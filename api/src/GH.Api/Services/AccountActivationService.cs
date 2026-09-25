@@ -88,6 +88,18 @@ public class AccountActivationService
             user.Status = UserStatus.Active;
             user.IsDeleted = false;
             user.UpdatedAt = DateTime.UtcNow;
+
+            // Un usuario invitado (compró sin cuenta) todavía no tiene contraseña: se le asigna
+            // ahora para que pueda entrar y conservar su pedido y su expediente.
+            if (string.IsNullOrWhiteSpace(user.PasswordHash))
+            {
+                if (!string.IsNullOrWhiteSpace(password))
+                    user.PasswordHash = _hasher.HashPassword(user, password);
+                else if (!string.IsNullOrWhiteSpace(solicitud.PasswordHash))
+                    user.PasswordHash = solicitud.PasswordHash;
+                else
+                    user.PasswordHash = _hasher.HashPassword(user, passwordFinal);
+            }
         }
         else
         {

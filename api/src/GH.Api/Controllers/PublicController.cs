@@ -1,4 +1,4 @@
-﻿using GH.Api.Contracts;
+using GH.Api.Contracts;
 using GH.Api.Services;
 using GH.Domain;
 using GH.Domain.Abstractions;
@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GH.Api.Controllers;
 
-/// <summary>Endpoints pÃºblicos: informaciÃ³n de la firma, catÃ¡logo, solicitud de cuenta,
-/// cotizaciones y descarga de documentos firmados. No requieren autenticaciÃ³n.</summary>
+/// <summary>Endpoints públicos: información de la firma, catálogo, solicitud de cuenta,
+/// cotizaciones y descarga de documentos firmados. No requieren autenticación.</summary>
 [ApiController]
 [Route("api/v1/public")]
 [AllowAnonymous]
@@ -40,7 +40,7 @@ public class PublicController : ControllerBase
         _activacion = activacion;
     }
 
-    /// <summary>InformaciÃ³n de marca, contacto y configuraciÃ³n de venta del app.</summary>
+    /// <summary>Información de marca, contacto y configuración de venta del app.</summary>
     [HttpGet("site")]
     public async Task<ActionResult<SiteDto>> Site(CancellationToken ct)
     {
@@ -90,7 +90,7 @@ public class PublicController : ControllerBase
             Get("catalog.sourceUrl", "https://www.ghcontadores.net/category/servicios")));
     }
 
-    /// <summary>CategorÃ­as del catÃ¡logo con el nÃºmero de servicios activos.</summary>
+    /// <summary>Categorías del catálogo con el número de servicios activos.</summary>
     [HttpGet("catalog/categories")]
     public async Task<ActionResult<IReadOnlyList<ProductCategoryDto>>> Categories(CancellationToken ct)
     {
@@ -108,7 +108,7 @@ public class PublicController : ControllerBase
         return Ok(categories.Select(c => ProductCategoryDto.From(c, counts.GetValueOrDefault(c.Id))).ToList());
     }
 
-    /// <summary>CatÃ¡logo de servicios con bÃºsqueda, filtros y paginaciÃ³n.</summary>
+    /// <summary>Catálogo de servicios con búsqueda, filtros y paginación.</summary>
     [HttpGet("catalog/products")]
     public async Task<ActionResult<PagedResult<ProductDto>>> Products(
         [FromQuery] string? category, [FromQuery] string? search, [FromQuery] bool? featured,
@@ -167,17 +167,17 @@ public class PublicController : ControllerBase
         });
     }
 
-    /// <summary>Solicitud de creaciÃ³n de cuenta desde el app. Queda pendiente de aprobaciÃ³n del administrador.</summary>
+    /// <summary>Solicitud de creación de cuenta desde el app. Queda pendiente de aprobación del administrador.</summary>
     [HttpPost("account-requests")]
     [EnableRateLimiting("public-write")]
     public async Task<ActionResult<AccountRequestStatusDto>> CreateAccountRequest([FromBody] AccountRequestCreateRequest request, CancellationToken ct)
     {
         var email = (request.Email ?? string.Empty).Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(request.Phone))
-            return BadRequest(new ProblemDetails { Title = "Datos incompletos", Detail = "El nombre, el correo y el telÃ©fono son obligatorios.", Status = 400 });
+            return BadRequest(new ProblemDetails { Title = "Datos incompletos", Detail = "El nombre, el correo y el teléfono son obligatorios.", Status = 400 });
 
         if (!email.Contains('@') || !email.Contains('.'))
-            return BadRequest(new ProblemDetails { Title = "Correo no vÃ¡lido", Status = 400 });
+            return BadRequest(new ProblemDetails { Title = "Correo no válido", Status = 400 });
 
         var existing = await _db.AccountRequests
             .Where(r => r.Email == email && r.Status == AccountRequestStatus.Pending)
@@ -190,21 +190,26 @@ public class PublicController : ControllerBase
                 AccessResolver.Label(existing.Status), existing.RejectionReason, existing.CreatedAt, existing.ReviewedAt, false));
         }
 
-        if (await _db.Users.AnyAsync(u => u.Email == email && !u.IsDeleted, ct))
+        // Si ya existe una cuenta REAL con ese correo (con contraseña) no se admite otra solicitud.
+        // Sí se admite cuando existe un usuario invitado (compró sin cuenta: pendiente y sin
+        // contraseña): en ese caso la solicitud sirve para activar su cuenta y conservar el pedido
+        // y el expediente que ya tiene a su nombre.
+        var usuarioExistente = await _db.Users.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted, ct);
+        if (usuarioExistente is not null && !string.IsNullOrWhiteSpace(usuarioExistente.PasswordHash))
             return Conflict(new ProblemDetails
             {
                 Title = "Correo ya registrado",
-                Detail = "Ya existe una cuenta con este correo. Inicie sesiÃ³n o recupere su contraseÃ±a.",
+                Detail = "Ya existe una cuenta con este correo. Inicie sesión o recupere su contraseña.",
                 Status = 409,
             });
 
-        // La contraseÃ±a que elige el solicitante se valida y se guarda cifrada en la propia
+        // La contraseña que elige el solicitante se valida y se guarda cifrada en la propia
         // solicitud, para que al aprobarla (en cualquier modo) pueda entrar con la suya.
         if (!string.IsNullOrWhiteSpace(request.Password) && request.Password.Length < 8)
             return BadRequest(new ProblemDetails
             {
-                Title = "ContraseÃ±a demasiado corta",
-                Detail = "La contraseÃ±a debe tener al menos 8 caracteres.",
+                Title = "Contraseña demasiado corta",
+                Detail = "La contraseña debe tener al menos 8 caracteres.",
                 Status = 400,
             });
 
@@ -229,9 +234,9 @@ public class PublicController : ControllerBase
         _db.AccountRequests.Add(entity);
         await _db.SaveChangesAsync(ct);
 
-        // Modo configurado por el administrador (Ajustes â†’ Registro de clientes):
-        //   Â· automatic â†’ la cuenta se activa al instante, sin visto bueno.
-        //   Â· approval  â†’ queda pendiente y aparece en el panel para aprobarla o rechazarla.
+        // Modo configurado por el administrador (Ajustes   Registro de clientes):
+        //   · automatic   la cuenta se activa al instante, sin visto bueno.
+        //   · approval    queda pendiente y aparece en el panel para aprobarla o rechazarla.
         var modo = await _activacion.GetModeAsync(ct);
         if (AccountActivationService.EsAutomatico(modo))
         {
@@ -254,8 +259,8 @@ public class PublicController : ControllerBase
             }, ct);
 
             await _notifications.NotifyStaffAsync(NotificationType.System,
-                "Cuenta creada automÃ¡ticamente",
-                $"{entity.FullName} se registrÃ³ y su cuenta quedÃ³ activa (modo de registro automÃ¡tico).",
+                "Cuenta creada automáticamente",
+                $"{entity.FullName} se registró y su cuenta quedó activa (modo de registro automático).",
                 deepLink: $"/admin/clients/{resultado.Client.Id}",
                 data: new { accountRequestId = entity.Id, clientId = resultado.Client.Id });
 
@@ -273,7 +278,7 @@ public class PublicController : ControllerBase
             AccessResolver.Label(entity.Status), null, entity.CreatedAt, null, false));
     }
 
-    /// <summary>Estado de una solicitud de cuenta (consulta desde el app mientras espera aprobaciÃ³n).</summary>
+    /// <summary>Estado de una solicitud de cuenta (consulta desde el app mientras espera aprobación).</summary>
     [HttpGet("account-requests/status")]
     public async Task<ActionResult<AccountRequestStatusDto>> GetAccountRequestStatus([FromQuery] string email, [FromQuery] string? trackingCode, CancellationToken ct)
     {
@@ -300,14 +305,14 @@ public class PublicController : ControllerBase
             ClientCode: cliente?.Code));
     }
 
-    /// <summary>EnvÃ­a una solicitud de cotizaciÃ³n desde la web o el app.</summary>
+    /// <summary>Envía una solicitud de cotización desde la web o el app.</summary>
     [HttpPost("quotes")]
     [EnableRateLimiting("public-write")]
     public async Task<ActionResult<IdResponse>> CreateQuote([FromBody] QuoteCreateRequest request, CancellationToken ct)
     {
         var email = (request.Email ?? string.Empty).Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(request.Phone))
-            return BadRequest(new ProblemDetails { Title = "Datos incompletos", Detail = "Nombre, correo y telÃ©fono son obligatorios.", Status = 400 });
+            return BadRequest(new ProblemDetails { Title = "Datos incompletos", Detail = "Nombre, correo y teléfono son obligatorios.", Status = 400 });
 
         var quote = new QuoteRequest
         {
@@ -323,14 +328,14 @@ public class PublicController : ControllerBase
         await _db.SaveChangesAsync(ct);
 
         await _notifications.NotifyStaffAsync(NotificationType.QuoteRequested,
-            "Nueva solicitud de cotizaciÃ³n",
-            $"{quote.FullName} solicitÃ³ una cotizaciÃ³n ({quote.Email}).",
+            "Nueva solicitud de cotización",
+            $"{quote.FullName} solicitó una cotización ({quote.Email}).",
             deepLink: "/admin/quotes",
             data: new { quoteId = quote.Id });
 
         await _audit.LogAsync("create", "QuoteRequest", quote.Id.ToString(), after: new { quote.FullName, quote.Email }, ct: ct);
 
-        return Ok(new IdResponse(quote.Id, Message: "Solicitud de cotizaciÃ³n recibida. Le contactaremos a la brevedad."));
+        return Ok(new IdResponse(quote.Id, Message: "Solicitud de cotización recibida. Le contactaremos a la brevedad."));
     }
 
     /// <summary>Descarga un documento usando un token firmado (HMAC, 15 minutos) generado por la API.</summary>
@@ -338,7 +343,7 @@ public class PublicController : ControllerBase
     public async Task<IActionResult> DownloadSigned(string token, CancellationToken ct)
     {
         if (!_storage.TryValidateDownloadToken(token, out var download) || download is null)
-            return Unauthorized(new ProblemDetails { Title = "Enlace no vÃ¡lido o expirado", Status = 401 });
+            return Unauthorized(new ProblemDetails { Title = "Enlace no válido o expirado", Status = 401 });
 
         try
         {
@@ -353,7 +358,7 @@ public class PublicController : ControllerBase
 
     private async Task OnAccountRequestCreatedAsync(AccountRequest entity, CancellationToken ct)
     {
-        // Aviso inmediato al panel de administraciÃ³n (grupo staff) + notificaciÃ³n persistida.
+        // Aviso inmediato al panel de administración (grupo staff) + notificación persistida.
         await _realtime.ToStaffAsync("accountrequest.created", new
         {
             id = entity.Id,
@@ -368,7 +373,7 @@ public class PublicController : ControllerBase
 
         await _notifications.NotifyStaffAsync(NotificationType.System,
             "Nueva solicitud de cuenta",
-            $"{entity.FullName} solicitÃ³ crear una cuenta ({entity.Email}). Requiere aprobaciÃ³n.",
+            $"{entity.FullName} solicitó crear una cuenta ({entity.Email}). Requiere aprobación.",
             deepLink: "/admin/account-requests",
             data: new { accountRequestId = entity.Id });
 
