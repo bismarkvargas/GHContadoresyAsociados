@@ -302,6 +302,60 @@ async function main(): Promise<void> {
     db.payments.some((p) => p.orderId === refundOrder.id && p.status === 'Refunded'),
   )
 
+  console.log('== Notificaciones (contrato de administración) ==')
+  const bandeja = await call('GET', '/admin/notifications?page=1&pageSize=5', undefined, adminToken)
+  check('bandeja paginada', bandeja.data.items.length === 5, `(${bandeja.data.items.length})`)
+  check('total disponible', typeof bandeja.data.total === 'number', `(${bandeja.data.total})`)
+  const primerAviso = bandeja.data.items[0]
+  check('la notificación trae destinatario resuelto', !!primerAviso?.userName && !!primerAviso?.userEmail)
+  check(
+    'las notificaciones de expediente traen deepLink',
+    bandeja.data.items.some((n: any) => typeof n.deepLink === 'string' && n.deepLink.startsWith('/cases/')),
+  )
+  check('la notificación trae isRead booleano', typeof primerAviso?.isRead === 'boolean')
+
+  const resumen = await call('GET', '/admin/notifications/summary', undefined, adminToken)
+  check('resumen con total', typeof resumen.data.total === 'number', `(${resumen.data.total})`)
+  check('resumen con sin leer', typeof resumen.data.unread === 'number', `(${resumen.data.unread})`)
+  check('resumen por tipo', Array.isArray(resumen.data.byType) && resumen.data.byType.length > 0)
+  check('resumen de últimos 30 días', typeof resumen.data.last30Days === 'number')
+
+  const porTipo = await call('GET', '/admin/notifications?type=OrderPaid', undefined, adminToken)
+  check(
+    'filtro por tipo',
+    porTipo.data.items.every((n: any) => n.type === 'OrderPaid'),
+    `(${porTipo.data.total})`,
+  )
+  const sinLeer = await call('GET', '/admin/notifications?unreadOnly=true', undefined, adminToken)
+  check(
+    'filtro de no leídas',
+    sinLeer.data.items.every((n: any) => n.isRead === false),
+    `(${sinLeer.data.total})`,
+  )
+
+  const reenviada = await call('POST', `/admin/notifications/${primerAviso.id}/resend`, {}, adminToken)
+  check('reenvío responde con mensaje', typeof reenviada.data.message === 'string')
+
+  console.log('== Etiquetas del cliente como arreglo ==')
+  const conEtiquetas = await call(
+    'POST',
+    '/admin/clients',
+    {
+      clientType: 'Company',
+      legalName: 'Cliente Con Etiquetas S.A.',
+      idNumber: '3-101-424242',
+      email: 'etiquetas@ejemplo.cr',
+      phone: '+506 8888 0000',
+      status: 'Lead',
+      source: 'web',
+      tags: ['vip', 'hotelería'],
+    },
+    adminToken,
+  )
+  check('la API recibe tags como arreglo', Array.isArray(conEtiquetas.data.tags), `(${JSON.stringify(conEtiquetas.data.tags)})`)
+  check('los valores se conservan', conEtiquetas.data.tags.includes('hotelería'))
+  check('tagsCsv derivado para la interfaz', conEtiquetas.data.tagsCsv === 'vip,hotelería')
+
   console.log('== Roles y permisos ==')
   const roles = await call('GET', '/admin/roles', undefined, adminToken)
   check('6 roles semilla', roles.data.length === 6, `(${roles.data.length})`)

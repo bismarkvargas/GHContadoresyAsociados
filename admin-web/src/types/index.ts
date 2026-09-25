@@ -87,15 +87,30 @@ export interface LoginResponse {
 export interface Notification {
   id: string
   userId: string
+  /** Contrato real de la API: destinatario resuelto y enlace profundo. */
+  userEmail?: string | null
+  userName?: string | null
   title: string
   body: string
   type: NotificationType
   dataJson?: string | null
-  channel: 'Push' | 'InApp' | 'Email'
-  status: 'Queued' | 'Sent' | 'Failed' | 'Read'
+  deepLink?: string | null
+  channel: 'Push' | 'InApp' | 'Email' | string
+  status: 'Queued' | 'Sent' | 'Failed' | 'Read' | string
+  isRead?: boolean
+  fcmMessageId?: string | null
+  error?: string | null
   createdAt: string
   sentAt?: string | null
   readAt?: string | null
+}
+
+/** Resumen de la bandeja de notificaciones (`GET /admin/notifications/summary`). */
+export interface NotificationSummary {
+  total: number
+  unread: number
+  byType: { type: NotificationType | string; label: string; count: number }[]
+  last30Days: number
 }
 
 export type NotificationType =

@@ -251,6 +251,20 @@ export default function ClientDetailPage() {
     [],
   )
 
+  // Un identificador ausente no se consulta: se informa en lugar de dejar la
+  // pantalla en un esqueleto indefinido.
+  if (!idValido) {
+    return (
+      <>
+        <PageHeader title="Ficha de cliente" backTo="/clientes" />
+        <ErrorState
+          title="Cliente no encontrado"
+          message={`La dirección solicitada no incluye un identificador de cliente válido${rawId ? ` («${rawId}»)` : ''}.`}
+        />
+      </>
+    )
+  }
+
   if (client.isLoading) {
     return (
       <>

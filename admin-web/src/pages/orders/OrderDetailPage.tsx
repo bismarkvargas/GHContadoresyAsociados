@@ -74,6 +74,20 @@ export default function OrderDetailPage() {
     onSuccess: () => setShowCreateCase(false),
   })
 
+  // Un identificador ausente no se consulta: se informa en lugar de dejar la
+  // pantalla en un esqueleto indefinido.
+  if (!idValido) {
+    return (
+      <>
+        <PageHeader title="Pedido" backTo="/pedidos" />
+        <ErrorState
+          title="Pedido no encontrado"
+          message={`La dirección solicitada no incluye un identificador de pedido válido${rawId ? ` («${rawId}»)` : ''}.`}
+        />
+      </>
+    )
+  }
+
   if (query.isLoading) {
     return (
       <>

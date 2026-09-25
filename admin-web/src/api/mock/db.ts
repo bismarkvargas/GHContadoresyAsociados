@@ -1150,9 +1150,12 @@ export async function buildSeedDb(): Promise<MockDb> {
   for (let i = 0; i < 18; i += 1) {
     const type = notifTypes[i % notifTypes.length]!
     const read = i > 5
+    const expediente = db.caseFiles[i % db.caseFiles.length]
     db.notifications.push({
       id: uid('notif'),
       userId: adminId,
+      userEmail: 'admin@ghcontadores.net',
+      userName: 'Gustavo Hernández Rojas',
       title:
         type === 'AccountApproved'
           ? 'Solicitud de cuenta aprobada'
@@ -1179,9 +1182,13 @@ export async function buildSeedDb(): Promise<MockDb> {
         'Un cliente envió un mensaje en el expediente asignado.',
       ]),
       type,
-      dataJson: JSON.stringify({ entityId: db.caseFiles[i % db.caseFiles.length]?.id ?? null }),
+      dataJson: JSON.stringify({ caseFileId: expediente?.id ?? null, code: expediente?.code ?? null }),
+      deepLink: expediente ? `/cases/${expediente.id}` : null,
       channel: 'InApp',
       status: read ? 'Read' : 'Sent',
+      isRead: read,
+      fcmMessageId: null,
+      error: null,
       createdAt: isoAgo(i * 0.4, int(7, 20), int(0, 59)),
       sentAt: isoAgo(i * 0.4, int(7, 20), int(0, 59)),
       readAt: read ? isoAgo(i * 0.4 - 0.1, int(7, 20)) : null,

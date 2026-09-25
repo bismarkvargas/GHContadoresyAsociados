@@ -251,6 +251,20 @@ export default function CaseDetailPage() {
     [],
   )
 
+  // Un identificador ausente no se consulta: se informa en lugar de dejar la
+  // pantalla en un esqueleto indefinido.
+  if (!idValido) {
+    return (
+      <>
+        <PageHeader title="Expediente" backTo="/expedientes" />
+        <ErrorState
+          title="Expediente no encontrado"
+          message={`La dirección solicitada no incluye un identificador de expediente válido${rawId ? ` («${rawId}»)` : ''}.`}
+        />
+      </>
+    )
+  }
+
   if (query.isLoading) {
     return (
       <>

@@ -26,6 +26,7 @@ const RolesPage = lazy(() => import('@/pages/roles/RolesPage'))
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'))
 const AuditPage = lazy(() => import('@/pages/audit/AuditPage'))
+const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'))
 
 function Page({ path, children }: { path: string; children: React.ReactNode }) {
   return <ProtectedRoute permission={routeViewPermission[path]}>{children}</ProtectedRoute>
@@ -54,6 +55,7 @@ const aliases: { from: string; to: string }[] = [
   { from: 'roles', to: '/roles' },
   { from: 'reports', to: '/informes' },
   { from: 'settings', to: '/ajustes' },
+  { from: 'notifications', to: '/notificaciones' },
   { from: 'audit', to: '/auditoria' },
   // Detalle con identificador
   { from: 'clients/:id', to: '/clientes/:id' },
@@ -278,6 +280,15 @@ export default function App() {
             element={
               <Page path="/auditoria">
                 <AuditPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="notificaciones"
+            element={
+              <Page path="/notificaciones">
+                <NotificationsPage />
               </Page>
             }
           />

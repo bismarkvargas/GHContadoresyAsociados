@@ -37,7 +37,8 @@ globalThis.fetch = async (url) => {
   return { ok: false, status: 404, json: async () => ({}) }
 }
 
-const entry = path.join(outDir, 'smoke-entry.mjs')
+const entrada = process.env.SMOKE_ENTRY ?? 'smoke'
+const entry = path.join(outDir, `${entrada}-entry.mjs`)
 
 await build({
   root,
@@ -54,11 +55,11 @@ await build({
     ssr: true,
     target: 'node20',
     outDir,
-    emptyOutDir: true,
+    emptyOutDir: false,
     minify: false,
     rollupOptions: {
-      input: path.join(root, 'scripts', 'smoke.ts'),
-      output: { entryFileNames: 'smoke-entry.mjs', manualChunks: undefined },
+      input: path.join(root, 'scripts', `${entrada}.ts`),
+      output: { entryFileNames: `${entrada}-entry.mjs`, manualChunks: undefined },
     },
   },
 })

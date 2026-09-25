@@ -130,6 +130,7 @@ function UserMenu() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 rounded-control p-1 pr-2 transition-colors hover:bg-surface"
+        aria-label="Menú de usuario"
         aria-haspopup="menu"
         aria-expanded={open}
       >
