@@ -24,6 +24,19 @@ panel de administración web, API y aplicación móvil híbrida con tienda de se
 3. [`docs/03-contrato-api.md`](docs/03-contrato-api.md) — contrato de API compartido entre api, admin y app.
 4. [`docs/04-despliegue.md`](docs/04-despliegue.md) — puesta en producción en `https://demostracion.es/ghcontadores/`.
 
+## Entorno desplegado
+
+| Servicio | URL |
+|---|---|
+| Panel de administración | <https://demostracion.es/ghcontadores/> |
+| API REST | `https://demostracion.es/ghcontadores/api/v1` |
+| Tiempo real (SignalR) | `wss://demostracion.es/ghcontadores/hubs/realtime` |
+| Documentación interactiva | <https://demostracion.es/ghcontadores/swagger> |
+| Estado del servicio | <https://demostracion.es/ghcontadores/health> |
+
+Despliegue y verificación: `bash deploy/deploy.sh` (en el servidor) · `bash deploy/smoke-test.sh` ·
+`node tools/realtime-test/realtime-test.mjs` · `node tools/e2e-admin/e2e-admin.mjs`.
+
 ## Funcionalidad principal
 
 - **CRM de clientes**: alta, estados, etiquetas, responsable, contactos, interacciones con recordatorios y línea de tiempo unificada.
