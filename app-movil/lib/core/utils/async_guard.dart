@@ -4,14 +4,56 @@ import 'dart:async';
 class AsyncGuard {
   const AsyncGuard._();
 
-  /// Ejecuta [action] con un tope de tiempo.
+  /// Ejecuta [action] con un tope de tiempo **cancelable**.
+  ///
+  /// A diferencia de `Future.timeout`, el temporizador interno se cancela en
+  /// cuanto [action] termina o falla. Esto importa en dos planos:
+  ///  * el binding de `flutter_test` considera un fallo que queden `Timer`
+  ///    pendientes al acabar un test (`!timersPending`);
+  ///  * en producción no se acumulan temporizadores ociosos en cada arranque.
+  static Future<T> withTimeout<T>(
+    Future<T> action, {
+    required Duration limit,
+    String? label,
+  }) async {
+    final completer = Completer<T>();
+    final timer = Timer(limit, () {
+      if (completer.isCompleted) return;
+      completer.completeError(
+        TimeoutException(
+          label == null ? 'Tiempo de espera agotado' : 'Tiempo agotado: $label',
+          limit,
+        ),
+      );
+    });
+
+    unawaited(
+      action.then(
+        (value) {
+          if (!completer.isCompleted) completer.complete(value);
+        },
+        onError: (Object error, StackTrace stack) {
+          if (!completer.isCompleted) completer.completeError(error, stack);
+        },
+      ),
+    );
+
+    try {
+      return await completer.future;
+    } finally {
+      // Siempre se cancela: el timer nunca sobrevive a la operación.
+      timer.cancel();
+    }
+  }
+
+  /// Alias histórico de [withTimeout] con valor de respaldo opcional.
   static Future<T> timeout<T>(
     Future<T> action, {
     Duration limit = const Duration(seconds: 20),
     T? fallback,
   }) async {
     try {
-      return await action.timeout(limit);
+      return await withTimeout<T>(action, limit: limit);
     } on TimeoutException {
       if (fallback != null) return fallback;
       rethrow;

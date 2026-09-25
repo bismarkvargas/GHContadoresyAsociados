@@ -288,7 +288,18 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       try {
         updated = await client.getOrder(order.id);
       } catch (_) {
-        updated = order;
+        // La consulta posterior puede fallar (por ejemplo sin sesión en modo
+        // demo): se reconstruye la orden con el resultado del cobro, que ya
+        // incluye el expediente generado.
+        updated = order.copyWith(
+          status: payment.orderStatus ??
+              (payment.isApproved ? 'InProcess' : order.status),
+          payment: payment,
+          paidAt: payment.isApproved ? payment.processedAt : null,
+          caseCodes: payment.caseCodes.isNotEmpty
+              ? payment.caseCodes
+              : order.caseCodes,
+        );
       }
       if (!mounted) return payment;
       state = state.copyWith(
@@ -298,10 +309,25 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
         step: CheckoutStep.result,
       );
       if (payment.isApproved) {
-        await _ref.read(cartProvider.notifier).load();
+        try {
+          await _ref.read(cartProvider.notifier).load();
+        } catch (_) {
+          // El carrito se refresca en la siguiente apertura.
+        }
       }
       return payment;
     } on ApiFailure catch (e) {
+      // Nunca se pierde un cobro ya procesado: si el pago se resolvió, el
+      // resultado se muestra aunque falle una consulta posterior.
+      if (state.payment != null) {
+        if (mounted) {
+          state = state.copyWith(
+            isBusy: false,
+            step: CheckoutStep.result,
+          );
+        }
+        return state.payment;
+      }
       if (!mounted) return null;
       state = state.copyWith(
         isBusy: false,

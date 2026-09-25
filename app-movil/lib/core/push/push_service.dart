@@ -85,33 +85,40 @@ class LocalNotificationService {
     if (_initialized) return;
     _initialized = true;
 
-    // Tope de tiempo: si la plataforma no responde (emulador, tests, o un
-    // dispositivo sin el plugin listo) la app no se queda esperando.
+    // Tope de tiempo cancelable: si la plataforma no responde (emulador, tests
+    // o un dispositivo sin el plugin listo) la app no queda esperando y no se
+    // dejan temporizadores vivos.
     try {
-      await _plugin
-          .initialize(
-            const InitializationSettings(
-              android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-              iOS: DarwinInitializationSettings(
-                requestAlertPermission: false,
-                requestBadgePermission: false,
-                requestSoundPermission: false,
-              ),
+      await AsyncGuard.withTimeout(
+        _plugin.initialize(
+          const InitializationSettings(
+            android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+            iOS: DarwinInitializationSettings(
+              requestAlertPermission: false,
+              requestBadgePermission: false,
+              requestSoundPermission: false,
             ),
-            onDidReceiveNotificationResponse: _handleResponse,
-            onDidReceiveBackgroundNotificationResponse: _handleBackgroundResponse,
-          )
-          .timeout(const Duration(seconds: 3));
+          ),
+          onDidReceiveNotificationResponse: _handleResponse,
+          onDidReceiveBackgroundNotificationResponse: _handleBackgroundResponse,
+        ),
+        limit: const Duration(seconds: 3),
+        label: 'push.initialize',
+      );
     } catch (e) {
       debugPrint('[Push] notificaciones locales no disponibles: $e');
     }
 
     try {
-      await _plugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(_channel)
-          .timeout(const Duration(seconds: 3));
+      await AsyncGuard.withTimeout(
+        _plugin
+                .resolvePlatformSpecificImplementation<
+                    AndroidFlutterLocalNotificationsPlugin>()
+                ?.createNotificationChannel(_channel) ??
+            Future<void>.value(),
+        limit: const Duration(seconds: 3),
+        label: 'push.channel',
+      );
     } catch (e) {
       debugPrint('[Push] no se pudo crear el canal Android: $e');
     }

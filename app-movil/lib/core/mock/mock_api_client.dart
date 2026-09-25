@@ -1076,8 +1076,7 @@ class MockApiClient implements ApiClient {
         ),
       );
       _cart = Cart.empty;
-    } else if (status == 'Declined') {
-      _notifications.insert(
+    } else if (status == 'Declined') {      _notifications.insert(
         0,
         AppNotification(
           id: 'not-${DateTime.now().microsecondsSinceEpoch}',
@@ -1092,7 +1091,38 @@ class MockApiClient implements ApiClient {
       );
     }
 
-    return _delay(payment, custom: const Duration(milliseconds: 250));
+    // La pasarela devuelve también el estado final de la orden y los
+    // expedientes generados, para que el app no dependa de una segunda llamada.
+    final settledOrder = _orders[index];
+    final settledPayment = PaymentResult(
+      id: payment.id,
+      status: payment.status,
+      amount: payment.amount,
+      method: payment.method,
+      provider: payment.provider,
+      currency: payment.currency,
+      reference: payment.reference,
+      authorizationCode: payment.authorizationCode,
+      cardBrand: payment.cardBrand,
+      cardLast4: payment.cardLast4,
+      cardHolder: payment.cardHolder,
+      failureReason: payment.failureReason,
+      createdAt: payment.createdAt,
+      processedAt: payment.processedAt,
+      instructions: payment.instructions,
+      orderStatus: settledOrder.status,
+      caseCodes: settledOrder.caseCodes,
+    );
+
+    return _delay(settledPayment, custom: const Duration(milliseconds: 250));
+  }
+
+  /// Estado actual de una orden en memoria (útil para demos y pruebas).
+  Order? peekOrder(String id) {
+    for (final order in _orders) {
+      if (order.id == id || order.number == id) return order;
+    }
+    return null;
   }
 
   String _brandFor(String digits) {

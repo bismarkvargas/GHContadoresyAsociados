@@ -70,13 +70,27 @@ void main() {
     expect(checkout.order!.caseCodes, isEmpty);
     expect(checkout.order!.isPayable, isTrue);
 
-    // Reintento: vuelve al paso de método de pago.
-    final retry = find.byType(FilledButton).last;
-    await tester.ensureVisible(retry);
+    // Reintento: baja al final del resultado y vuelve al paso de método de pago.
+    await tester.drag(
+      find.byType(ListView).first,
+      const Offset(0, -700),
+    );
+    await TestHarness.advance(
+      tester,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    final retry = find.text('Intentar de nuevo');
+    expect(retry, findsWidgets);
+    await tester.ensureVisible(retry.first);
     await tester.pump();
-    await tester.tap(retry);
+    await tester.tap(retry.first);
     await TestHarness.advance(tester, duration: const Duration(seconds: 2));
-    expect(find.text('Método de pago'), findsOneWidget);
+    expect(
+      container.read(checkoutProvider).step,
+      CheckoutStep.method,
+      reason: 'El reintento debe devolver al paso de método de pago',
+    );
   });
 
   testWidgets('pago pendiente con 4000 0000 0000 9995 queda en revisión',
