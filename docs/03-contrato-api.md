@@ -5,7 +5,9 @@ Errores: `application/problem+json` (RFC 7807) con `traceId` y `errors{}` de val
 Listados: `?page=1&pageSize=20&sort=field&order=asc|desc` → `{ "items": [...], "total": n, "page": 1, "pageSize": 20, "totalPages": n }`.
 Fechas: ISO-8601 UTC (`2026-02-14T18:30:00Z`). Dinero: número decimal + `currency`.
 Idempotencia de compra: cabecera `Idempotency-Key` en `POST /me/orders`.
-Swagger vivo en `/swagger`. Esta tabla es el contrato de referencia entre api ↔ admin ↔ app.
+Swagger vivo en `/swagger` (102 rutas · 123 esquemas). Esta tabla es el contrato de referencia entre api ↔ admin ↔ app.
+
+**Tolerancia con formularios**: como el panel y el app construyen sus peticiones a partir de formularios, una cadena vacía (`""`) en un campo opcional (`Guid`, `int`, `decimal`, `DateTime`) se interpreta como *ausencia de valor* en lugar de devolver `400`. En los parámetros de consulta la API es estricta a propósito: un `clientId=undefined` devuelve 400 en vez de devolver datos sin filtrar.
 
 ## 1. Público (sin token)
 
@@ -79,7 +81,11 @@ Swagger vivo en `/swagger`. Esta tabla es el contrato de referencia entre api �
 | GET | `/admin/reports/sales` · `/admin/reports/cases` · `/admin/reports/productivity` | `reports.view` |
 | GET/PUT | `/admin/settings` | `settings.*` |
 | GET | `/admin/audit` | `settings.view` |
-| GET | `/admin/notifications` (reenviar) POST `/admin/notifications/send` | `notifications.send` |
+| GET | `/admin/documents` · POST `/admin/documents` (multipart) · DELETE `/admin/documents/{id}` | `documents.*` |
+| GET | `/admin/notifications` | `notifications.view` |
+| GET | `/admin/notifications/summary` | `notifications.view` |
+| POST | `/admin/notifications/{id}/read` · `/admin/notifications/read-all` | `notifications.view` |
+| POST | `/admin/notifications/send` · `/admin/notifications/{id}/resend` | `notifications.send` |
 
 ## 5. Tiempo real
 
