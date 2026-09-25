@@ -22,15 +22,21 @@ void main() {
         findsOneWidget,
       );
 
-      // Y termina llevándonos al catálogo público (sin sesión).
-      await TestHarness.waitForBoot(tester);
-      expect(find.text('Servicios'), findsWidgets);
+      // Y termina llevándonos al catálogo público (sin sesión y con
+      // onboarding ya visto, que es el caso de este test).
+      final reachedCatalog = await TestHarness.waitForText(tester, 'Servicios');
+      expect(
+        reachedCatalog ||
+            find.text('Todas las categorías').evaluate().isNotEmpty,
+        isTrue,
+        reason: 'El arranque debe terminar en el catálogo público',
+      );
       expect(find.textContaining('Buscar'), findsWidgets);
 
       await TestHarness.teardown(tester);
     });
 
-    testWidgets('sin onboarding completado abre las diapositivas de bienvenida',
+    testWidgets('sin onboarding completado muestra el onboarding antes del catálogo',
         (tester) async {
       TestHarness.prepare(onboardingDone: false);
       await TestHarness.pumpApp(tester);

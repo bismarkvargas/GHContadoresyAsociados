@@ -26,6 +26,14 @@ import 'mock_seed.dart';
 /// `Pending` (pantalla de espera de aprobación).
 enum MockAuthMode { active, pending }
 
+/// Sobrescritura de la latencia simulada del modo demo.
+///
+/// En los tests se pone en [Duration.zero] (`MockApiClient.latencyOverride`):
+/// los `Future.delayed` del mock se resuelven en el mismo turno del reloj
+/// virtual, de modo que ningún test depende del avance del tiempo real.
+@visibleForTesting
+Duration? mockLatencyOverride;
+
 /// Modo demo: implementación completa en memoria con el catálogo real
 /// (`assets/mock/catalog.seed.json`, 62 servicios) y datos operativos
 /// simulados coherentes. No requiere backend.
@@ -36,6 +44,8 @@ class MockApiClient implements ApiClient {
   });
 
   /// Latencia artificial para que skeletons y spinners se vean reales.
+  ///
+  /// Si [mockLatencyOverride] está definida (tests), tiene prioridad.
   final Duration latency;
 
   /// Configuración de registro que simula el panel de administración.
@@ -280,8 +290,18 @@ class MockApiClient implements ApiClient {
   // ---------- Utilidades ----------
 
   Future<T> _delay<T>(T value, {Duration? custom}) async {
-    await Future<void>.delayed(custom ?? latency);
+    // La sobrescritura de tests (0 ms) tiene prioridad sobre cualquier latencia
+    // simulada, incluida la de llamadas con `custom` (p. ej. el cobro).
+    await _pause(custom ?? latency);
     return value;
+  }
+
+  /// Espera la latencia simulada, salvo que los tests la hayan anulado.
+  Future<void> _pause(Duration duration) async {
+    final effective = mockLatencyOverride ?? duration;
+    if (effective > Duration.zero) {
+      await Future<void>.delayed(effective);
+    }
   }
 
   void _requireSession() {
@@ -770,7 +790,7 @@ class MockApiClient implements ApiClient {
     _docSeq++;
     const total = 100;
     for (int i = 0; i <= total; i += 10) {
-      await Future<void>.delayed(const Duration(milliseconds: 60));
+      await _pause(const Duration(milliseconds: 60));
       onProgress?.call(i, total);
     }
     final caseCode = caseFileId == null
@@ -985,7 +1005,7 @@ class MockApiClient implements ApiClient {
     final now = DateTime.now().toUtc();
 
     // La pasarela simulada tarda ~1.5 s en procesar (la UI anima ese tiempo).
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    await _pause(const Duration(milliseconds: 1500));
 
     String status;
     String? failureReason;
@@ -1099,8 +1119,7 @@ class MockApiClient implements ApiClient {
         ),
       );
       _cart = Cart.empty;
-    } else if (status == 'Declined') {
-      _notifications.insert(
+    } else if (status == 'Declined') {      _notifications.insert(
         0,
         AppNotification(
           id: 'not-${DateTime.now().microsecondsSinceEpoch}',
@@ -1115,7 +1134,38 @@ class MockApiClient implements ApiClient {
       );
     }
 
-    return _delay(payment, custom: const Duration(milliseconds: 250));
+    // La pasarela devuelve también el estado final de la orden y los
+    // expedientes generados, para que el app no dependa de una segunda llamada.
+    final settledOrder = _orders[index];
+    final settledPayment = PaymentResult(
+      id: payment.id,
+      status: payment.status,
+      amount: payment.amount,
+      method: payment.method,
+      provider: payment.provider,
+      currency: payment.currency,
+      reference: payment.reference,
+      authorizationCode: payment.authorizationCode,
+      cardBrand: payment.cardBrand,
+      cardLast4: payment.cardLast4,
+      cardHolder: payment.cardHolder,
+      failureReason: payment.failureReason,
+      createdAt: payment.createdAt,
+      processedAt: payment.processedAt,
+      instructions: payment.instructions,
+      orderStatus: settledOrder.status,
+      caseCodes: settledOrder.caseCodes,
+    );
+
+    return _delay(settledPayment, custom: const Duration(milliseconds: 250));
+  }
+
+  /// Estado actual de una orden en memoria (útil para demos y pruebas).
+  Order? peekOrder(String id) {
+    for (final order in _orders) {
+      if (order.id == id || order.number == id) return order;
+    }
+    return null;
   }
 
   String _brandFor(String digits) {

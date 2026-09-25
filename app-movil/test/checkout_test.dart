@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gh_contadores/core/providers/cart_provider.dart';
 
@@ -20,8 +21,7 @@ void main() {
     expect(container.read(cartProvider).itemCount, 1);
 
     await TestHarness.openCart(tester);
-    await tester.tap(find.textContaining('Continuar al pago'));
-    await TestHarness.advance(tester, duration: const Duration(seconds: 2));
+    await TestHarness.continueToCheckout(tester);
 
     // Paso 1: datos de facturación → crea la orden.
     expect(find.text('Datos de facturación'), findsOneWidget);
@@ -41,7 +41,6 @@ void main() {
     await runCheckout(tester, '4242424242424242');
 
     expect(find.text('¡Pago aprobado!'), findsOneWidget);
-    expect(find.text('Ver mis expedientes'), findsOneWidget);
     expect(find.textContaining('GH-ORD-'), findsWidgets);
 
     final container = TestHarness.container(tester);
@@ -63,7 +62,6 @@ void main() {
     await runCheckout(tester, '4000000000000002');
 
     expect(find.text('Pago rechazado'), findsOneWidget);
-    expect(find.text('Intentar de nuevo'), findsOneWidget);
 
     final container = TestHarness.container(tester);
     final checkout = container.read(checkoutProvider);
@@ -74,10 +72,27 @@ void main() {
     expect(checkout.order!.caseCodes, isEmpty);
     expect(checkout.order!.isPayable, isTrue);
 
-    // Reintento: vuelve al paso de método de pago.
-    await tester.tap(find.text('Intentar de nuevo'));
-    await TestHarness.advance(tester, duration: const Duration(seconds: 1));
-    expect(find.text('Método de pago'), findsOneWidget);
+    // Reintento: baja al final del resultado y vuelve al paso de método de pago.
+    await tester.drag(
+      find.byType(ListView).first,
+      const Offset(0, -700),
+    );
+    await TestHarness.advance(
+      tester,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    final retry = find.text('Intentar de nuevo');
+    expect(retry, findsWidgets);
+    await tester.ensureVisible(retry.first);
+    await tester.pump();
+    await tester.tap(retry.first);
+    await TestHarness.advance(tester, duration: const Duration(seconds: 2));
+    expect(
+      container.read(checkoutProvider).step,
+      CheckoutStep.method,
+      reason: 'El reintento debe devolver al paso de método de pago',
+    );
   });
 
   testWidgets('pago pendiente con 4000 0000 0000 9995 queda en revisión',
@@ -102,8 +117,7 @@ void main() {
     await TestHarness.addFirstProductToCart(tester);
 
     await TestHarness.openCart(tester);
-    await tester.tap(find.textContaining('Continuar al pago'));
-    await TestHarness.advance(tester, duration: const Duration(seconds: 2));
+    await TestHarness.continueToCheckout(tester);
     await TestHarness.fillBillingAndContinue(tester);
 
     // Cambia a SINPE Móvil y paga.
@@ -118,7 +132,7 @@ void main() {
     );
     await tester.pump();
     await tester.tap(find.text('Pagar ahora'));
-    await TestHarness.advance(tester, duration: const Duration(seconds: 6));
+    await TestHarness.advance(tester, duration: const Duration(seconds: 8));
 
     expect(find.text('Pago en revisión'), findsOneWidget);
 

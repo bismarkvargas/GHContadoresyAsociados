@@ -48,12 +48,16 @@ public record SiteDto(
     CompanyDto Company,
     CurrencyDto Currency,
     PaymentConfigDto Payment,
+    RegistrationConfigDto Registration,
     string CatalogSourceUrl);
 
 public record BrandDto(string Name, string ShortName, string PrimaryColor, string InkColor, string AccentColor, string SuccessColor, string? LogoUrl);
 public record CompanyDto(string LegalName, string Address, string Phone1, string Phone2, string Email, string SupportEmail, string Website, string Country, string TimeZone);
 public record CurrencyDto(string Base, string Secondary, decimal UsdToCrc);
 public record PaymentConfigDto(string Provider, string TestCardApproved, string TestCardDeclined, string TestCardPending, bool Simulated);
+
+/// <summary>Modo de registro configurado por el administrador (automático o con aprobación).</summary>
+public record RegistrationConfigDto(string Mode, bool AutoApprove, string Message);
 
 public record ProductCategoryDto(
     Guid Id,
@@ -146,7 +150,8 @@ public record AccountRequestCreateRequest(
     string? IdNumber,
     ClientType ClientType,
     string? Company,
-    string? Message);
+    string? Message,
+    string? Password);
 
 public record AccountRequestStatusDto(
     string TrackingCode,
@@ -156,7 +161,11 @@ public record AccountRequestStatusDto(
     string? RejectionReason,
     DateTime CreatedAt,
     DateTime? ReviewedAt,
-    bool CanLogin);
+    bool CanLogin,
+    bool AutoApproved = false,
+    string? TemporaryPassword = null,
+    Guid? ClientId = null,
+    string? ClientCode = null);
 
 public record AccountRequestDto(
     Guid Id,

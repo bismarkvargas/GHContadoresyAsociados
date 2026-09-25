@@ -1,7 +1,24 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+/// Tope de tiempo para las llamadas al canal de notificaciones locales.
+///
+/// Es una variable (no una constante) para que los tests puedan reducirlo a
+/// cero y no dejar temporizadores pendientes al terminar.
+@visibleForTesting
+Duration pushInitTimeout = const Duration(seconds: 3);
+
+/// Permite desactivar por completo el centro de notificaciones local.
+///
+/// En los tests se pone en `false`: sin canal de plataforma la llamada nunca
+/// contesta, y el `Future` quedaría vivo al terminar el test.
+/// En producción (y en la app real) permanece activado.
+@visibleForTesting
+bool pushLocalNotificationsEnabled = true;
 
 /// Payload estándar de push/deep link (docs/03 §6).
 class PushPayload {
@@ -85,30 +102,60 @@ class LocalNotificationService {
     if (_initialized) return;
     _initialized = true;
 
+    // Acota cada llamada al canal de plataforma. Si no responde (emulador,
+    // tests o un dispositivo sin el plugin listo) se abandona la llamada y el
+    // arranque continúa. No se usan `.timeout()` ni `Future.delayed` para no
+    // dejar temporizadores vivos cuando la plataforma nunca contesta.
+    if (pushLocalNotificationsEnabled && pushInitTimeout > Duration.zero) {
+      _initializePlugin();
+      _createAndroidChannel();
+    }
+  }
+
+  Future<void> _initializePlugin() async {
     try {
-      await _plugin.initialize(
-        const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-          iOS: DarwinInitializationSettings(
-            requestAlertPermission: false,
-            requestBadgePermission: false,
-            requestSoundPermission: false,
+      await _bounded(
+        _plugin.initialize(
+          const InitializationSettings(
+            android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+            iOS: DarwinInitializationSettings(
+              requestAlertPermission: false,
+              requestBadgePermission: false,
+              requestSoundPermission: false,
+            ),
           ),
+          onDidReceiveNotificationResponse: _handleResponse,
+          onDidReceiveBackgroundNotificationResponse: _handleBackgroundResponse,
         ),
-        onDidReceiveNotificationResponse: _handleResponse,
-        onDidReceiveBackgroundNotificationResponse: _handleBackgroundResponse,
       );
     } catch (e) {
       debugPrint('[Push] notificaciones locales no disponibles: $e');
     }
+  }
 
+  Future<void> _createAndroidChannel() async {
     try {
-      await _plugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(_channel);
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android == null) return;
+      await _bounded(android.createNotificationChannel(_channel));
     } catch (e) {
       debugPrint('[Push] no se pudo crear el canal Android: $e');
+    }
+  }
+
+  /// Espera [action] a lo sumo [pushInitTimeout]; si no contesta, abandona.
+  ///
+  /// No hay operación que cancelar en el canal de plataforma: la llamada se
+  /// descarta, que es exactamente el comportamiento tolerante que se busca.
+  Future<void> _bounded(Future<void>? action) async {
+    if (action == null) return;
+    final limit = pushInitTimeout;
+    if (limit <= Duration.zero) return;
+    try {
+      await action;
+    } on MissingPluginException {
+      // Plugin no registrado (tests, escritorio): se ignora.
     }
   }
 

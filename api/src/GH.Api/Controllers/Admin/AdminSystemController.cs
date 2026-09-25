@@ -124,8 +124,9 @@ public class AdminSystemController : ControllerBase
     [HttpPost("documents")]
     [HasPermission("documents.upload")]
     [RequestSizeLimit(52_428_800)]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<DocumentDto>> UploadDocument(
-        [FromForm] IFormFile file, [FromForm] Guid? clientId, [FromForm] Guid? caseFileId,
+        IFormFile file, [FromForm] Guid? clientId, [FromForm] Guid? caseFileId,
         [FromForm] Guid? orderId, [FromForm] string? category, [FromForm] string? description,
         [FromForm] bool clientVisible = true, CancellationToken ct = default)
     {
@@ -227,6 +228,37 @@ public class AdminSystemController : ControllerBase
                 .OrderByDescending(x => x.count).ToList(),
             last30Days = recent.Count,
         });
+    }
+
+    /// <summary>Marca una notificación como leída (el panel la descuenta de «sin leer»).</summary>
+    [HttpPost("notifications/{id:guid}/read")]
+    [HasPermission("notifications.view")]
+    public async Task<IActionResult> MarkNotificationRead(Guid id, CancellationToken ct)
+    {
+        var updated = await _db.Notifications.Where(n => n.Id == id && n.ReadAt == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(n => n.ReadAt, DateTime.UtcNow)
+                .SetProperty(n => n.Status, NotificationStatus.Read), ct);
+
+        if (updated == 0 && !await _db.Notifications.AnyAsync(n => n.Id == id, ct))
+            throw new KeyNotFoundException("Notificación no encontrada.");
+
+        return NoContent();
+    }
+
+    /// <summary>Marca como leídas todas las notificaciones pendientes (opcionalmente de un usuario).</summary>
+    [HttpPost("notifications/read-all")]
+    [HasPermission("notifications.view")]
+    public async Task<ActionResult<object>> MarkAllNotificationsRead([FromQuery] Guid? userId, CancellationToken ct)
+    {
+        var query = _db.Notifications.Where(n => n.ReadAt == null);
+        if (userId.HasValue) query = query.Where(n => n.UserId == userId);
+
+        var updated = await query.ExecuteUpdateAsync(s => s
+            .SetProperty(n => n.ReadAt, DateTime.UtcNow)
+            .SetProperty(n => n.Status, NotificationStatus.Read), ct);
+
+        return Ok(new { updated, message = $"{updated} notificaciones marcadas como leídas." });
     }
 
     /// <summary>Envía un aviso manual a un usuario (queda en su bandeja del app y se envía por push).</summary>

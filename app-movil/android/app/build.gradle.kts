@@ -16,7 +16,9 @@ val hayFirmaReal = archivoClaves.exists() && claves.getProperty("storeFile") != 
 
 android {
     namespace = "net.ghcontadores.gh_contadores"
-    compileSdk = flutter.compileSdkVersion
+    // Se fija la API de compilación: los complementos actuales (file_picker,
+    // flutter_plugin_android_lifecycle) exigen compilar contra android-36 o superior.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

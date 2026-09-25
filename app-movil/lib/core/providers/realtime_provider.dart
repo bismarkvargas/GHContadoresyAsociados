@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_config.dart';
 import '../models/notification.dart';
 import '../models/user.dart';
+import '../push/push_service.dart';
 import '../realtime/mock_realtime_service.dart';
 import '../realtime/realtime_service.dart';
-import '../push/push_service.dart';
 import '../utils/json.dart';
 import 'auth_provider.dart';
 import 'cases_provider.dart';
@@ -180,10 +180,27 @@ class RealtimeBridge {
   }
 
   /// Polling de respaldo cada 15 s (docs/03 §5).
+  ///
+  /// Se desactiva si [realtimePollingIntervalProvider] devuelve `null`, lo que
+  /// evita dejar un `Timer.periodic` vivo cuando no se necesita. Tampoco se
+  /// activa sin sesión: sin token las consultas autenticadas devolverían 401 en
+  /// bucle y gastarían batería y datos sin aportar nada.
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(AppConfig.pollingInterval, (_) => _poll());
+    if (!_haySesion()) {
+      debugPrint('[Realtime][polling] sin sesión: no se activa');
+      return;
+    }
+    final interval = _ref.read(realtimePollingIntervalProvider);
+    if (interval == null) {
+      debugPrint('[Realtime][polling] desactivado');
+      return;
+    }
+    _pollTimer = Timer.periodic(interval, (_) => _poll());
   }
+
+  /// Comprueba que hay una sesión iniciada antes de consultar la API.
+  bool _haySesion() => _ref.read(tokenStoreProvider).isLoggedIn;
 
   void _stopPolling() {
     _pollTimer?.cancel();
@@ -191,6 +208,10 @@ class RealtimeBridge {
   }
 
   Future<void> _poll() async {
+    if (!_haySesion()) {
+      _stopPolling();
+      return;
+    }
     try {
       final client = _ref.read(apiClientProvider);
       final since = _lastPoll;
@@ -225,6 +246,20 @@ class RealtimeBridge {
 
 /// Deep link pendiente del banner in-app.
 final realtimeBannerDeepLinkProvider = StateProvider<String?>((ref) => null);
+
+/// Permite silenciar el sondeo de respaldo (tests o modo sólo-push).
+///
+/// En los tests se sobrescribe a `false` para que no queden `Timer.periodic`
+/// vivos; en producción se deja activo porque es la red de seguridad cuando
+/// el socket de SignalR cae.
+final realtimePollingEnabledProvider = Provider<bool>((ref) => true);
+
+/// Intervalo efectivo del sondeo (`null` = desactivado).
+final realtimePollingIntervalProvider = Provider<Duration?>((ref) {
+  return ref.watch(realtimePollingEnabledProvider)
+      ? AppConfig.pollingInterval
+      : null;
+});
 
 /// Stream de eventos de tiempo real expuesto a la UI.
 final realtimeEventsProvider = StreamProvider<RealtimeEvent>((ref) {

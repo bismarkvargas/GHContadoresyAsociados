@@ -418,10 +418,23 @@ class DioApiClient implements ApiClient {
 
   @override
   Future<String> getDocumentDownloadUrl(String id) => _guard(() async {
-        final res = await _dio.get<dynamic>('/me/documents/$id/download-url');
+        // La API devuelve un enlace firmado (HMAC, 15 minutos) con la ruta completa,
+        // incluido el prefijo de despliegue: /ghcontadores/api/v1/public/files/<token>.
+        final res = await _dio.get<dynamic>('/me/documents/$id/link');
         final map = asMap(res.data);
-        return asStringOr(map['url'], '${AppConfig.apiBaseUrl}/public/files/$id');
+        final url = asStringOr(map['url'], '');
+        if (url.isEmpty) {
+          throw const ApiFailure(message: 'No se pudo obtener el enlace de descarga del documento.');
+        }
+        return _absoluteUrl(url);
       });
+
+  /// Convierte una ruta relativa de la API en absoluta conservando el origen desplegado.
+  String _absoluteUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    final origin = Uri.parse(AppConfig.apiBaseUrl).origin;
+    return url.startsWith('/') ? '$origin$url' : '$origin/$url';
+  }
 
   @override
   Future<Paged<Message>> getMessages({
@@ -501,7 +514,8 @@ class DioApiClient implements ApiClient {
 
   @override
   Future<Cart> clearCart() => _guard(() async {
-        await _dio.delete<dynamic>('/me/cart/items');
+        // El contrato vacía el carrito con DELETE /me/cart (no /me/cart/items).
+        await _dio.delete<dynamic>('/me/cart');
         return Cart.empty;
       });
 
