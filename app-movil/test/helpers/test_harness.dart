@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gh_contadores/core/mock/mock_api_client.dart';
 import 'package:gh_contadores/core/widgets/product_card.dart';
 import 'package:gh_contadores/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,12 +19,32 @@ class TestHarness {
 
   static final Map<String, String> _secureValues = <String, String>{};
 
-  /// Prepara SharedPreferences y el almacenamiento seguro simulado.
+  /// Ruta del catálogo semilla dentro del proyecto.
+  static const String _catalogAsset = 'assets/mock/catalog.seed.json';
+
+  /// Prepara SharedPreferences, el almacenamiento seguro y el catálogo semilla.
   static void prepare({bool onboardingDone = true}) {
+    _secureValues.clear();
     _installSecureStorageMock();
+    _installSeedCatalog();
     SharedPreferences.setMockInitialValues(<String, Object>{
       if (onboardingDone) 'gh_onboarding_done': true,
     });
+  }
+
+  /// Inyecta el catálogo real (mismo JSON que usa la app) en el cliente mock.
+  ///
+  /// Se lee del disco porque dentro de `testWidgets` el reloj es ficticio y
+  /// `rootBundle.loadString` no completaría.
+  static void _installSeedCatalog() {
+    final file = File(_catalogAsset);
+    if (!file.existsSync()) {
+      throw FlutterError(
+        'No se encontró el catálogo semilla en ${file.absolute.path}. '
+        'Ejecuta los tests desde la raíz del proyecto (app-movil/).',
+      );
+    }
+    MockApiClient.seedCatalogJsonOverride = file.readAsStringSync();
   }
 
   /// Responde a las llamadas del plugin de almacenamiento seguro.

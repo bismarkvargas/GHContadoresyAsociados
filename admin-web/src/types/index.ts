@@ -163,11 +163,16 @@ export interface Client {
   district?: string | null
   country: string
   status: ClientStatus
-  source: ClientSource
+  source: ClientSource | string
   assignedToUserId?: string | null
+  assignedToName?: string | null
+  tags?: string[]
+  /** Compatibilidad con la forma antigua del contrato (`TagsCsv`). */
   tagsCsv?: string | null
   notes?: string | null
   userId?: string | null
+  hasAppAccount?: boolean
+  lastContactAt?: string | null
   createdAt: string
   updatedAt: string
   isDeleted: boolean
@@ -175,6 +180,14 @@ export interface Client {
   openCases?: number
   totalCases?: number
   totalBilled?: number
+  counts?: {
+    caseFiles?: number
+    openCases?: number
+    overdueTasks?: number
+    documents?: number
+    orders?: number
+    totalSpent?: number
+  }
 }
 
 export interface ClientContact {
@@ -233,6 +246,7 @@ export interface CaseFile {
   code: string
   clientId: string
   clientName?: string
+  clientCode?: string | null
   title: string
   description?: string | null
   matter: CaseMatter
@@ -250,8 +264,12 @@ export interface CaseFile {
   progressPercent: number
   clientVisible: boolean
   orderItemId?: string | null
+  source?: string | null
+  documentCount?: number
   taskCount?: number
   openTaskCount?: number
+  /** La API devuelve los conteos agrupados. */
+  taskCounts?: { total?: number; open?: number; done?: number; overdue?: number }
 }
 
 export type CaseTaskStatus = 'Todo' | 'InProgress' | 'Done' | 'Blocked' | 'Cancelled'
@@ -530,6 +548,8 @@ export interface DashboardSummary {
     pendingQuotes: number
     newClientsThisMonth: number
     ordersThisMonth: number
+    unreadMessages?: number
+    documentsThisMonth?: number
   }
   ordersByStatus: { status: OrderStatus; count: number; total: number }[]
   salesByMonth: { month: string; total: number; orders: number }[]

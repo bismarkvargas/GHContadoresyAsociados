@@ -46,8 +46,8 @@ import {
 } from '@/lib/constants'
 import { slugify } from '@/lib/format'
 
-export const MOCK_DB_VERSION = 7
-const STORAGE_KEY = 'gh.mock.db.v7'
+export const MOCK_DB_VERSION = 8
+const STORAGE_KEY = 'gh.mock.db.v8'
 
 export interface MockDb {
   version: number
@@ -153,7 +153,9 @@ const personNames = [
 ]
 
 const companyNames = [
-  'Inversiones Bahía Salinas S.A.',
+  'Inversiones Pacífico Azul S.A.',
+  'Blue Wave Holdings LLC',
+  'Distribuidora Guanacaste S.A.',
   'Hotel Playa Grande del Pacífico S.A.',
   'Restaurante Sabor Tico Tamarindo Ltda.',
   'Constructora Guanacaste Vertical S.A.',
@@ -400,7 +402,16 @@ const staffSeed: StaffSeed[] = [
     phone: '+506 8846 9454',
     idNumber: '5-0234-0567',
     role: 'SuperAdmin',
-    password: 'Admin123!',
+    password: 'Gh.Admin2026',
+  },
+  {
+    id: 'user-gerencia',
+    email: 'gerencia@ghcontadores.net',
+    fullName: 'María Fernanda Rojas Vega',
+    phone: '+506 2653 6634',
+    idNumber: '5-0455-0778',
+    role: 'Admin',
+    password: 'Gh.Gerencia2026',
   },
   {
     id: 'user-abogado',
@@ -409,16 +420,7 @@ const staffSeed: StaffSeed[] = [
     phone: '+506 8712 3344',
     idNumber: '1-1122-0334',
     role: 'Abogado',
-    password: 'Abogado123!',
-  },
-  {
-    id: 'user-admin2',
-    email: 'maria.rojas@ghcontadores.net',
-    fullName: 'María Fernanda Rojas Vega',
-    phone: '+506 2653 6634',
-    idNumber: '5-0455-0778',
-    role: 'Admin',
-    password: 'Demo123!',
+    password: 'Gh.Abogado2026',
   },
   {
     id: 'user-contador',
@@ -427,7 +429,7 @@ const staffSeed: StaffSeed[] = [
     phone: '+506 8899 1122',
     idNumber: '2-0567-0891',
     role: 'Contador',
-    password: 'Demo123!',
+    password: 'Gh.Contador2026',
   },
   {
     id: 'user-asistente',
@@ -436,7 +438,7 @@ const staffSeed: StaffSeed[] = [
     phone: '+506 8866 5544',
     idNumber: '5-0678-0912',
     role: 'Asistente',
-    password: 'Demo123!',
+    password: 'Gh.Asistente2026',
   },
   {
     id: 'user-contador2',
@@ -445,7 +447,7 @@ const staffSeed: StaffSeed[] = [
     phone: '+506 8733 2211',
     idNumber: '1-0890-0123',
     role: 'Contador',
-    password: 'Demo123!',
+    password: 'Gh.Contador2026',
   },
 ]
 

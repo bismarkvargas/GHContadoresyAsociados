@@ -6,6 +6,7 @@
 
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { handleMockRequest, MockHttpError } from './mock/router'
+import { normalizeApiPayload } from './normalize'
 
 export const USE_MOCKS = String(import.meta.env.VITE_USE_MOCKS ?? 'true') !== 'false'
 
@@ -62,6 +63,19 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
+})
+
+/**
+ * La API .NET en producción devuelve formas distintas a las del contrato de
+ * referencia (nombres de campo, envoltorios, etiquetas traducidas, permisos `"*"`).
+ * Se traducen aquí, en el borde, para que los componentes usen un único modelo.
+ * En modo mock no se aplica: el adaptador ya devuelve el modelo interno.
+ */
+api.interceptors.response.use((response) => {
+  if (!USE_MOCKS && response.data !== undefined) {
+    response.data = normalizeApiPayload(response.config.url ?? '', response.data)
+  }
+  return response
 })
 
 /** Convierte un error del mock en un AxiosError con payload problem+json. */

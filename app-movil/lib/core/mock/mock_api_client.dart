@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../error/api_failure.dart';
@@ -63,6 +64,13 @@ class MockApiClient implements ApiClient {
 
   bool _initialized = false;
 
+  /// Permite inyectar el catálogo semilla ya cargado.
+  ///
+  /// Se usa en los tests de widget, donde el reloj es ficticio y
+  /// `rootBundle.loadString` no completaría dentro del *fake async*.
+  @visibleForTesting
+  static String? seedCatalogJsonOverride;
+
   /// Arranca los datos semilla. Idempotente.
   Future<void> init() async {
     if (_initialized) return;
@@ -85,7 +93,8 @@ class MockApiClient implements ApiClient {
 
   Future<void> _loadCatalog() async {
     try {
-      final raw = await rootBundle.loadString('assets/mock/catalog.seed.json');
+      final raw = seedCatalogJsonOverride ??
+          await rootBundle.loadString('assets/mock/catalog.seed.json');
       final decoded = jsonDecode(raw);
       final map = asMap(decoded);
 

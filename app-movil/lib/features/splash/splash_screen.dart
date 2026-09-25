@@ -48,6 +48,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   );
 
   String _status = 'Preparando tu espacio de trabajo…';
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -101,26 +102,33 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     if (!onboardingDone) {
-      context.go(AppRoutes.onboarding);
+      _go(AppRoutes.onboarding);
       return;
     }
 
     switch (auth.stage) {
       case AuthStage.unknown:
       case AuthStage.unauthenticated:
-        context.go(AppRoutes.services);
+        _go(AppRoutes.services);
         break;
       case AuthStage.pending:
-        context.go(AppRoutes.pendingApproval);
+        _go(AppRoutes.pendingApproval);
         break;
       case AuthStage.active:
-        context.go(AppRoutes.home);
+        _go(AppRoutes.home);
         break;
       case AuthStage.suspended:
       case AuthStage.rejected:
-        context.go(AppRoutes.login);
+        _go(AppRoutes.login);
         break;
     }
+  }
+
+  /// Navega una sola vez (evita reentradas si el widget se reconstruye).
+  void _go(String location) {
+    if (_navigated || !mounted) return;
+    _navigated = true;
+    context.go(location);
   }
 
   @override

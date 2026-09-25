@@ -1,5 +1,6 @@
 import {
   createContext,
+  forwardRef,
   useContext,
   useEffect,
   useId,
@@ -69,20 +70,24 @@ interface FieldProps {
   required?: boolean
   children: ReactNode
   className?: string
+  /** id del control para asociar el <label>. */
+  htmlFor?: string
 }
 
-export function Field({ label, hint, error, required, children, className }: FieldProps) {
+export function Field({ label, hint, error, required, children, className, htmlFor }: FieldProps) {
   return (
     <div className={className}>
       {label ? (
-        <label className="gh-label">
+        <label className="gh-label" htmlFor={htmlFor}>
           {label}
           {required ? <span className="ml-0.5 text-danger">*</span> : null}
         </label>
       ) : null}
       {children}
       {error ? (
-        <p className="mt-1 text-xs text-danger">{error}</p>
+        <p className="mt-1 text-xs text-danger" role="alert">
+          {error}
+        </p>
       ) : hint ? (
         <p className="mt-1 text-xs text-muted">{hint}</p>
       ) : null}
@@ -98,10 +103,19 @@ interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
   trailing?: ReactNode
 }
 
-export function TextInput({ label, hint, error, leading, trailing, className, ...rest }: TextInputProps) {
-  const id = useId()
+/**
+ * IMPORTANTE: se usa `forwardRef` porque react-hook-form registra los campos con
+ * `{...register(name)}`, que incluye un `ref`. Sin reenviarlo, RHF nunca enlaza el
+ * input, el valor queda `undefined` y la validación falla con «Required».
+ */
+export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function TextInput(
+  { label, hint, error, leading, trailing, className, id: idProp, ...rest },
+  ref,
+) {
+  const autoId = useId()
+  const id = idProp ?? autoId
   return (
-    <Field label={label} hint={hint} error={error}>
+    <Field label={label} hint={hint} error={error} htmlFor={id}>
       <div className="relative">
         {leading ? (
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">
@@ -110,6 +124,7 @@ export function TextInput({ label, hint, error, leading, trailing, className, ..
         ) : null}
         <input
           id={id}
+          ref={ref}
           className={cx('gh-input', leading ? 'pl-9' : '', trailing ? 'pr-9' : '', className)}
           {...rest}
         />
@@ -119,7 +134,7 @@ export function TextInput({ label, hint, error, leading, trailing, className, ..
       </div>
     </Field>
   )
-}
+})
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string
@@ -129,18 +144,15 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string
 }
 
-export function Select({
-  label,
-  hint,
-  error,
-  options,
-  placeholder,
-  className,
-  ...rest
-}: SelectProps) {
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
+  { label, hint, error, options, placeholder, className, id: idProp, ...rest },
+  ref,
+) {
+  const autoId = useId()
+  const id = idProp ?? autoId
   return (
-    <Field label={label} hint={hint} error={error}>
-      <select className={cx('gh-select', className)} {...rest}>
+    <Field label={label} hint={hint} error={error} htmlFor={id}>
+      <select id={id} ref={ref} className={cx('gh-select', className)} {...rest}>
         {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -150,7 +162,7 @@ export function Select({
       </select>
     </Field>
   )
-}
+})
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string
@@ -158,26 +170,34 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string
 }
 
-export function Textarea({ label, hint, error, className, ...rest }: TextareaProps) {
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
+  { label, hint, error, className, id: idProp, ...rest },
+  ref,
+) {
+  const autoId = useId()
+  const id = idProp ?? autoId
   return (
-    <Field label={label} hint={hint} error={error}>
-      <textarea className={cx('gh-input min-h-[84px]', className)} {...rest} />
+    <Field label={label} hint={hint} error={error} htmlFor={id}>
+      <textarea id={id} ref={ref} className={cx('gh-input min-h-[84px]', className)} {...rest} />
     </Field>
   )
-}
+})
 
-export function Checkbox({
-  label,
-  className,
-  ...rest
-}: InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
-  return (
-    <label className={cx('inline-flex cursor-pointer items-center gap-2 text-sm text-ink', className)}>
-      <input type="checkbox" className="gh-checkbox" {...rest} />
-      {label}
-    </label>
-  )
-}
+export const Checkbox = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { label?: string }>(
+  function Checkbox({ label, className, id: idProp, ...rest }, ref) {
+    const autoId = useId()
+    const id = idProp ?? autoId
+    return (
+      <label
+        htmlFor={id}
+        className={cx('inline-flex cursor-pointer items-center gap-2 text-sm text-ink', className)}
+      >
+        <input id={id} ref={ref} type="checkbox" className="gh-checkbox" {...rest} />
+        {label}
+      </label>
+    )
+  },
+)
 
 /* ------------------------------------------------------------------ */
 /* Superficies y etiquetas                                             */

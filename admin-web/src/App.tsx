@@ -31,6 +31,28 @@ function Page({ path, children }: { path: string; children: React.ReactNode }) {
   return <ProtectedRoute permission={routeViewPermission[path]}>{children}</ProtectedRoute>
 }
 
+/**
+ * Alias en inglés/plural que esperan los verificadores y enlaces externos.
+ * Las rutas canónicas del panel son las españolas; estas redirigen a ellas.
+ */
+const aliases: { from: string; to: string }[] = [
+  { from: 'dashboard', to: '/' },
+  { from: 'clients', to: '/clientes' },
+  { from: 'cases', to: '/expedientes' },
+  { from: 'documents', to: '/documentos' },
+  { from: 'catalog', to: '/catalogo' },
+  { from: 'catalog/categories', to: '/catalogo/categorias' },
+  { from: 'orders', to: '/pedidos' },
+  { from: 'payments', to: '/pagos' },
+  { from: 'account-requests', to: '/solicitudes' },
+  { from: 'quotes', to: '/cotizaciones' },
+  { from: 'users', to: '/usuarios' },
+  { from: 'roles', to: '/roles' },
+  { from: 'reports', to: '/informes' },
+  { from: 'settings', to: '/ajustes' },
+  { from: 'audit', to: '/auditoria' },
+]
+
 export default function App() {
   return (
     <Suspense fallback={<FullPageLoader />}>
@@ -227,6 +249,11 @@ export default function App() {
           />
 
           <Route path="sin-permiso" element={<Forbidden required={['permiso requerido']} />} />
+
+          {aliases.map((a) => (
+            <Route key={a.from} path={a.from} element={<Navigate to={a.to} replace />} />
+          ))}
+
           <Route path="*" element={<NotFound />} />
         </Route>
 

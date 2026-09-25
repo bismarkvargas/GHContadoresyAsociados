@@ -18,12 +18,35 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 const demoAccounts = [
-  { email: 'admin@ghcontadores.net', password: 'Admin123!', label: 'SuperAdmin', detail: 'Todos los permisos' },
+  {
+    email: 'admin@ghcontadores.net',
+    password: 'Gh.Admin2026',
+    label: 'SuperAdmin',
+    detail: 'Todos los permisos',
+  },
+  {
+    email: 'gerencia@ghcontadores.net',
+    password: 'Gh.Gerencia2026',
+    label: 'Administración',
+    detail: 'Operación completa del despacho',
+  },
   {
     email: 'abogado@ghcontadores.net',
-    password: 'Abogado123!',
+    password: 'Gh.Abogado2026',
     label: 'Abogado',
     detail: 'Sin usuarios, roles ni ajustes',
+  },
+  {
+    email: 'contador@ghcontadores.net',
+    password: 'Gh.Contador2026',
+    label: 'Contador',
+    detail: 'Expedientes y documentos',
+  },
+  {
+    email: 'asistente@ghcontadores.net',
+    password: 'Gh.Asistente2026',
+    label: 'Asistente',
+    detail: 'Clientes, documentos y pedidos',
   },
 ]
 
@@ -208,8 +231,8 @@ export default function LoginPage() {
                   key={acc.email}
                   type="button"
                   onClick={() => {
-                    setValue('email', acc.email)
-                    setValue('password', acc.password)
+                    setValue('email', acc.email, { shouldValidate: true, shouldDirty: true })
+                    setValue('password', acc.password, { shouldValidate: true, shouldDirty: true })
                     setServerError(null)
                   }}
                   className="flex w-full items-center justify-between gap-3 rounded-control border border-line px-3 py-2 text-left transition-colors hover:border-primary/40 hover:bg-surface-2"
@@ -225,8 +248,9 @@ export default function LoginPage() {
               ))}
             </div>
             <p className="mt-3 text-[11px] leading-relaxed text-muted">
-              SuperAdmin ve todo el menú; Abogado no ve Usuarios, Roles, Ajustes ni Auditoría y sus
-              botones de borrado quedan ocultos.
+              Son las mismas credenciales sembradas por la API en producción, así que el modo demo y el
+              modo real se comportan igual. SuperAdmin ve todo el menú; Abogado no ve Usuarios, Roles,
+              Ajustes ni Auditoría.
             </p>
           </div>
         </div>

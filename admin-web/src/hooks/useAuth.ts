@@ -9,7 +9,10 @@ export function useAuth(): AuthContextValue {
 
 /**
  * RBAC en la UI: comprueba el permiso `modulo.accion` contra los permisos efectivos
- * devueltos por el login (/auth/me). SuperAdmin pasa siempre.
+ * devueltos por el login (/auth/me).
+ *
+ * La API real devuelve `["*"]` para los roles con acceso total (SuperAdmin/Admin) y
+ * `modulo.*` para concesiones por módulo; ambos se respetan.
  */
 export function usePermission(): {
   can: (code: string) => boolean
@@ -20,17 +23,19 @@ export function usePermission(): {
   isSuperAdmin: boolean
 } {
   const { permissions, roles } = useAuth()
-  const isSuperAdmin = roles.includes('SuperAdmin')
+  const hasGlobalGrant = permissions.includes('*') || permissions.includes('*.*')
+  const isSuperAdmin = roles.includes('SuperAdmin') || hasGlobalGrant
 
   const can = useCallback(
     (code: string) => {
+      if (hasGlobalGrant) return true
       if (isSuperAdmin) return true
       if (permissions.includes(code)) return true
       // Comodín por módulo: `cases.*`
       const [moduleKey] = code.split('.')
       return permissions.includes(`${moduleKey}.*`)
     },
-    [permissions, isSuperAdmin],
+    [permissions, isSuperAdmin, hasGlobalGrant],
   )
 
   const canAny = useCallback((codes: string[]) => codes.some((c) => can(c)), [can])
