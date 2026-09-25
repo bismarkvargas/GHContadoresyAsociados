@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/core_providers.dart';
 import '../theme/gh_tokens.dart';
 import '../widgets/gh_branding.dart';
 import '../../features/account_request/account_request_screen.dart';

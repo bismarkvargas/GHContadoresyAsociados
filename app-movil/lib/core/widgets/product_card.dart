@@ -200,7 +200,8 @@ class CaseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final matterIcon = GhStatus.matterIcons[caseFile.matter] ?? Icons.folder_outlined;
+    final matterIcon =
+        GhStatus.matterIcons[caseFile.matter] ?? Icons.folder_outlined;
 
     return GhCard(
       margin: const EdgeInsets.only(bottom: 12),

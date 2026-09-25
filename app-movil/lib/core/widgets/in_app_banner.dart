@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/core_providers.dart';
 import '../push/push_service.dart';
+import '../realtime/realtime_service.dart';
 import '../theme/gh_tokens.dart';
 
 /// Host del banner in-app: muestra los avisos de push y de tiempo real

@@ -19,6 +19,12 @@ import '../network/api_client.dart';
 import '../utils/json.dart';
 import 'mock_seed.dart';
 
+/// Modo de autenticación del mock.
+///
+/// Permite probar el arranque con una cuenta ya activa o con una cuenta
+/// `Pending` (pantalla de espera de aprobación).
+enum MockAuthMode { active, pending }
+
 /// Modo demo: implementación completa en memoria con el catálogo real
 /// (`assets/mock/catalog.seed.json`, 62 servicios) y datos operativos
 /// simulados coherentes. No requiere backend.

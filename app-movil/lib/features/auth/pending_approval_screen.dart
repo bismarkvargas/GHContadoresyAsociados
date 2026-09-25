@@ -11,6 +11,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/core_providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
+import '../../core/widgets/gh_branding.dart';
 import '../../core/widgets/gh_common.dart';
 import '../../core/widgets/gh_state_views.dart';
 

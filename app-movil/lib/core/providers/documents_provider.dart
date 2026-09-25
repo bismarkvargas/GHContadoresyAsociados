@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../error/api_failure.dart';
 import '../models/document.dart';
 import '../utils/validators.dart';
+import 'cases_provider.dart';
 import 'core_providers.dart';
 
 /// Filtros de la bandeja de documentos.

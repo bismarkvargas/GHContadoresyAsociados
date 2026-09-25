@@ -915,8 +915,8 @@ route('GET', '/admin/clients/:id/timeline', (ctx): TimelineEntry[] => {
 /* EXPEDIENTES                                                         */
 /* ------------------------------------------------------------------ */
 
-route('GET', '/admin/cases', (ctx) =>
-  list(
+route('GET', '/admin/cases', (ctx): Paginated<CaseFile> =>
+  list<CaseFile>(
     getDb().caseFiles.map(caseRow),
     ctx.query,
     (c) =>
@@ -1183,8 +1183,8 @@ route('DELETE', '/admin/cases/:id/tasks/:taskId', (ctx) => {
 /* MENSAJES                                                            */
 /* ------------------------------------------------------------------ */
 
-route('GET', '/admin/messages', (ctx) =>
-  list(
+route('GET', '/admin/messages', (ctx): Paginated<Message> =>
+  list<Message>(
     getDb().messages.map((m) => ({
       ...m,
       senderName: m.senderUserId ? userName(m.senderUserId) : 'Cliente',
@@ -1234,8 +1234,8 @@ route('POST', '/admin/messages', (ctx) => {
 /* DOCUMENTOS                                                          */
 /* ------------------------------------------------------------------ */
 
-route('GET', '/admin/documents', (ctx) =>
-  list(
+route('GET', '/admin/documents', (ctx): Paginated<DocumentItem> =>
+  list<DocumentItem>(
     getDb().documents.filter((d) => !d.isDeleted).map(docRow),
     ctx.query,
     (d) =>
@@ -1411,8 +1411,8 @@ route('DELETE', '/admin/catalog/categories/:id', (ctx) => {
   return { ok: true }
 })
 
-route('GET', '/admin/catalog/products', (ctx) =>
-  list(
+route('GET', '/admin/catalog/products', (ctx): Paginated<Product> =>
+  list<Product>(
     getDb().products.filter((p) => !p.isDeleted).map(productRow),
     ctx.query,
     (p) =>
@@ -1522,8 +1522,8 @@ route('DELETE', '/admin/catalog/products/:id', (ctx) => {
 /* PEDIDOS Y PAGOS                                                     */
 /* ------------------------------------------------------------------ */
 
-route('GET', '/admin/orders', (ctx) =>
-  list(
+route('GET', '/admin/orders', (ctx): Paginated<Order> =>
+  list<Order>(
     getDb().orders.map(orderRow),
     ctx.query,
     (o) =>
@@ -1673,8 +1673,8 @@ route('POST', '/admin/orders/:id/create-case', (ctx) => {
   return { created: created.map(caseRow), order: orderRow(o) }
 })
 
-route('GET', '/admin/payments', (ctx) =>
-  list(
+route('GET', '/admin/payments', (ctx): Paginated<Payment> =>
+  list<Payment>(
     getDb().payments.map(paymentRow),
     ctx.query,
     (p) =>
@@ -1892,8 +1892,8 @@ route('POST', '/admin/quotes/:id/convert', (ctx) => {
 /* USUARIOS Y ROLES                                                    */
 /* ------------------------------------------------------------------ */
 
-route('GET', '/admin/users', (ctx) =>
-  list(
+route('GET', '/admin/users', (ctx): Paginated<User> =>
+  list<User>(
     getDb().users.map(userRow),
     ctx.query,
     (u) =>

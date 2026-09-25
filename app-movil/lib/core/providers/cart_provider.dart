@@ -4,6 +4,7 @@ import '../error/api_failure.dart';
 import '../models/cart.dart';
 import '../models/catalog.dart';
 import '../models/order.dart';
+import '../network/api_client.dart' show CardPaymentData;
 import '../utils/json.dart';
 import 'core_providers.dart';
 
