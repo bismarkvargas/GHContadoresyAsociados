@@ -150,6 +150,7 @@ class DioApiClient implements ApiClient {
     required String phone,
     required String idNumber,
     required ClientType clientType,
+    required String password,
     String? company,
     String? message,
   }) =>
@@ -162,12 +163,15 @@ class DioApiClient implements ApiClient {
             'phone': phone,
             'idNumber': idNumber,
             'clientType': clientType.name,
+            'password': password,
             'company': company,
             'message': message,
             'source': 'app',
           },
           options: _public(),
         );
+        // La respuesta puede indicar aprobación automática y acceso inmediato:
+        // `autoApproved`, `canLogin` y, opcionalmente, `temporaryPassword`.
         return AccountRequest.fromJson(asMap(res.data));
       });
 

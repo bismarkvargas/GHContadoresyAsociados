@@ -8,13 +8,15 @@ import '../../core/config/app_config.dart';
 import '../../core/models/user.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/core_providers.dart';
+import '../../core/providers/guest_provider.dart';
 import '../../core/realtime/realtime_service.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/validators.dart';
-import '../../core/widgets/gh_branding.dart';
 import '../../core/widgets/gh_common.dart';
+import '../../core/widgets/gh_guest.dart';
+import '../../core/widgets/gh_logo.dart';
 
 /// Perfil: datos personales y fiscales, preferencias, contacto directo,
 /// modo oscuro, eliminar cuenta y cerrar sesión.
@@ -31,21 +33,17 @@ class ProfileScreen extends ConsumerWidget {
 
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Perfil')),
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const GhIllustrationViewLarge(),
-              const SizedBox(height: 16),
-              const Text('Inicia sesión para ver tu perfil'),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () => context.push(AppRoutes.login),
-                child: const Text('Iniciar sesión'),
+        appBar: AppBar(title: const Text('Mi cuenta')),
+        body: Column(
+          children: <Widget>[
+            const GhTopStripe(),
+            Expanded(
+              child: GhGuestState(
+                intent: GuestIntent.cases,
+                secondaryLabel: 'Crear cuenta',
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -643,14 +641,6 @@ class _InfoLine extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Ilustración usada cuando no hay sesión.
-class GhIllustrationViewLarge extends StatelessWidget {
-  const GhIllustrationViewLarge({super.key});
-
-  @override
-  Widget build(BuildContext context) => const GhLogo(size: 76);
 }
 
 extension _IfEmpty on String {

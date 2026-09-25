@@ -5,15 +5,23 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/error/api_failure.dart';
+import '../../core/models/site_info.dart';
 import '../../core/models/user.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/core_providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/gh_common.dart';
+import '../../core/widgets/gh_logo.dart';
 
 /// Solicitud de cuenta desde el app (`POST /public/account-requests`).
-/// Todos los usuarios creados por esta vía nacen `Pending` (docs/02 §1).
+///
+/// El modo de registro lo define el administrador y llega en
+/// `GET /public/site → registration`:
+///  * `autoApprove: true` → la cuenta queda activa y se inicia sesión al instante.
+///  * `autoApprove: false` → la solicitud queda `Pending` y se muestra el
+///    seguimiento con código de trámite.
 class AccountRequestScreen extends ConsumerStatefulWidget {
   const AccountRequestScreen({super.key});
 
@@ -30,9 +38,12 @@ class _AccountRequestScreenState extends ConsumerState<AccountRequestScreen> {
   final _idNumber = TextEditingController();
   final _company = TextEditingController();
   final _message = TextEditingController();
+  final _password = TextEditingController();
+  final _confirmPassword = TextEditingController();
 
   ClientType _clientType = ClientType.individual;
   bool _isBusy = false;
+  bool _obscure = true;
   String? _error;
 
   @override
@@ -43,6 +54,8 @@ class _AccountRequestScreenState extends ConsumerState<AccountRequestScreen> {
     _idNumber.dispose();
     _company.dispose();
     _message.dispose();
+    _password.dispose();
+    _confirmPassword.dispose();
     super.dispose();
   }
 
@@ -56,22 +69,49 @@ class _AccountRequestScreenState extends ConsumerState<AccountRequestScreen> {
 
     try {
       final client = ref.read(apiClientProvider);
+      final email = _email.text.trim();
+      final password = _password.text;
       final request = await client.createAccountRequest(
         fullName: _name.text.trim(),
-        email: _email.text.trim(),
+        email: email,
         phone: _phone.text.trim(),
         idNumber: _idNumber.text.trim(),
         clientType: _clientType,
+        password: password,
         company: _company.text.trim().isEmpty ? null : _company.text.trim(),
         message: _message.text.trim().isEmpty ? null : _message.text.trim(),
       );
       await ref.read(tokenStoreProvider).setTrackingCode(request.trackingCode);
 
       if (!mounted) return;
+
+      // Registro abierto: la cuenta ya está activa → sesión automática.
+      if (request.canLogin || request.autoApproved) {
+        final ok = await ref.read(authProvider.notifier).login(
+              email: email,
+              password: request.temporaryPassword ?? password,
+            );
+        if (!mounted) return;
+        setState(() => _isBusy = false);
+        if (ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '¡Bienvenido, ${_name.text.trim().split(' ').first}! '
+                'Su cuenta está activa.',
+              ),
+            ),
+          );
+        }
+        context.go(AppRoutes.home);
+        return;
+      }
+
+      // Registro con aprobación: seguimiento con código de trámite.
       setState(() => _isBusy = false);
       context.push(
         '${AppRoutes.accountTracking}'
-        '?email=${Uri.encodeComponent(request.email)}'
+        '?email=${Uri.encodeComponent(email)}'
         '&code=${Uri.encodeComponent(request.trackingCode)}',
       );
     } on ApiFailure catch (e) {
@@ -92,10 +132,14 @@ class _AccountRequestScreenState extends ConsumerState<AccountRequestScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final registration = ref.watch(siteInfoProvider).maybeWhen(
+          data: (site) => site.registration,
+          orElse: () => const RegistrationConfig(),
+        );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Solicitar cuenta'),
+        title: Text(registration.isAutomatic ? 'Crear cuenta' : 'Solicitar cuenta'),
         leading: IconButton(
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back_rounded),
@@ -108,14 +152,17 @@ class _AccountRequestScreenState extends ConsumerState<AccountRequestScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
             children: <Widget>[
+              const Center(child: GhTopStripe(includeSafeArea: false, height: 4)),
+              const SizedBox(height: 18),
+              const Center(child: GhLogoImage(height: 40)),
+              const SizedBox(height: 18),
               Text(
-                'Cuéntanos quién eres',
+                registration.headline,
                 style: theme.textTheme.headlineMedium,
               ),
               const SizedBox(height: 6),
               Text(
-                'Un administrador revisará tu solicitud y te avisará por correo '
-                'y dentro de la app cuando tu cuenta esté activa.',
+                registration.description,
                 style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: 24),
@@ -238,6 +285,50 @@ class _AccountRequestScreenState extends ConsumerState<AccountRequestScreen> {
                   alignLabelWithHint: true,
                 ),
               ),
+              const Divider(height: 32),
+              Text(
+                'Contraseña de acceso',
+                style: theme.textTheme.titleMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                registration.isAutomatic
+                    ? 'La usará para entrar de inmediato y ver sus compras.'
+                    : 'Créela ahora para poder entrar en cuanto aprobemos su cuenta.',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _password,
+                obscureText: _obscure,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña *',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    tooltip: _obscure ? 'Mostrar contraseña' : 'Ocultar contraseña',
+                  ),
+                ),
+                validator: (value) => GhValidators.password(value, isNew: true),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _confirmPassword,
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'Confirmar contraseña *',
+                  prefixIcon: Icon(Icons.check_circle_outline_rounded),
+                ),
+                validator: (value) =>
+                    GhValidators.confirmPassword(value, _password.text),
+              ),
               const SizedBox(height: 8),
               GhInlineNotice(
                 message:
@@ -258,8 +349,19 @@ class _AccountRequestScreenState extends ConsumerState<AccountRequestScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.send_rounded, size: 18),
-                label: Text(_isBusy ? 'Enviando…' : 'Enviar solicitud'),
+                    : Icon(
+                        registration.isAutomatic
+                            ? Icons.person_add_alt_1_rounded
+                            : Icons.send_rounded,
+                        size: 18,
+                      ),
+                label: Text(
+                  _isBusy
+                      ? 'Enviando…'
+                      : (registration.isAutomatic
+                          ? 'Crear mi cuenta'
+                          : 'Enviar solicitud'),
+                ),
               ),
               const SizedBox(height: 10),
               OutlinedButton(

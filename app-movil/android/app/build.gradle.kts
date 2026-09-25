@@ -4,6 +4,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Firma de producción de GH Contadores.
+// Las credenciales viven en android/key.properties (fuera del repositorio). Si el archivo
+// no existe —por ejemplo en un clon limpio— se firma con la clave de depuración para que
+// el proyecto siga compilando en desarrollo.
+val archivoClaves = rootProject.file("key.properties")
+val claves = java.util.Properties().apply {
+    if (archivoClaves.exists()) archivoClaves.inputStream().use { load(it) }
+}
+val hayFirmaReal = archivoClaves.exists() && claves.getProperty("storeFile") != null
+
 android {
     namespace = "net.ghcontadores.gh_contadores"
     // Se fija la API de compilación: los complementos actuales (file_picker,
@@ -27,13 +37,25 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hayFirmaReal) {
+            create("release") {
+                storeFile = file(claves.getProperty("storeFile"))
+                storePassword = claves.getProperty("storePassword")
+                keyAlias = claves.getProperty("keyAlias")
+                keyPassword = claves.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO(producción): reemplazar por una configuración de firma real
-            // (keystore de GH Contadores) antes de publicar en Play Store.
-            signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Firma real cuando android/key.properties existe; si no, clave de depuración
+            // (solo para compilar en desarrollo, nunca para publicar en Play Store).
+            signingConfig = if (hayFirmaReal) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }

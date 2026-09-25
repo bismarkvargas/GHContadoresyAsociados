@@ -4,11 +4,67 @@ import 'package:go_router/go_router.dart';
 
 import '../models/case_file.dart';
 import '../models/catalog.dart';
+import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/guest_provider.dart';
+import '../router/app_router.dart';
 import '../theme/gh_tokens.dart';
 import '../utils/formatters.dart';
 import '../utils/status_labels.dart';
 import 'gh_common.dart';
+import 'gh_guest.dart';
+
+/// Acción de carrito consciente de la sesión.
+///
+/// Sin sesión no falla en silencio ni muestra un error técnico: guarda el
+/// producto pendiente y abre la hoja «Inicie sesión para agregar servicios a su
+/// carrito». Tras el login, `AuthNotifier` recupera ese producto y lo agrega
+/// automáticamente.
+Future<void> addToCartGuarded(
+  BuildContext context,
+  WidgetRef ref,
+  Product product, {
+  int quantity = 1,
+}) async {
+  final isLoggedIn = ref.read(authProvider).isAuthenticated;
+
+  if (!isLoggedIn) {
+    ref.read(pendingCartProductProvider.notifier).state = product;
+    if (!context.mounted) return;
+    await showGuestSheet(
+      context,
+      ref,
+      intent: GuestIntent.addToCart,
+      action: PendingGuestAction(
+        intent: GuestIntent.addToCart,
+        productId: product.id,
+      ),
+    );
+    return;
+  }
+
+  final ok = await ref.read(cartProvider.notifier).add(product, quantity: quantity);
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? '${product.name} agregado al carrito'
+              : ref.read(cartProvider).error ??
+                  'No pudimos agregarlo. Intente de nuevo.',
+        ),
+        action: ok
+            ? SnackBarAction(
+                label: 'Ver carrito',
+                textColor: Colors.white,
+                onPressed: () => context.go(AppRoutes.cart),
+              )
+            : null,
+      ),
+    );
+}
 
 /// Tarjeta de servicio del catálogo con transición hero.
 class ProductCard extends ConsumerWidget {
@@ -31,6 +87,7 @@ class ProductCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final inCart = ref.watch(cartProvider).cart.contains(product.id);
+    final isLoggedIn = ref.watch(authProvider).isAuthenticated;
 
     return Semantics(
       button: true,
@@ -139,51 +196,32 @@ class ProductCard extends ConsumerWidget {
                           if (showAddButton)
                             Semantics(
                               button: true,
-                              label: inCart
-                                  ? 'En el carrito. Añadir otra unidad de ${product.name}'
+                              label: !isLoggedIn
+                                  ? 'Inicie sesión para agregar ${product.name} al carrito'
                                   : 'Agregar ${product.name} al carrito',
                               child: InkResponse(
-                                onTap: () async {
-                                  final ok = await ref
-                                      .read(cartProvider.notifier)
-                                      .add(product);
-                                  if (!context.mounted) return;
-                                  ScaffoldMessenger.of(context)
-                                    ..hideCurrentSnackBar()
-                                    ..showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          ok
-                                              ? '${product.name} agregado al carrito'
-                                              : 'No pudimos agregarlo. Intenta de nuevo.',
-                                        ),
-                                        action: ok
-                                            ? SnackBarAction(
-                                                label: 'Ver carrito',
-                                                textColor: Colors.white,
-                                                onPressed: () =>
-                                                    context.go('/cart'),
-                                              )
-                                            : null,
-                                      ),
-                                    );
-                                },
+                                key: const Key('product-add-to-cart'),
+                                onTap: () => addToCartGuarded(context, ref, product),
                                 radius: 24,
                                 child: Container(
                                   width: 34,
                                   height: 34,
                                   decoration: BoxDecoration(
-                                    color: inCart
-                                        ? GhTokens.success.withValues(alpha: 0.14)
-                                        : GhTokens.primary,
+                                    color: (!isLoggedIn || !inCart)
+                                        ? GhTokens.primary
+                                        : GhTokens.success.withValues(alpha: 0.14),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(
-                                    inCart
-                                        ? Icons.check_rounded
-                                        : Icons.add_shopping_cart_rounded,
+                                    !isLoggedIn
+                                        ? Icons.lock_outline_rounded
+                                        : inCart
+                                            ? Icons.check_rounded
+                                            : Icons.add_shopping_cart_rounded,
                                     size: 17,
-                                    color: inCart ? GhTokens.success : Colors.white,
+                                    color: (!isLoggedIn || !inCart)
+                                        ? Colors.white
+                                        : GhTokens.success,
                                   ),
                                 ),
                               ),

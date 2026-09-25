@@ -13,6 +13,9 @@ void main() {
     await TestHarness.pumpApp(tester);
     await TestHarness.waitForBoot(tester);
     await TestHarness.waitForCatalog(tester);
+    // El carrito requiere sesión (los invitados ven un estado amable).
+    await TestHarness.loginAsDemoUser(tester);
+    await TestHarness.advance(tester, duration: const Duration(seconds: 1));
 
     // Estado inicial: carrito vacío.
     final container = TestHarness.container(tester);
@@ -32,6 +35,7 @@ void main() {
     await TestHarness.pumpApp(tester);
     await TestHarness.waitForBoot(tester);
     await TestHarness.waitForCatalog(tester);
+    await TestHarness.loginAsDemoUser(tester);
     await TestHarness.addFirstProductToCart(tester);
 
     final container = TestHarness.container(tester);
@@ -73,6 +77,7 @@ void main() {
     await TestHarness.pumpApp(tester);
     await TestHarness.waitForBoot(tester);
     await TestHarness.waitForCatalog(tester);
+    await TestHarness.loginAsDemoUser(tester);
     await TestHarness.addFirstProductToCart(tester);
 
     final container = TestHarness.container(tester);

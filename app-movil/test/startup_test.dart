@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gh_contadores/core/widgets/gh_branding.dart';
+import 'package:gh_contadores/core/widgets/gh_logo.dart';
 
 import 'helpers/test_harness.dart';
 
@@ -12,10 +12,11 @@ void main() {
       TestHarness.prepare();
       await TestHarness.pumpApp(tester);
 
-      // El splash se pinta de inmediato con el monograma de marca.
+      // El splash se pinta de inmediato con la marca y la franja lima.
       await tester.pump();
-      expect(find.byType(GhLogo), findsWidgets);
-      expect(find.text('GH Contadores'), findsWidgets);
+      expect(find.byType(GhLogoImage), findsWidgets);
+      expect(find.byType(GhTopStripe), findsWidgets);
+      expect(find.text('GH Contadores y Asociados'), findsWidgets);
       expect(
         find.text('En GH Contadores lo resolvemos por usted'),
         findsOneWidget,

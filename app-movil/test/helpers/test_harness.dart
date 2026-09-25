@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gh_contadores/core/mock/mock_api_client.dart';
+import 'package:gh_contadores/core/mock/mock_seed.dart';
+import 'package:gh_contadores/core/providers/auth_provider.dart';
 import 'package:gh_contadores/core/providers/realtime_provider.dart';
 import 'package:gh_contadores/core/push/push_service.dart';
 import 'package:gh_contadores/core/widgets/product_card.dart';
@@ -109,6 +111,23 @@ class TestHarness {
     return ProviderScope.containerOf(
       tester.element(find.byType(GhContadoresApp)),
     );
+  }
+
+  /// Inicia sesión con la cuenta demo activa.
+  ///
+  /// Necesario para los flujos que requieren sesión (carrito, checkout,
+  /// expedientes): la app invitada los protege con estados de invitado.
+  static Future<void> loginAsDemoUser(WidgetTester tester) async {
+    final c = container(tester);
+    final ok = await c.read(authProvider.notifier).login(
+          email: MockSeed.demoUser().email,
+          password: MockSeed.demoPassword,
+        );
+    expect(ok, isTrue, reason: 'El login demo debe funcionar');
+    for (int i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+      if (c.read(authProvider).isActive) break;
+    }
   }
 
   /// Espera a que el splash y el arranque terminen.

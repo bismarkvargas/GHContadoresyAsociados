@@ -3,8 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/gh_tokens.dart';
+import 'gh_logo.dart';
 
-/// Isotipo de marca GH: monograma dibujado con vectores (sin assets externos).
+/// Logotipo de la firma.
+///
+/// Con `showWordmark: true` usa el logotipo horizontal oficial (PNG con
+/// tipografía) de `gh_logo.dart`; en tamaño pequeño dibuja el monograma
+/// vectorial [GhMonogram]. Se mantiene esta clase por compatibilidad.
 class GhLogo extends StatelessWidget {
   const GhLogo({
     super.key,
@@ -19,68 +24,33 @@ class GhLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mark = _GhMark(size: size);
-    if (!showWordmark) return mark;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        mark,
-        const SizedBox(width: 12),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'GH Contadores',
-              style: TextStyle(
-                fontSize: size * 0.36,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
-                color: onDark ? Colors.white : GhTokens.ink,
-              ),
-            ),
-            Text(
-              '& Asociados',
-              style: TextStyle(
-                fontSize: size * 0.24,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 2.4,
-                color: onDark ? Colors.white70 : GhTokens.muted,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
+    if (showWordmark) {
+      return GhLogoImage(height: size, onDarkBackground: onDark);
+    }
+    return GhMonogram(size: size, color: GhTokens.accent);
   }
 }
 
-class _GhMark extends StatelessWidget {
-  const _GhMark({required this.size});
+/// Isotipo de marca GH dibujado con vectores (marca de agua y usos pequeños).
+///
+/// Los logotipos oficiales (PNG) están en gh_logo.dart ([GhLogoImage]).
+class GhMonogram extends StatelessWidget {
+  const GhMonogram({super.key, required this.size, this.color});
 
   final double size;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      image: true,
       label: 'GH Contadores y Asociados',
-      child: Container(
+      child: SizedBox(
         width: size,
         height: size,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[GhTokens.primary, GhTokens.primary600],
-          ),
-          borderRadius: BorderRadius.circular(size * 0.28),
-        ),
-        alignment: Alignment.center,
         child: CustomPaint(
-          size: Size(size * 0.62, size * 0.62),
           painter: _GhMonogramPainter(
-            color: Colors.white,
+            color: color ?? GhTokens.accent,
             strokeWidth: size * 0.075,
           ),
         ),
@@ -88,6 +58,22 @@ class _GhMark extends StatelessWidget {
     );
   }
 }
+
+/// Marca de agua decorativa con el monograma (para cabeceras).
+class GhWatermark extends StatelessWidget {
+  const GhWatermark({super.key, required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: 0.12,
+      child: GhMonogram(size: size, color: GhTokens.primary),
+    );
+  }
+}
+
 
 /// Dibuja "GH" con trazos geométricos (G circular + H de barras).
 class _GhMonogramPainter extends CustomPainter {
@@ -445,28 +431,4 @@ class _IllustrationPainter extends CustomPainter {
       oldDelegate.accent != accent ||
       oldDelegate.soft != soft ||
       oldDelegate.surface != surface;
-}
-
-/// Marca de agua decorativa con el monograma (para cabeceras).
-class GhWatermark extends StatelessWidget {
-  const GhWatermark({super.key, required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: 0.12,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: CustomPaint(
-          painter: _GhMonogramPainter(
-            color: GhTokens.primary,
-            strokeWidth: size * 0.06,
-          ),
-        ),
-      ),
-    );
-  }
 }

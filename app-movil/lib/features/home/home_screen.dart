@@ -19,6 +19,8 @@ import '../../core/utils/json.dart';
 import '../../core/utils/status_labels.dart';
 import '../../core/widgets/gh_branding.dart';
 import '../../core/widgets/gh_common.dart';
+import '../../core/widgets/gh_guest.dart';
+import '../../core/widgets/gh_logo.dart';
 import '../../core/widgets/gh_skeleton.dart';
 import '../../core/widgets/gh_state_views.dart';
 import '../../core/widgets/in_app_banner.dart';
@@ -34,6 +36,7 @@ class HomeScreen extends ConsumerWidget {
     final dashboard = ref.watch(dashboardProvider);
     final cart = ref.watch(cartProvider);
     final unreadNotifications = ref.watch(unreadNotificationsProvider);
+    final isLoggedIn = ref.watch(authProvider).isAuthenticated;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -53,7 +56,7 @@ class HomeScreen extends ConsumerWidget {
               surfaceTintColor: Colors.transparent,
               title: Row(
                 children: <Widget>[
-                  const GhLogo(size: 30),
+                  const GhLogoImage(height: 22),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -88,6 +91,7 @@ class HomeScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   const ConnectionStatusChip(),
+                  if (!isLoggedIn) const GhGuestHomeBanner(),
                   dashboard.when(
                     loading: () => const _DashboardSkeleton(),
                     error: (error, _) => Padding(

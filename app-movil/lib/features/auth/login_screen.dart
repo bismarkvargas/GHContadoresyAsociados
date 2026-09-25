@@ -9,8 +9,8 @@ import '../../core/providers/core_providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/validators.dart';
-import '../../core/widgets/gh_branding.dart';
 import '../../core/widgets/gh_common.dart';
+import '../../core/widgets/gh_logo.dart';
 
 /// Inicio de sesión (`POST /auth/login`).
 class LoginScreen extends ConsumerStatefulWidget {
@@ -145,7 +145,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const Center(child: GhLogo(size: 68, showWordmark: false)),
+                const Center(
+                  child: GhTopStripe(includeSafeArea: false, height: 4),
+                ),
+                const SizedBox(height: 22),
+                const Center(child: GhLogoImage(height: 44)),
                 const SizedBox(height: 20),
                 Text(
                   'Bienvenido de vuelta',

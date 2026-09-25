@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/cart_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../theme/gh_tokens.dart';
+import '../widgets/gh_logo.dart';
 import '../widgets/in_app_banner.dart';
 
 /// Contenedor de la navegación principal.
@@ -106,12 +107,25 @@ class AppShell extends ConsumerWidget {
                     ),
                   ),
                   const VerticalDivider(width: 1),
-                  Expanded(child: navigationShell),
+                  Expanded(
+                    child: Column(
+                      children: <Widget>[
+                        const GhTopStripe(),
+                        Expanded(child: navigationShell),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             )
           : Scaffold(
-              body: navigationShell,
+              body: Column(
+                children: <Widget>[
+                  // Franja lima corporativa pegada al borde superior.
+                  const GhTopStripe(),
+                  Expanded(child: navigationShell),
+                ],
+              ),
               bottomNavigationBar: isIOS
                   ? _CupertinoBar(
                       items: _items,

@@ -13,6 +13,8 @@ void main() {
     await TestHarness.pumpApp(tester);
     await TestHarness.waitForBoot(tester);
     await TestHarness.waitForCatalog(tester);
+    // El checkout requiere sesión: se entra con la cuenta demo.
+    await TestHarness.loginAsDemoUser(tester);
     await TestHarness.addFirstProductToCart(tester);
 
     final container = TestHarness.container(tester);
@@ -111,6 +113,7 @@ void main() {
     await TestHarness.pumpApp(tester);
     await TestHarness.waitForBoot(tester);
     await TestHarness.waitForCatalog(tester);
+    await TestHarness.loginAsDemoUser(tester);
     await TestHarness.addFirstProductToCart(tester);
 
     await TestHarness.openCart(tester);

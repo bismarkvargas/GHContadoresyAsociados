@@ -43,6 +43,7 @@ abstract class ApiClient {
     required String phone,
     required String idNumber,
     required ClientType clientType,
+    required String password,
     String? company,
     String? message,
   });

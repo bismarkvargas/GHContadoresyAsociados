@@ -6,7 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/core_providers.dart';
 import '../layout/app_shell.dart';
 import '../theme/gh_tokens.dart';
-import '../widgets/gh_branding.dart';
+import '../widgets/gh_logo.dart';
 import '../../features/account_request/account_request_screen.dart';
 import '../../features/account_request/account_tracking_screen.dart';
 import '../../features/auth/login_screen.dart';
@@ -336,7 +336,9 @@ class _AboutScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: <Widget>[
-          const Center(child: GhLogo(size: 84, showWordmark: false)),
+          const Center(child: GhTopStripe(includeSafeArea: false, height: 4)),
+          const SizedBox(height: 22),
+          const Center(child: GhLogoImage(height: 52)),
           const SizedBox(height: 16),
           Text(
             'GH Contadores y Asociados',

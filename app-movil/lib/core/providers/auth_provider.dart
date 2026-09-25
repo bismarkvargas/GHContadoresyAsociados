@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../error/api_failure.dart';
 import '../models/user.dart';
 import '../network/api_client.dart';
+import 'cart_provider.dart';
 import 'core_providers.dart';
+import 'guest_provider.dart';
 
 /// Estado de autenticación de la app (docs/03 §2).
 enum AuthStage { unknown, unauthenticated, pending, active, suspended, rejected }
@@ -113,6 +115,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         session: session,
       );
       await _startRealtime();
+      await _resumeGuestIntent();
       return true;
     } on ApiFailure catch (e) {
       state = state.copyWith(isBusy: false, error: e.message);
@@ -120,6 +123,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(isBusy: false, error: 'No pudimos iniciar sesión. $e');
       return false;
+    }
+  }
+
+  /// Retoma lo que el invitado quería hacer antes de iniciar sesión.
+  ///
+  /// Hoy: si había un producto pendiente para el carrito, se agrega solo.
+  Future<void> _resumeGuestIntent() async {
+    final pending = _ref.read(pendingCartProductProvider);
+    if (pending == null) return;
+    try {
+      await _ref.read(cartProvider.notifier).add(pending);
+    } catch (_) {
+      // Si falla, el usuario puede agregarlo de nuevo desde el catálogo.
+    } finally {
+      _ref.read(pendingCartProductProvider.notifier).state = null;
     }
   }
 

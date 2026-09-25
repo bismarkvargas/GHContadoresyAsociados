@@ -6,6 +6,7 @@ import '../../core/providers/core_providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/widgets/gh_branding.dart';
+import '../../core/widgets/gh_logo.dart';
 
 /// Onboarding de 3 pasos con ilustraciones vectoriales propias.
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -88,22 +89,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final isLast = _index == _slides.length - 1;
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
-              child: Row(
+      body: Column(
+        children: <Widget>[
+          const GhTopStripe(),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: Column(
                 children: <Widget>[
-                  const GhLogo(size: 34),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _finish,
-                    child: const Text('Omitir'),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                    child: Row(
+                      children: <Widget>[
+                        const GhLogoImage(height: 28),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: _finish,
+                          child: const Text('Omitir'),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
             Expanded(
               child: PageView.builder(
                 controller: _controller,
@@ -221,8 +227,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ],
               ),
             ),
-          ],
-        ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

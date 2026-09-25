@@ -56,3 +56,19 @@ flutter:
   uses-material-design: true
   assets:
     - assets/mock/
+    - assets/brand/
+
+  # Tipografía corporativa Montserrat (5 pesos).
+  fonts:
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-400.ttf
+          weight: 400
+        - asset: assets/fonts/Montserrat-500.ttf
+          weight: 500
+        - asset: assets/fonts/Montserrat-600.ttf
+          weight: 600
+        - asset: assets/fonts/Montserrat-700.ttf
+          weight: 700
+        - asset: assets/fonts/Montserrat-800.ttf
+          weight: 800

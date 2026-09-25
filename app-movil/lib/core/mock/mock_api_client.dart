@@ -48,6 +48,12 @@ class MockApiClient implements ApiClient {
   /// Si [mockLatencyOverride] está definida (tests), tiene prioridad.
   final Duration latency;
 
+  /// Configuración de registro que simula el panel de administración.
+  ///
+  /// Con `autoApprove: false` (por defecto) las cuentas nacen `Pending` y hay
+  /// que esperar la aprobación; con `true` la cuenta queda activa al instante.
+  static RegistrationConfig registrationConfig = const RegistrationConfig();
+
   /// Permite probar el arranque con cuenta `Pending`.
   MockAuthMode authMode;
 
@@ -326,7 +332,11 @@ class MockApiClient implements ApiClient {
   // ---------- Público ----------
 
   @override
-  Future<SiteInfo> getSiteInfo() => _delay(SiteInfo.fromJson(<String, dynamic>{}));
+  Future<SiteInfo> getSiteInfo() => _delay(
+        SiteInfo.fromJson(<String, dynamic>{
+          'registration': registrationConfig.toJson(),
+        }),
+      );
 
   @override
   Future<List<ProductCategory>> getCategories() async {
@@ -421,11 +431,15 @@ class MockApiClient implements ApiClient {
     required String phone,
     required String idNumber,
     required ClientType clientType,
+    required String password,
     String? company,
     String? message,
   }) async {
     await init();
     final seq = _accountRequests.length + 1;
+    // El modo de registro lo define el "panel": en demo se puede alternar con
+    // [registrationConfig] para reproducir ambos flujos.
+    final auto = registrationConfig.autoApprove;
     final request = AccountRequest(
       id: 'ar-${seq.toString().padLeft(4, '0')}',
       fullName: fullName,
@@ -436,10 +450,19 @@ class MockApiClient implements ApiClient {
       trackingCode: 'GH-SOL-${seq.toString().padLeft(4, '0')}',
       company: company,
       message: message,
-      status: 'Pending',
+      status: auto ? 'Approved' : 'Pending',
       createdAt: DateTime.now().toUtc(),
+      reviewedAt: auto ? DateTime.now().toUtc() : null,
+      autoApproved: auto,
+      canLogin: auto,
+      temporaryPassword: null,
     );
     _accountRequests.add(request);
+
+    if (auto) {
+      // La cuenta queda activa: el app puede iniciar sesión de inmediato.
+      _user = (_user ?? MockSeed.demoUser()).copyWith(email: email, fullName: fullName);
+    }
     return _delay(request);
   }
 

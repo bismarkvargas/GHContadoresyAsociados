@@ -3,12 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/models/notification.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/core_providers.dart';
+import '../../core/providers/guest_provider.dart';
 import '../../core/providers/notifications_provider.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/gh_common.dart';
+import '../../core/widgets/gh_guest.dart';
+import '../../core/widgets/gh_logo.dart';
 import '../../core/widgets/gh_skeleton.dart';
 import '../../core/widgets/gh_state_views.dart';
 
@@ -61,6 +65,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final notifications = ref.watch(notificationsProvider);
     final unread = ref.watch(unreadNotificationsProvider).valueOrNull ?? 0;
     final theme = Theme.of(context);
+    final isLoggedIn = ref.watch(authProvider).isAuthenticated;
+
+    if (!isLoggedIn) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Notificaciones')),
+        body: Column(
+          children: <Widget>[
+            const GhTopStripe(),
+            const Expanded(
+              child: GhGuestState(intent: GuestIntent.notifications),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(

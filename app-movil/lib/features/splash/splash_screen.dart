@@ -8,6 +8,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/async_guard.dart';
 import '../../core/widgets/gh_branding.dart';
+import '../../core/widgets/gh_logo.dart';
 
 /// Mínimo de tiempo que el splash permanece visible para que la animación de
 /// marca se aprecie. Es variable para que los tests puedan ponerlo a cero y no
@@ -162,6 +163,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           children: <Widget>[
             Positioned(right: -40, top: -30, child: GhWatermark(size: 220)),
             Positioned(left: -60, bottom: -40, child: GhWatermark(size: 180)),
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: GhTopStripe(),
+            ),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -172,7 +179,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       opacity: _fade,
                       child: ScaleTransition(
                         scale: _scale,
-                        child: const GhLogo(size: 108),
+                        child: const GhLogoImage(height: 84),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -181,9 +188,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       child: Column(
                         children: <Widget>[
                           Text(
-                            'GH Contadores',
-                            style: theme.textTheme.displayLarge?.copyWith(
-                              letterSpacing: -0.8,
+                            'GH Contadores y Asociados',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              letterSpacing: -0.4,
                             ),
                           ),
                           const SizedBox(height: 6),

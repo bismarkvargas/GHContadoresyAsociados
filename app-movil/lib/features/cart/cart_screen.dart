@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/models/cart.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/cart_provider.dart';
+import '../../core/providers/guest_provider.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/gh_common.dart';
+import '../../core/widgets/gh_guest.dart';
 import '../../core/widgets/gh_skeleton.dart';
 import '../../core/widgets/gh_state_views.dart';
 
@@ -20,6 +23,7 @@ class CartScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(cartProvider);
     final cart = state.cart;
+    final isLoggedIn = ref.watch(authProvider).isAuthenticated;
 
     return Scaffold(
       appBar: AppBar(
@@ -104,10 +108,28 @@ class CartScreen extends ConsumerWidget {
                       const SizedBox(height: 20),
                       FilledButton.icon(
                         key: const Key('cart-continue-to-checkout'),
-                        onPressed: () => context.push(AppRoutes.checkout),
-                        icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                        // Sin sesión se invita a entrar conservando el carrito.
+                        onPressed: () {
+                          if (!isLoggedIn) {
+                            showGuestSheet(
+                              context,
+                              ref,
+                              intent: GuestIntent.checkout,
+                            );
+                            return;
+                          }
+                          context.push(AppRoutes.checkout);
+                        },
+                        icon: Icon(
+                          isLoggedIn
+                              ? Icons.lock_outline_rounded
+                              : Icons.login_rounded,
+                          size: 18,
+                        ),
                         label: Text(
-                          'Continuar al pago · ${GhFormat.money(cart.totals.total)}',
+                          isLoggedIn
+                              ? 'Continuar al pago · ${GhFormat.money(cart.totals.total)}'
+                              : 'Iniciar sesión para pagar',
                         ),
                       ),
                       const SizedBox(height: 10),

@@ -82,3 +82,6 @@ tools/e2e-admin/panel-dashboard.png
 app-movil/android/.kotlin/
 app-movil/android/.gradle/
 *.apk
+
+# Firma de produccion (NUNCA debe subirse al repositorio)
+app-movil/android/keystore/

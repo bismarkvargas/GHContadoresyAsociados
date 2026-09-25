@@ -2,6 +2,10 @@ import '../../core/utils/json.dart';
 import 'user.dart' show ClientType, clientTypeFrom, clientTypeToJson;
 
 /// Solicitud de cuenta desde el app (docs/02 §2).
+///
+/// La API puede aprobarla automáticamente (`autoApproved`) cuando el panel tiene
+/// el registro en modo abierto; en ese caso devuelve `canLogin` y, si procede,
+/// una `temporaryPassword` para iniciar sesión de inmediato.
 class AccountRequest {
   const AccountRequest({
     required this.id,
@@ -18,6 +22,9 @@ class AccountRequest {
     this.source = 'app',
     this.createdAt,
     this.reviewedAt,
+    this.autoApproved = false,
+    this.canLogin = false,
+    this.temporaryPassword,
   });
 
   final String id;
@@ -34,6 +41,15 @@ class AccountRequest {
   final String source;
   final DateTime? createdAt;
   final DateTime? reviewedAt;
+
+  /// `true` cuando la cuenta quedó activa sin intervención del administrador.
+  final bool autoApproved;
+
+  /// `true` cuando el usuario puede iniciar sesión de inmediato.
+  final bool canLogin;
+
+  /// Contraseña temporal devuelta por la API (modo automático).
+  final String? temporaryPassword;
 
   bool get isPending => status == 'Pending';
   bool get isApproved => status == 'Approved';
@@ -54,6 +70,9 @@ class AccountRequest {
         source: asStringOr(json['source'], 'app'),
         createdAt: asDate(json['createdAt']),
         reviewedAt: asDate(json['reviewedAt']),
+        autoApproved: asBool(json['autoApproved']),
+        canLogin: asBool(json['canLogin']),
+        temporaryPassword: asString(json['temporaryPassword']),
       );
 
   JsonMap toJson() => <String, dynamic>{
@@ -71,9 +90,19 @@ class AccountRequest {
         'source': source,
         'createdAt': createdAt?.toIso8601String(),
         'reviewedAt': reviewedAt?.toIso8601String(),
+        'autoApproved': autoApproved,
+        'canLogin': canLogin,
+        'temporaryPassword': temporaryPassword,
       };
 
-  AccountRequest copyWith({String? status, String? rejectionReason, DateTime? reviewedAt}) =>
+  AccountRequest copyWith({
+    String? status,
+    String? rejectionReason,
+    DateTime? reviewedAt,
+    bool? autoApproved,
+    bool? canLogin,
+    String? temporaryPassword,
+  }) =>
       AccountRequest(
         id: id,
         fullName: fullName,
@@ -89,6 +118,9 @@ class AccountRequest {
         source: source,
         createdAt: createdAt,
         reviewedAt: reviewedAt ?? this.reviewedAt,
+        autoApproved: autoApproved ?? this.autoApproved,
+        canLogin: canLogin ?? this.canLogin,
+        temporaryPassword: temporaryPassword ?? this.temporaryPassword,
       );
 }
 

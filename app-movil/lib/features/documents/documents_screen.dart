@@ -6,11 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/models/document.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/documents_provider.dart';
+import '../../core/providers/guest_provider.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/gh_common.dart';
+import '../../core/widgets/gh_guest.dart';
+import '../../core/widgets/gh_logo.dart';
 import '../../core/widgets/gh_skeleton.dart';
 import '../../core/widgets/gh_state_views.dart';
 
@@ -139,6 +143,19 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
     final documents = ref.watch(documentsProvider);
     final uploadProgress = ref.watch(uploadProgressProvider);
     final theme = Theme.of(context);
+    final isLoggedIn = ref.watch(authProvider).isAuthenticated;
+
+    if (!isLoggedIn) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Documentos')),
+        body: Column(
+          children: <Widget>[
+            const GhTopStripe(),
+            const Expanded(child: GhGuestState(intent: GuestIntent.documents)),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
