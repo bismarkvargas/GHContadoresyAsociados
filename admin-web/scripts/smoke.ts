@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Prueba de humo del adaptador mock: recorre el contrato de API sin navegador.
  * Se ejecuta con scripts/smoke.mjs (compila con Vite en modo módulo y lanza Node).
  */
@@ -70,7 +70,12 @@ async function main(): Promise<void> {
     password: 'Gh.Admin2026',
   })
   check('login SuperAdmin', adminLogin.status === 200 && !!adminLogin.data.accessToken)
-  check('SuperAdmin recibe permisos', adminLogin.data.permissions.length > 40, `(${adminLogin.data.permissions.length})`)
+  // La API real devuelve `["*"]` para los roles con acceso total: el mock lo imita.
+  check(
+    'SuperAdmin recibe el comodín global',
+    adminLogin.data.permissions.includes('*'),
+    `(${adminLogin.data.permissions.join(',')})`,
+  )
   const adminToken = adminLogin.data.accessToken as string
 
   const lawyerLogin = await call('POST', '/auth/login', {
@@ -85,9 +90,9 @@ async function main(): Promise<void> {
   check('Abogado NO tiene clients.delete', !lawyerPerms.includes('clients.delete'))
   check('Abogado SÍ tiene cases.edit', lawyerPerms.includes('cases.edit'))
   check(
-    'Abogado ve menos permisos que SuperAdmin',
-    lawyerPerms.length < adminLogin.data.permissions.length,
-    `(${lawyerPerms.length} < ${adminLogin.data.permissions.length})`,
+    'Abogado NO recibe el comodín global',
+    !lawyerPerms.includes('*'),
+    `(${lawyerPerms.length} permisos explícitos)`,
   )
 
   check('login con contraseña errónea devuelve 401', (await expectError('POST', '/auth/login', { email: 'admin@ghcontadores.net', password: 'incorrecta' }))?.status === 401)

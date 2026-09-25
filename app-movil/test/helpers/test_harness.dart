@@ -79,6 +79,13 @@ class TestHarness {
     await tester.pumpWidget(const ProviderScope(child: GhContadoresApp()));
   }
 
+  /// Contenedor de providers de la app montada (para inspeccionar el estado).
+  static ProviderContainer container(WidgetTester tester) {
+    return ProviderScope.containerOf(
+      tester.element(find.byType(GhContadoresApp)),
+    );
+  }
+
   /// Espera a que el splash y el arranque terminen.
   ///
   /// No se usa `pumpAndSettle` porque el modo demo mantiene un temporizador
@@ -146,6 +153,18 @@ class TestHarness {
   static Future<void> openCart(WidgetTester tester) async {
     await tester.tap(find.text('Carrito').last);
     await advance(tester, duration: const Duration(milliseconds: 900));
+  }
+
+  /// Cierra el test de forma limpia.
+  ///
+  /// El modo demo mantiene temporizadores vivos (tiempo real simulado, tope de
+  /// espera del splash, SnackBars), así que se avanza el reloj virtual para que
+  /// expiren antes de que el binding verifique que no queden timers pendientes.
+  static Future<void> teardown(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    for (int i = 0; i < 40; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
   }
 
   /// Completa los datos de facturación y avanza al pago.

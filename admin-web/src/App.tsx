@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Forbidden, FullPageLoader, NotFound, ProtectedRoute } from '@/components/layout/guards'
 import { routeViewPermission } from '@/config/routes'
@@ -36,12 +36,16 @@ function Page({ path, children }: { path: string; children: React.ReactNode }) {
  * Las rutas canónicas del panel son las españolas; estas redirigen a ellas.
  */
 const aliases: { from: string; to: string }[] = [
+  // Rutas anidadas primero (el orden importa: `path` es exacto, pero se listan por claridad).
+  { from: 'catalog/categories', to: '/catalogo/categorias' },
+  { from: 'clients/new', to: '/clientes/nuevo' },
+  { from: 'cases/new', to: '/expedientes/nuevo' },
+  { from: 'cases/board', to: '/expedientes/tablero' },
   { from: 'dashboard', to: '/' },
   { from: 'clients', to: '/clientes' },
   { from: 'cases', to: '/expedientes' },
   { from: 'documents', to: '/documentos' },
   { from: 'catalog', to: '/catalogo' },
-  { from: 'catalog/categories', to: '/catalogo/categorias' },
   { from: 'orders', to: '/pedidos' },
   { from: 'payments', to: '/pagos' },
   { from: 'account-requests', to: '/solicitudes' },
@@ -51,7 +55,22 @@ const aliases: { from: string; to: string }[] = [
   { from: 'reports', to: '/informes' },
   { from: 'settings', to: '/ajustes' },
   { from: 'audit', to: '/auditoria' },
+  // Detalle con identificador
+  { from: 'clients/:id', to: '/clientes/:id' },
+  { from: 'cases/:id', to: '/expedientes/:id' },
+  { from: 'orders/:id', to: '/pedidos/:id' },
 ]
+
+/** Sustituye `:param` por el valor real de la ruta entrante. */
+function resolveAlias(to: string, params: Record<string, string | undefined>): string {
+  return to.replace(/:([a-zA-Z]+)/g, (_, name: string) => params[name] ?? '')
+}
+
+/** Redirección permanente de un alias en inglés a la ruta canónica española. */
+function AliasRedirect({ target }: { target: string }) {
+  const params = useParams()
+  return <Navigate to={resolveAlias(target, params)} replace />
+}
 
 export default function App() {
   return (
@@ -251,7 +270,11 @@ export default function App() {
           <Route path="sin-permiso" element={<Forbidden required={['permiso requerido']} />} />
 
           {aliases.map((a) => (
-            <Route key={a.from} path={a.from} element={<Navigate to={a.to} replace />} />
+            <Route
+              key={a.from}
+              path={a.from}
+              element={<AliasRedirect target={a.to} />}
+            />
           ))}
 
           <Route path="*" element={<NotFound />} />

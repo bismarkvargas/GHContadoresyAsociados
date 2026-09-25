@@ -100,9 +100,9 @@ async function main() {
   else ko('el panel sigue mostrando datos de demostración (VITE_USE_MOCKS no está en false)')
 
   step('4 · Catálogo migrado desde ghcontadores.net')
-  if (await irA(page, 'catalog', 'Servicio')) {
+  if (await irA(page, 'catalogo', 'Catálogo')) {
     const texto = await page.locator('body').innerText()
-    // El catálogo está paginado: la primera página no contiene todos los servicios,
+    // El catálogo está paginado: la primera página no contiene los 62 servicios,
     // así que se comprueba que aparezcan términos reales del catálogo migrado.
     const conocidos = ['Contabilidad', 'Patente', 'SUGEF', 'D-104', 'Tributaria', 'Póliza', 'Renta', 'Permiso', 'Declaraci']
     const encontrados = conocidos.filter((k) => new RegExp(k, 'i').test(texto))
@@ -113,29 +113,61 @@ async function main() {
     }
 
     if (/62/.test(texto)) ok('el panel informa de los 62 servicios migrados')
-    else ok('catálogo listado (el total exacto depende de la paginación)')
+    else ko('el catálogo no muestra el total de 62 servicios migrados')
+
+    if (await irA(page, 'catalogo/categorias', 'Categorías')) {
+      const cats = await page.locator('body').innerText()
+      const cuatro = ['Contables', 'Legales', 'Municipales', 'Tributarios'].filter((c) => new RegExp(c, 'i').test(cats))
+      if (cuatro.length === 4) ok('las 4 categorías del sitio original están presentes')
+      else ko(`faltan categorías (encontradas: ${cuatro.join(', ') || 'ninguna'})`)
+    } else {
+      ko('no se pudo abrir la pantalla de categorías')
+    }
   } else {
     ko('no se pudo abrir el módulo de catálogo')
   }
 
-  step('5 · CRM, expedientes, pedidos, pagos y solicitudes')
+  step('5 · Módulos del panel con datos reales')
+  // Cada módulo se comprueba por su URL (sin redirección a acceso denegado) y por un
+  // contenido que solo puede venir de la API real.
   const modulos = [
-    ['clients', 'Cliente', 'clientes del CRM'],
-    ['cases', 'Expediente', 'expedientes y casos'],
-    ['orders', 'Pedido', 'pedidos'],
-    ['payments', 'Pago', 'pagos de la pasarela simulada'],
-    ['account-requests', 'Solicitud', 'solicitudes de cuenta del app'],
-    ['quotes', 'Cotizaci', 'cotizaciones'],
-    ['users', 'Usuario', 'usuarios'],
-    ['roles', 'Rol', 'roles y permisos'],
-    ['settings', 'Ajuste', 'ajustes'],
+    ['', 'Dashboard', /cliente|expediente/i],
+    ['clientes', 'Clientes (CRM)', /GH-CLI-\d{5}/],
+    ['expedientes', 'Expedientes', /GH-EXP-\d{4}-\d{4}/],
+    ['expedientes/tablero', 'Tablero kanban', /Abierto|En proceso/i],
+    ['documentos', 'Documentos', /documento|no hay documentos/i],
+    ['pedidos', 'Pedidos', /GH-ORD-\d{4}-\d{5}/],
+    ['pagos', 'Pagos', /SIM-|GH-Simulated|Aprobado|Aprobada/i],
+    ['cotizaciones', 'Cotizaciones', /Cotizaci/i],
+    ['solicitudes', 'Solicitudes de cuenta', /GH-SOL-|Pendiente/i],
+    ['informes', 'Informes', /venta|productividad|total/i],
+    ['usuarios', 'Usuarios', /ghcontadores\.net/i],
+    ['roles', 'Roles y permisos', /SuperAdmin/],
+    ['ajustes', 'Ajustes', /GH Contadores|Marca|Empresa/i],
+    ['auditoria', 'Auditoría', /Acci|Fecha|Entidad|Auditor/i],
   ]
-  for (const [ruta, marcador, nombre] of modulos) {
-    (await irA(page, ruta, marcador)) ? ok(`${nombre}: módulo accesible con datos`) : ko(`${nombre}: no cargó (${ruta})`)
+
+  for (const [ruta, nombre, patron] of modulos) {
+    await page.goto(`${BASE}${ruta}`, { waitUntil: 'domcontentloaded' })
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page.waitForTimeout(900)
+
+    const url = page.url()
+    const texto = await page.locator('body').innerText()
+    if (/\/login/.test(url)) {
+      ko(`${nombre}: la sesión se perdió y redirigió al acceso`)
+      continue
+    }
+    if (/Acceso denegado|sin permiso|no encontrada/i.test(texto)) {
+      ko(`${nombre}: la pantalla mostró acceso denegado o no encontrada`)
+      continue
+    }
+    if (patron.test(texto)) ok(`${nombre}: cargado con datos reales`)
+    else ko(`${nombre}: no se encontró contenido esperado (${ruta})`)
   }
 
   step('6 · El CRM muestra el cliente sembrado')
-  await irA(page, 'clients', 'Cliente')
+  await irA(page, 'clientes', 'Cliente')
   const crm = await page.locator('body').innerText()
   if (/Inversiones Pacífico Azul|Pacífico Azul/.test(crm)) {
     ok('aparece el cliente de demostración creado por la API (Inversiones Pacífico Azul S.A.)')
@@ -144,7 +176,7 @@ async function main() {
   }
 
   step('7 · Expedientes reales')
-  await irA(page, 'cases', 'Expediente')
+  await irA(page, 'expedientes', 'Expediente')
   const exp = await page.locator('body').innerText()
   if (/GH-EXP-\d{4}-\d{4}|Contabilidad mensual|Patente Comercial/i.test(exp)) {
     ok('se listan expedientes reales con su código GH-EXP-AAAA-NNNN')
@@ -152,12 +184,56 @@ async function main() {
     ko('no se ven expedientes reales')
   }
 
-  step('8 · Roles y permisos (control de acceso real)')
+  step('8 · Alta real de un cliente desde el formulario')
+  // Verifica de extremo a extremo que los campos de formulario se envían de verdad
+  // y que el panel crea el cliente en la API (no solo en el modo demo).
+  const nombrePrueba = `Cliente E2E ${Date.now()}`
+  const correoPrueba = `e2e.${Date.now()}@ejemplo.cr`
+  await page.goto(`${BASE}clientes/nuevo`, { waitUntil: 'domcontentloaded' })
+  await page.waitForLoadState('networkidle').catch(() => {})
+
+  const campoRazon = page.getByLabel(/Razón social|Nombre completo/i).first()
+  const hayFormulario = await campoRazon.count()
+  if (!hayFormulario) {
+    ko('no se encontró el formulario de nuevo cliente')
+  } else {
+    await campoRazon.fill(nombrePrueba)
+    await page.getByLabel(/Cédula jurídica|Cédula \/ pasaporte/i).first().fill('3-101-999999')
+    await page.getByLabel(/Correo electrónico/i).first().fill(correoPrueba)
+    await page.getByLabel(/^Teléfono/i).first().fill('+506 8888 0000')
+    await page.locator('button[type="submit"], button:has-text("Guardar"), button:has-text("Crear")').first().click()
+    await page.waitForLoadState('networkidle').catch(() => {})
+    await page.waitForTimeout(3500)
+
+    // Se confirma contra la API que el cliente existe de verdad.
+    const respuesta = await page.evaluate(async (correo) => {
+      const token = localStorage.getItem('gh.accessToken') ?? sessionStorage.getItem('gh.accessToken')
+      const r = await fetch(`/ghcontadores/api/v1/admin/clients?search=${encodeURIComponent(correo)}&pageSize=5`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return r.ok ? await r.json() : { status: r.status }
+    }, correoPrueba)
+
+    const creado = (respuesta.items ?? []).find((c) => c.legalName === nombrePrueba)
+    if (creado) {
+      ok(`el formulario creó el cliente en la API real · ${creado.code}`)
+      // Limpieza: se retira el cliente de prueba para no ensuciar la demostración.
+      await page.evaluate(async (id) => {
+        const token = localStorage.getItem('gh.accessToken') ?? sessionStorage.getItem('gh.accessToken')
+        await fetch(`/ghcontadores/api/v1/admin/clients/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      }, creado.id)
+      ok('cliente de prueba retirado tras la comprobación')
+    } else {
+      ko(`el cliente no llegó a la API (respuesta: ${JSON.stringify(respuesta).slice(0, 200)})`)
+    }
+  }
+
+  step('9 · Roles y permisos (control de acceso real)')
   const contexto2 = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'es-CR' })
   const page2 = await contexto2.newPage()
   await login(page2, ABOGADO)
   const menuAbogado = (await page2.locator('body').innerText()).toLowerCase()
-  const puedeGestionarUsuarios = /usuarios/.test(menuAbogado) && (await irA(page2, 'users', 'Usuario'))
+  const puedeGestionarUsuarios = /usuarios/.test(menuAbogado) && (await irA(page2, 'usuarios', 'Usuario'))
   if (!puedeGestionarUsuarios) {
     ok('un Abogado no ve ni abre la gestión de usuarios (permisos aplicados en la interfaz)')
   } else {
@@ -165,7 +241,7 @@ async function main() {
   }
   await contexto2.close()
 
-  step('9 · Errores de consola')
+  step('10 · Errores de consola')
   const graves = erroresConsola.filter((e) => !/favicon|404 \(Not Found\)/i.test(e))
   graves.length === 0
     ? ok('sin errores graves en la consola del navegador')

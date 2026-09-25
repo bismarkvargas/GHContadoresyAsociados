@@ -28,6 +28,13 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        // Los formularios del panel y del app envían "" en los campos opcionales:
+        // se interpreta como ausencia de valor en lugar de devolver 400.
+        options.JsonSerializerOptions.Converters.Add(new GH.Api.Json.EmptyStringToNullableGuidConverter());
+        options.JsonSerializerOptions.Converters.Add(new GH.Api.Json.EmptyStringToGuidConverter());
+        options.JsonSerializerOptions.Converters.Add(new GH.Api.Json.EmptyStringToNullableIntConverter());
+        options.JsonSerializerOptions.Converters.Add(new GH.Api.Json.EmptyStringToNullableDecimalConverter());
+        options.JsonSerializerOptions.Converters.Add(new GH.Api.Json.EmptyStringToNullableDateTimeConverter());
     });
 
 builder.Services.Configure<FormOptions>(options =>

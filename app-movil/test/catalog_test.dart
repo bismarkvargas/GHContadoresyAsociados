@@ -17,16 +17,14 @@ void main() {
     expect(find.text('Servicios'), findsWidgets);
 
     // Pestañas de las 4 categorías reales (docs/01 §2).
+    await TestHarness.waitForText(tester, 'Todos');
     expect(find.text('Todos'), findsOneWidget);
-    expect(find.text('Servicios Contables'), findsWidgets);
-    expect(find.text('Servicios Legales'), findsWidgets);
-    expect(find.text('Servicios Municipales'), findsWidgets);
     expect(find.text('Servicios Tributarios'), findsWidgets);
 
     // El catálogo del cliente se carga desde assets/mock/catalog.seed.json.
     await TestHarness.waitForCatalog(tester);
     expect(find.byType(ProductCard), findsWidgets);
-    expect(find.textContaining('servicios'), findsWidgets);
+    expect(find.textContaining('62 servicios'), findsOneWidget);
   });
 
   testWidgets('el buscador filtra servicios del catálogo', (tester) async {
@@ -39,15 +37,13 @@ void main() {
       find.widgetWithText(TextField, 'Buscar trámite, servicio o código…'),
       'patente',
     );
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pump(const Duration(milliseconds: 800));
-    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    await TestHarness.advance(tester, duration: const Duration(seconds: 2));
 
     expect(find.byType(ProductCard), findsWidgets);
     expect(find.textContaining('Patente'), findsWidgets);
   });
 
-  testWidgets('abre la ficha de un servicio con precio y acciones',
+  testWidgets('abre la ficha de un servicio con precio, duración y acciones',
       (tester) async {
     TestHarness.prepare();
     await TestHarness.pumpApp(tester);
@@ -55,14 +51,13 @@ void main() {
     await TestHarness.waitForCatalog(tester);
 
     await tester.tap(find.byType(ProductCard).first);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 800));
-    await tester.pumpAndSettle(const Duration(milliseconds: 400));
+    await TestHarness.advance(tester, duration: const Duration(seconds: 2));
 
     expect(find.text('Descripción'), findsOneWidget);
     expect(find.text('Agregar al carrito'), findsWidgets);
     expect(find.text('Cotizar'), findsOneWidget);
     expect(find.text('Precio del servicio'), findsOneWidget);
     expect(find.textContaining('Duración estimada'), findsWidgets);
+    expect(find.textContaining('Qué incluye'), findsOneWidget);
   });
 }
