@@ -101,3 +101,83 @@
     @apply text-base font-semibold text-ink;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Documentos legales públicos (/privacidad y /terminos)
+
+   Se escriben como componentes (y no con el plugin `@tailwindcss/typography`,
+   que no está instalado) para que la columna de lectura, la jerarquía de
+   encabezados y el tema claro/oscuro usen exactamente los mismos tokens de
+   marca que el resto del panel. El ancho de lectura lo fija LegalPageShell
+   (760 px); aquí solo van la tipografía y el ritmo vertical.
+   ------------------------------------------------------------------------- */
+@layer components {
+  .gh-legal-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
+  }
+
+  /* Plomo de introducción: más grande que el cuerpo para entrar al documento. */
+  .gh-legal-lead {
+    @apply text-base leading-7;
+  }
+
+  .gh-legal {
+    @apply text-[15px] leading-7 text-ink-700;
+  }
+
+  /* Ancla interna: el encabezado queda libre de la cabecera fija al saltar. */
+  .gh-legal-section,
+  .gh-legal-subsection {
+    scroll-margin-top: 96px;
+  }
+
+  .gh-legal-section h2 {
+    @apply mb-3 mt-0 text-lg font-bold leading-7 text-ink;
+  }
+  .gh-legal-subsection h3 {
+    @apply mb-2 mt-6 text-base font-semibold leading-6 text-ink;
+  }
+  .gh-legal-section + .gh-legal-section {
+    @apply mt-9 border-t border-line pt-7;
+  }
+
+  .gh-legal p + p {
+    @apply mt-3;
+  }
+
+  .gh-legal ul,
+  .gh-legal ol {
+    @apply mt-3 space-y-2 pl-5;
+  }
+  .gh-legal ul {
+    @apply list-disc;
+  }
+  .gh-legal ol {
+    @apply list-decimal;
+  }
+  .gh-legal li::marker {
+    color: var(--gh-primary);
+  }
+  .gh-legal strong {
+    @apply font-semibold text-ink;
+  }
+  .gh-legal a {
+    @apply gh-link;
+  }
+
+  /* Índice de secciones */
+  .gh-legal-toc-title {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
+  }
+  .gh-legal-toc {
+    @apply space-y-2 text-sm;
+  }
+  .gh-legal-toc a {
+    @apply text-ink-700 hover:text-primary hover:underline;
+  }
+  /* Número de la sección: lima corporativo como acento, nunca como texto sobre blanco. */
+  .gh-legal-toc-num {
+    @apply inline-flex h-5 w-5 shrink-0 translate-y-0.5 items-center justify-center rounded-full
+      bg-accent/30 text-[11px] font-semibold text-ink;
+  }
+}

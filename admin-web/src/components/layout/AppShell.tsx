@@ -11,6 +11,7 @@ import {
   WifiOff,
 } from 'lucide-react'
 import { company } from '@/lib/constants'
+import { legalLinks } from '@/pages/legal/legalLinks'
 import { navGroups, navItems } from '@/config/routes'
 import { useAuth, usePermission } from '@/hooks/useAuth'
 import { useRealtime, useTheme, useToast } from '@/hooks/useUi'
@@ -392,6 +393,22 @@ export function AppShell() {
             <span>
               {company.phones.join(' · ')} · {company.emailOrders}
             </span>
+          </div>
+          {/* Páginas legales públicas: el administrador las abre (y copia la URL) desde aquí. */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line/60 pt-2">
+            <span className="text-[11px] uppercase tracking-wide">
+              Documentos legales públicos
+            </span>
+            {legalLinks.map((enlace) => (
+              <Link
+                key={enlace.path}
+                to={enlace.path}
+                className="text-[11px] text-ink-700 underline-offset-2 hover:text-primary hover:underline"
+                title={enlace.url}
+              >
+                {enlace.label}
+              </Link>
+            ))}
           </div>
         </footer>
       </div>

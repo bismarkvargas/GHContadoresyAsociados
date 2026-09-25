@@ -3,7 +3,7 @@
 Base de despliegue: **`/ghcontadores/`** (por eso las URLs reales son
 `https://demostracion.es/ghcontadores/…`). El router usa `BrowserRouter` con `basename` tomado de
 `import.meta.env.BASE_URL`, y todas las rutas internas exigen sesión de **personal de la firma**
-(`IsStaff = true`).
+(`IsStaff = true`). Las dos páginas legales de la sección 1 son la excepción: son públicas.
 
 La columna **Permiso de vista** es el permiso que la guarda `ProtectedRoute` exige para entrar a la
 pantalla; **Permisos de acción** son los que habilitan los botones dentro de ella. Los permisos se
@@ -19,8 +19,25 @@ URL a mano, recibe la pantalla *Acceso denegado* con el permiso que le falta.
 | Ruta | Pantalla | Permiso de vista | Permisos de acción | Archivo |
 |---|---|---|---|---|
 | `/login` | Inicio de sesión a pantalla completa (marca + formulario, recordar sesión, errores 401/403, cuentas demo) | — (pública) | — | `src/pages/LoginPage.tsx` |
+| `/privacidad` | **Política de Privacidad**: documento público con índice de secciones, fechas de vigencia y actualización, datos de contacto de la firma y enlace de vuelta al inicio | — (pública) | — | `src/pages/legal/PrivacidadPage.tsx` |
+| `/terminos` | **Términos y Condiciones**: servicio, contratación y pagos, precios en USD, cancelación y reembolsos, propiedad de los documentos, limitación de responsabilidad y ley aplicable (Costa Rica) | — (pública) | — | `src/pages/legal/TerminosPage.tsx` |
 
 Si ya hay sesión válida, `/login` redirige a la ruta solicitada o al dashboard.
+
+### Páginas legales (URL para Google Play)
+
+- URL declarada en **Play Console** y abierta desde la app móvil:
+  **`https://demostracion.es/ghcontadores/privacidad`** y
+  **`https://demostracion.es/ghcontadores/terminos`**.
+- Están en `App.tsx` **fuera** de `ProtectedRoute` y del `AppShell`: no piden token ni permisos y no
+  muestran el menú del panel. Comparten el marco de marca `LegalPageShell`
+  (`src/pages/legal/LegalPageShell.tsx`): franja lima superior, azul marino, Montserrat, logotipo según
+  el tema (claro/oscuro), columna de lectura de **760 px** y pie con los datos reales de la firma.
+- Cada página fija su propio `<title>` y su `<meta name="description">` con el hook
+  `useDocumentMeta` (`src/pages/legal/useDocumentMeta.ts`).
+- Las URLs se centralizan en `src/pages/legal/legalLinks.ts` y se muestran (con botón de copiar) en
+  **Ajustes → Páginas legales públicas**, además de enlazarse desde el pie del `AppShell`.
+- Verificación en navegador real: `node ../tools/e2e-admin/verificar-legales.mjs`.
 
 ## 2. Rutas autenticadas (shell con sidebar + topbar)
 

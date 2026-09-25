@@ -5,6 +5,8 @@ import { Forbidden, FullPageLoader, NotFound, ProtectedRoute } from '@/component
 import { routeViewPermission } from '@/config/routes'
 
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const PrivacidadPage = lazy(() => import('@/pages/legal/PrivacidadPage'))
+const TerminosPage = lazy(() => import('@/pages/legal/TerminosPage'))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'))
 const ClientNewPage = lazy(() => import('@/pages/clients/ClientNewPage'))
@@ -94,6 +96,15 @@ export default function App() {
     <Suspense fallback={<FullPageLoader />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+
+        {/*
+          Páginas legales públicas: se declaran como URL de la Política de Privacidad y de los
+          Términos en Google Play y se abren desde la app móvil y el pie del panel. Van FUERA del
+          `ProtectedRoute` y del `AppShell` a propósito: no piden sesión, no piden permisos y no
+          muestran el menú del panel.
+        */}
+        <Route path="/privacidad" element={<PrivacidadPage />} />
+        <Route path="/terminos" element={<TerminosPage />} />
 
         <Route
           element={

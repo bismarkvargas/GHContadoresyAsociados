@@ -58,6 +58,7 @@ En `../tools/e2e-admin` (Playwright ya instalado):
 | `node diagnostico-respuestas.mjs` | Compara varios payloads de alta contra la API real |
 | `node diagnostico-formulario.mjs` · `diagnostico-login.mjs` | Diagnóstico del formulario de acceso y de las cuentas demo |
 | `node verificar-bundle.mjs` | Comprueba que el `dist/` construido contiene las correcciones y que el modo mock quedó desactivado |
+| `node verificar-legales.mjs` | **Páginas legales públicas** (`/privacidad` y `/terminos`): carga sin sesión, contenido exigido, índice y anclas, `<title>`/meta descripción, tema claro y oscuro, logotipo y ancho de lectura de 760 px (por defecto contra producción) |
 
 Despliegue en el servidor (`ssh root@2.25.111.177`): `bash /opt/ghcontadores/deploy/deploy.sh`.
 
@@ -205,6 +206,32 @@ se aclara a `#D4E455`).
 Datos reales visibles en Ajustes y en el pie del panel: GH Contadores & Asociados · Ruta Nacional
 Secundaria 155, Huacas, Santa Cruz, Guanacaste, Costa Rica · +506 2653 6634 · +506 8846 9454 ·
 gustavo.ghcontadores@outlook.com · pedidos@ghcontadores.net · moneda base **USD**.
+
+### Páginas legales públicas (requisito de Google Play)
+
+Dos páginas **públicas** (no piden sesión) con el contenido legal que la firma declara en **Google
+Play Console** y que abre la app móvil:
+
+| Documento | URL pública |
+|---|---|
+| Política de Privacidad | `https://demostracion.es/ghcontadores/privacidad` |
+| Términos y Condiciones | `https://demostracion.es/ghcontadores/terminos` |
+
+- Son las URLs que se declaran en **Play Console** (ficha de la app → Política de privacidad) y las
+  que enlaza **la app móvil**, así que no deben cambiar sin actualizar ambas.
+- Código: `src/pages/legal/` — `PrivacidadPage.tsx`, `TerminosPage.tsx`, el marco común
+  `LegalPageShell.tsx`, el hook de metadatos `useDocumentMeta.ts` y las rutas en `legalLinks.ts`.
+  Se añaden al router en `src/App.tsx` **fuera** de `ProtectedRoute` y del `AppShell`.
+- Diseño: franja lima superior de marca, Montserrat, logotipo según el tema (claro/oscuro), índice de
+  secciones con enlaces internos, columna de lectura máxima de **760 px**, `<title>` y
+  `<meta name="description">` propios en cada página, fechas visibles de *entrada en vigor* y *última
+  actualización* y pie con los datos reales de contacto.
+- El administrador las localiza (con botón de copiar URL) en **Ajustes → Páginas legales públicas**, y
+  también están enlazadas en el pie del panel.
+- Al modificar un documento hay que actualizar su fecha de «Última actualización» dentro del propio
+  archivo y volver a desplegar.
+- Verificación en navegador real (carga sin sesión, contenido, anclas, tema claro/oscuro y ancho de
+  lectura): `node ../tools/e2e-admin/verificar-legales.mjs`.
 
 ## 9. Despliegue en `/ghcontadores/`
 

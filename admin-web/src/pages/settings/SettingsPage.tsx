@@ -9,6 +9,7 @@ import { formatMoney, prettyJson } from '@/lib/format'
 import { Badge, Button, Card, Select, Skeleton, TextInput, Textarea } from '@/components/ui'
 import { PageHeader } from '@/components/layout/AppShell'
 import { RegistrationSettings } from './RegistrationSettings'
+import { LegalUrlsCard } from './LegalUrlsCard'
 import type { Setting } from '@/types'
 
 const brandingDefaults = [
@@ -326,6 +327,8 @@ export default function SettingsPage() {
                 </li>
               </ul>
             </Card>
+
+            <LegalUrlsCard />
           </div>
         </div>
       )}
