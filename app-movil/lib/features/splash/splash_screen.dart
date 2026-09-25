@@ -9,6 +9,12 @@ import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/async_guard.dart';
 import '../../core/widgets/gh_branding.dart';
 
+/// Mínimo de tiempo que el splash permanece visible para que la animación de
+/// marca se aprecie. Es variable para que los tests puedan ponerlo a cero y no
+/// dejar un `Future.delayed` pendiente al terminar.
+@visibleForTesting
+Duration splashMinimumVisible = const Duration(milliseconds: 1200);
+
 /// Pantalla de arranque.
 ///
 /// Mientras está visible: inicializa el cliente del modo demo (catálogo real),
@@ -78,20 +84,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final stopwatch = Stopwatch()..start();
 
     try {
-      await AsyncGuard.timeout(
+      await AsyncGuard.withTimeout(
         ref.read(apiBootstrapProvider.future),
         limit: const Duration(seconds: 12),
+        label: 'splash.apiBootstrap',
       );
-      await AsyncGuard.timeout(
+      await AsyncGuard.withTimeout(
         ref.read(authProvider.notifier).bootstrap(),
         limit: const Duration(seconds: 12),
+        label: 'splash.authBootstrap',
       );
-      await AsyncGuard.timeout(
-        ref.read(onboardingDoneProvider.notifier).state == null
-            ? loadOnboardingDone(ref)
-            : Future<void>.value(),
-        limit: const Duration(seconds: 5),
-      );
+      if (ref.read(onboardingDoneProvider) == null) {
+        await AsyncGuard.withTimeout(
+          loadOnboardingDone(ref),
+          limit: const Duration(seconds: 5),
+          label: 'splash.onboarding',
+        );
+      }
     } catch (_) {
       // El modo demo y el catálogo público no dependen de la red.
     }
@@ -101,9 +110,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
 
     // Mínimo visible para que la animación de marca se aprecie.
-    const minimum = Duration(milliseconds: 1200);
-    if (stopwatch.elapsed < minimum) {
-      await Future<void>.delayed(minimum - stopwatch.elapsed);
+    if (splashMinimumVisible > Duration.zero &&
+        stopwatch.elapsed < splashMinimumVisible) {
+      await Future<void>.delayed(splashMinimumVisible - stopwatch.elapsed);
     }
 
     if (!mounted) return;

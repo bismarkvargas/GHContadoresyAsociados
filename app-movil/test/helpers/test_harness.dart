@@ -5,7 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gh_contadores/core/mock/mock_api_client.dart';
+import 'package:gh_contadores/core/providers/realtime_provider.dart';
+import 'package:gh_contadores/core/push/push_service.dart';
 import 'package:gh_contadores/core/widgets/product_card.dart';
+import 'package:gh_contadores/features/splash/splash_screen.dart';
 import 'package:gh_contadores/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,10 +26,20 @@ class TestHarness {
   static const String _catalogAsset = 'assets/mock/catalog.seed.json';
 
   /// Prepara SharedPreferences, el almacenamiento seguro y el catálogo semilla.
+  ///
+  /// Además desactiva las dos fuentes de `Timer` que la app agenda en el
+  /// arranque y que en el entorno de test nunca se completan (no hay canal de
+  /// plataforma): el centro de notificaciones local y el mínimo visible del
+  /// splash. Con esto el binding no encuentra temporizadores pendientes.
   static void prepare({bool onboardingDone = true}) {
     _secureValues.clear();
     _installSecureStorageMock();
     _installSeedCatalog();
+    pushLocalNotificationsEnabled = false;
+    splashMinimumVisible = Duration.zero;
+    // Sin latencia simulada: los `Future.delayed` del mock se resuelven en el
+    // mismo turno del reloj virtual, así ningún test depende del tiempo real.
+    mockLatencyOverride = Duration.zero;
     SharedPreferences.setMockInitialValues(<String, Object>{
       if (onboardingDone) 'gh_onboarding_done': true,
     });
@@ -76,11 +89,18 @@ class TestHarness {
 
   /// Monta la app completa con sus providers.
   ///
-  /// Registra además el cierre limpio del test ([teardown]): la app mantiene
-  /// temporizadores vivos (centro de notificaciones, tiempo real simulado,
-  /// SnackBars) y el binding de `flutter_test` exige que no queden pendientes.
+  /// Se sobrescribe el sondeo de respaldo a desactivado: en los tests no hay
+  /// backend al que consultar y un `Timer.periodic` vivo al acabar el test
+  /// rompe la invariante `!timersPending` del binding de `flutter_test`.
   static Future<void> pumpApp(WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: GhContadoresApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: <Override>[
+          realtimePollingEnabledProvider.overrideWithValue(false),
+        ],
+        child: const GhContadoresApp(),
+      ),
+    );
     addTearDown(() => teardown(tester));
   }
 
@@ -93,26 +113,15 @@ class TestHarness {
 
   /// Espera a que el splash y el arranque terminen.
   ///
-  /// No se usa `pumpAndSettle` porque el modo demo mantiene un temporizador
-  /// periódico de tiempo real (y el splash tiene animaciones continuas), así
-  /// que la app nunca queda "en reposo".
+  /// No se usa `pumpAndSettle` porque el modo demo mantiene animaciones
+  /// continuas (shimmer, indicadores) y la app nunca queda "en reposo".
   static Future<void> waitForBoot(WidgetTester tester) async {
     await tester.pump();
     for (int i = 0; i < 120; i++) {
       await tester.pump(const Duration(milliseconds: 120));
       if (find.text('Buscar trámite, servicio o código…').evaluate().isNotEmpty) {
-        // Deja expirar los temporizadores internos del arranque (por ejemplo
-        // el tope de tiempo del centro de notificaciones).
-        await settleTimers(tester);
         return;
       }
-    }
-  }
-
-  /// Avanza el reloj virtual para que expiren los temporizadores de arranque.
-  static Future<void> settleTimers(WidgetTester tester) async {
-    for (int i = 0; i < 8; i++) {
-      await tester.pump(const Duration(seconds: 1));
     }
   }
 
@@ -132,10 +141,7 @@ class TestHarness {
   static Future<void> waitForCatalog(WidgetTester tester) async {
     for (int i = 0; i < 100; i++) {
       await tester.pump(const Duration(milliseconds: 120));
-      if (find.byType(ProductCard).evaluate().isNotEmpty) {
-        await settleTimers(tester);
-        return;
-      }
+      if (find.byType(ProductCard).evaluate().isNotEmpty) return;
     }
   }
 
@@ -154,7 +160,6 @@ class TestHarness {
 
   /// Agrega el primer servicio del catálogo al carrito.
   static Future<void> addFirstProductToCart(WidgetTester tester) async {
-    await settleTimers(tester);
     final card = find.byType(ProductCard).first;
     expect(card, findsOneWidget);
 
@@ -194,14 +199,21 @@ class TestHarness {
 
   /// Cierra el test de forma limpia.
   ///
-  /// El modo demo mantiene temporizadores vivos (tiempo real simulado, tope de
-  /// espera del splash, SnackBars), así que se avanza el reloj virtual para que
-  /// expiren antes de que el binding verifique que no queden timers pendientes.
+  /// Los `SnackBar` de confirmación dejan un `Timer` de auto-cierre; se retiran
+  /// antes de desmontar el árbol para que el binding no encuentre timers
+  /// pendientes (`!timersPending`) al terminar el test.
   static Future<void> teardown(WidgetTester tester) async {
-    await tester.pumpWidget(const SizedBox.shrink());
-    for (int i = 0; i < 40; i++) {
-      await tester.pump(const Duration(seconds: 1));
+    final messenger = find.byType(ScaffoldMessenger);
+    if (messenger.evaluate().isNotEmpty) {
+      tester
+          .state<ScaffoldMessengerState>(messenger.first)
+          .clearSnackBars();
     }
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    // Margen para animaciones de salida y temporizadores residuales.
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
   }
 
   /// Completa los datos de facturación y avanza al pago.
