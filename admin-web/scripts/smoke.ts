@@ -1,6 +1,6 @@
 ﻿/**
  * Prueba de humo del adaptador mock: recorre el contrato de API sin navegador.
- * Se ejecuta con scripts/smoke.mjs (compila con Vite en modo mÃ³dulo y lanza Node).
+ * Se ejecuta con scripts/smoke.mjs (compila con Vite en modo módulo y lanza Node).
  */
 
 import { buildSeedDb, setDb } from '@/api/mock/db'
@@ -60,11 +60,11 @@ async function main(): Promise<void> {
   check('pagos sembrados', db.payments.length > 30, `(${db.payments.length})`)
   check('solicitudes de cuenta', db.accountRequests.length === 16, `(${db.accountRequests.length})`)
   check('cotizaciones', db.quotes.length === 14, `(${db.quotes.length})`)
-  check('auditorÃ­a', db.auditLogs.length === 60, `(${db.auditLogs.length})`)
+  check('auditoría', db.auditLogs.length === 60, `(${db.auditLogs.length})`)
   check('roles semilla', db.roles.length === 6, `(${db.roles.length})`)
-  check('permisos con comodines por mÃ³dulo', db.permissions.length > 40, `(${db.permissions.length})`)
+  check('permisos con comodines por módulo', db.permissions.length > 40, `(${db.permissions.length})`)
 
-  console.log('== AutenticaciÃ³n ==')
+  console.log('== Autenticación ==')
   const adminLogin = await call('POST', '/auth/login', {
     email: 'admin@ghcontadores.net',
     password: 'Gh.Admin2026',
@@ -83,28 +83,28 @@ async function main(): Promise<void> {
   check('Abogado NO tiene roles.view', !lawyerPerms.includes('roles.view'))
   check('Abogado NO tiene settings.edit', !lawyerPerms.includes('settings.edit'))
   check('Abogado NO tiene clients.delete', !lawyerPerms.includes('clients.delete'))
-  check('Abogado SÃ tiene cases.edit', lawyerPerms.includes('cases.edit'))
+  check('Abogado SÍ tiene cases.edit', lawyerPerms.includes('cases.edit'))
   check(
     'Abogado ve menos permisos que SuperAdmin',
     lawyerPerms.length < adminLogin.data.permissions.length,
     `(${lawyerPerms.length} < ${adminLogin.data.permissions.length})`,
   )
 
-  check('login con contraseÃ±a errÃ³nea devuelve 401', (await expectError('POST', '/auth/login', { email: 'admin@ghcontadores.net', password: 'incorrecta' }))?.status === 401)
+  check('login con contraseña errónea devuelve 401', (await expectError('POST', '/auth/login', { email: 'admin@ghcontadores.net', password: 'incorrecta' }))?.status === 401)
   check('sin token devuelve 401', (await expectError('GET', '/admin/dashboard/summary'))?.status === 401)
   check('sin token en /admin/clients devuelve 401', (await expectError('GET', '/admin/clients'))?.status === 401)
   check('sin token en /admin/users devuelve 401', (await expectError('GET', '/admin/users'))?.status === 401)
 
-  console.log('== Contrato de listados (paginaciÃ³n, filtros, orden) ==')
+  console.log('== Contrato de listados (paginación, filtros, orden) ==')
   const clients = await call('GET', '/admin/clients?page=1&pageSize=5&sort=code&order=asc', undefined, adminToken)
   check('clientes pagina 5', clients.data.items.length === 5, `(${clients.data.items.length})`)
   check('clientes total 34', clients.data.total === 34, `(${clients.data.total})`)
   check('clientes totalPages 7', clients.data.totalPages === 7, `(${clients.data.totalPages})`)
-  check('clientes orden ascendente por cÃ³digo', clients.data.items[0].code < clients.data.items[4].code)
+  check('clientes orden ascendente por código', clients.data.items[0].code < clients.data.items[4].code)
   check('cliente enriquecido con openCases', typeof clients.data.items[0].openCases === 'number')
 
   const searched = await call('GET', '/admin/clients?search=hotel', undefined, adminToken)
-  check('bÃºsqueda ignora acentos y mayÃºsculas', searched.data.total > 0, `(${searched.data.total})`)
+  check('búsqueda ignora acentos y mayúsculas', searched.data.total > 0, `(${searched.data.total})`)
 
   const leads = await call('GET', '/admin/clients?status=Lead', undefined, adminToken)
   check(
@@ -125,16 +125,16 @@ async function main(): Promise<void> {
   check('filtro de vencidos', overdue.data.total >= 0 && overdue.data.total < 58, `(${overdue.data.total})`)
 
   const products = await call('GET', '/admin/catalog/products?page=1&pageSize=100', undefined, adminToken)
-  check('catÃ¡logo con 62 servicios reales', products.data.total === 62, `(${products.data.total})`)
+  check('catálogo con 62 servicios reales', products.data.total === 62, `(${products.data.total})`)
   const categories = await call('GET', '/admin/catalog/categories', undefined, adminToken)
-  check('catÃ¡logo con 4 categorÃ­as reales', categories.data.length === 4, `(${categories.data.length})`)
+  check('catálogo con 4 categorías reales', categories.data.length === 4, `(${categories.data.length})`)
   check(
-    'suma de servicios por categorÃ­a = 62',
+    'suma de servicios por categoría = 62',
     categories.data.reduce((s: number, c: any) => s + c.productCount, 0) === 62,
   )
   const prices = products.data.items.map((p: any) => p.price)
-  check('precio mÃ­nimo real 16.95', Math.min(...prices) === 16.95, `(${Math.min(...prices)})`)
-  check('precio mÃ¡ximo real 960.50', Math.max(...prices) === 960.5, `(${Math.max(...prices)})`)
+  check('precio mínimo real 16.95', Math.min(...prices) === 16.95, `(${Math.min(...prices)})`)
+  check('precio máximo real 960.50', Math.max(...prices) === 960.5, `(${Math.max(...prices)})`)
 
   console.log('== Dashboard ==')
   const dash = await call('GET', '/admin/dashboard/summary', undefined, adminToken)
@@ -142,7 +142,7 @@ async function main(): Promise<void> {
   check('12 meses de ventas', dash.data.salesByMonth.length === 12, `(${dash.data.salesByMonth.length})`)
   check('embudo de 4 etapas', dash.data.leadsFunnel.length === 4)
   check('pedidos por estado', dash.data.ordersByStatus.length >= 4, `(${dash.data.ordersByStatus.length})`)
-  check('Ãºltimas gestiones', dash.data.latestActivities.length === 12, `(${dash.data.latestActivities.length})`)
+  check('últimas gestiones', dash.data.latestActivities.length === 12, `(${dash.data.latestActivities.length})`)
   check(
     'ventas no negativas',
     dash.data.salesByMonth.every((m: any) => m.total >= 0),
@@ -185,7 +185,7 @@ async function main(): Promise<void> {
   )
   check('completar tarea', done.data.status === 'Done' && !!done.data.completedAt)
 
-  console.log('== Documentos: validaciÃ³n y versionado ==')
+  console.log('== Documentos: validación y versionado ==')
   const upload1 = await call(
     'POST',
     '/admin/documents',
@@ -199,7 +199,7 @@ async function main(): Promise<void> {
     },
     adminToken,
   )
-  check('subida vÃ¡lida (versiÃ³n 1)', upload1.data.version === 1, `(v${upload1.data.version})`)
+  check('subida válida (versión 1)', upload1.data.version === 1, `(v${upload1.data.version})`)
   const upload2 = await call(
     'POST',
     '/admin/documents',
@@ -212,10 +212,10 @@ async function main(): Promise<void> {
     },
     adminToken,
   )
-  check('segunda subida crea versiÃ³n 2', upload2.data.version === 2, `(v${upload2.data.version})`)
+  check('segunda subida crea versión 2', upload2.data.version === 2, `(v${upload2.data.version})`)
   const versions = await call('GET', `/admin/documents/${upload2.data.id}/versions`, undefined, adminToken)
   check('historial de 2 versiones', versions.data.length === 2, `(${versions.data.length})`)
-  check('solo la Ãºltima es actual', versions.data.filter((d: any) => d.isCurrent).length === 1)
+  check('solo la última es actual', versions.data.filter((d: any) => d.isCurrent).length === 1)
 
   check(
     'rechaza tipo de archivo no permitido',
@@ -258,7 +258,7 @@ async function main(): Promise<void> {
   const rejected = await call(
     'POST',
     `/admin/account-requests/${pending.data.items[1].id}/reject`,
-    { reason: 'DocumentaciÃ³n ilegible' },
+    { reason: 'Documentación ilegible' },
     adminToken,
   )
   check('rechazar guarda motivo', rejected.data.status === 'Rejected' && !!rejected.data.rejectionReason)
@@ -285,9 +285,9 @@ async function main(): Promise<void> {
   check('pedido pasa a InProcess', created.data.order.status === 'InProcess')
 
   const orderDetail = await call('GET', `/admin/orders/${paidOrder.id}`, undefined, adminToken)
-  check('detalle del pedido con Ã­tems', orderDetail.data.items.length > 0)
+  check('detalle del pedido con ítems', orderDetail.data.items.length > 0)
   check('detalle del pedido con pagos', Array.isArray(orderDetail.data.payments))
-  check('Ã­tem vinculado al expediente', !!orderDetail.data.items[0].caseCode)
+  check('ítem vinculado al expediente', !!orderDetail.data.items[0].caseCode)
 
   const refundOrder = db.orders.find((o) => o.status === 'Completed')!
   const refunded = await call('POST', `/admin/orders/${refundOrder.id}/refund`, { reason: 'Prueba' }, adminToken)
@@ -333,13 +333,13 @@ async function main(): Promise<void> {
     { roles: ['Contador', 'Asistente'] },
     adminToken,
   )
-  check('roles mÃºltiples asignados', rolesChanged.data.roles.length === 2)
+  check('roles múltiples asignados', rolesChanged.data.roles.length === 2)
   const suspended = await call('PATCH', `/admin/users/${staffUser.id}/status`, { status: 'Suspended' }, adminToken)
   check('suspender usuario', suspended.data.status === 'Suspended')
   const reset = await call('POST', `/admin/users/${staffUser.id}/reset-password`, {}, adminToken)
-  check('reset de contraseÃ±a devuelve temporal', !!reset.data.temporaryPassword)
+  check('reset de contraseña devuelve temporal', !!reset.data.temporaryPassword)
   check(
-    'no puede suspenderse a sÃ­ mismo',
+    'no puede suspenderse a sí mismo',
     (
       await expectError(
         'PATCH',
@@ -360,43 +360,43 @@ async function main(): Promise<void> {
     { idNumber: '3-101-999999' },
     adminToken,
   )
-  check('convertir cotizaciÃ³n en cliente', !!converted.data.clientId && db.clients.length === clientsBefore + 1)
+  check('convertir cotización en cliente', !!converted.data.clientId && db.clients.length === clientsBefore + 1)
 
   console.log('== Informes ==')
   const sales = await call('GET', '/admin/reports/sales', undefined, adminToken)
   check('informe de ventas con 12 meses', sales.data.byMonth.length === 12)
   check('totales coherentes', sales.data.totals.total > 0, `(${sales.data.totals.total})`)
-  check('desglose por categorÃ­a', sales.data.byCategory.length >= 4, `(${sales.data.byCategory.length})`)
+  check('desglose por categoría', sales.data.byCategory.length >= 4, `(${sales.data.byCategory.length})`)
   const casesReport = await call('GET', '/admin/reports/cases', undefined, adminToken)
   check('informe de expedientes', casesReport.data.byStatus.length > 0 && casesReport.data.byEntity.length > 0)
   const productivity = await call('GET', '/admin/reports/productivity', undefined, adminToken)
   check('productividad por profesional', productivity.data.rows.length >= 5, `(${productivity.data.rows.length})`)
 
-  console.log('== Ajustes y auditorÃ­a ==')
+  console.log('== Ajustes y auditoría ==')
   const settings = await call('GET', '/admin/settings', undefined, adminToken)
   check('ajustes agrupados', Object.keys(settings.data.groups).length === 6, `(${Object.keys(settings.data.groups).length})`)
   check('tipo de cambio presente', settings.data.exchangeRate > 0, `(${settings.data.exchangeRate})`)
   const saved = await call('PUT', '/admin/settings', { items: [{ key: 'currency.usdToCrc', value: '515' }] }, adminToken)
   check('guardar ajuste', saved.data.updated === 1)
   const settings2 = await call('GET', '/admin/settings', undefined, adminToken)
-  check('el ajuste quedÃ³ persistido', settings2.data.exchangeRate === 515, `(${settings2.data.exchangeRate})`)
+  check('el ajuste quedó persistido', settings2.data.exchangeRate === 515, `(${settings2.data.exchangeRate})`)
 
   const audit = await call('GET', '/admin/audit?page=1&pageSize=10', undefined, adminToken)
-  check('auditorÃ­a paginada', audit.data.items.length === 10, `(${audit.data.items.length})`)
-  check('auditorÃ­a con diff antes/despuÃ©s', audit.data.items.some((l: any) => !!l.afterJson))
-  check('auditorÃ­a resuelve el nombre del usuario', audit.data.items.some((l: any) => !!l.userName))
+  check('auditoría paginada', audit.data.items.length === 10, `(${audit.data.items.length})`)
+  check('auditoría con diff antes/después', audit.data.items.some((l: any) => !!l.afterJson))
+  check('auditoría resuelve el nombre del usuario', audit.data.items.some((l: any) => !!l.userName))
   const auditByEntity = await call('GET', '/admin/audit?entityName=CaseFile', undefined, adminToken)
   check(
-    'filtro de auditorÃ­a por entidad',
+    'filtro de auditoría por entidad',
     auditByEntity.data.items.every((l: any) => l.entityName === 'CaseFile'),
   )
 
-  console.log('== Rutas pÃºblicas y errores ==')
+  console.log('== Rutas públicas y errores ==')
   const site = await call('GET', '/public/site')
   check('GET /public/site responde', !!site.data.company['company.legalName'])
-  check('la razÃ³n social es la real', site.data.company['company.legalName'] === 'GH Contadores & Asociados')
+  check('la razón social es la real', site.data.company['company.legalName'] === 'GH Contadores & Asociados')
   const publicProducts = await call('GET', '/public/catalog/products?pageSize=100')
-  check('catÃ¡logo pÃºblico solo activos', publicProducts.data.items.every((p: any) => p.isActive))
+  check('catálogo público solo activos', publicProducts.data.items.every((p: any) => p.isActive))
   const request = await call('POST', '/public/account-requests', {
     fullName: 'Prueba Humo',
     email: 'prueba@correo.cr',
@@ -405,7 +405,7 @@ async function main(): Promise<void> {
     clientType: 'Individual',
     source: 'web',
   })
-  check('solicitud pÃºblica crea registro con seguimiento', !!request.data.trackingCode)
+  check('solicitud pública crea registro con seguimiento', !!request.data.trackingCode)
   const status = await call('GET', '/public/account-requests/status?email=prueba@correo.cr')
   check('consulta de estado por correo', status.data.status === 'Pending')
   const health = await call('GET', '/health')
