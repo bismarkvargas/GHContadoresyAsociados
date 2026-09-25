@@ -39,13 +39,15 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # --- Push FCM (ver README §Firebase) ---
-  # Descomenta estas 2 líneas cuando existan las credenciales del proyecto
-  # (`android/app/google-services.json` y `ios/Runner/GoogleService-Info.plist`).
-  # La app arranca sin ellas: el push FCM se auto-desactiva y el resto de la
-  # mensajería funciona por SignalR, polling y notificaciones locales.
-  # firebase_core: ^3.3.0
-  # firebase_messaging: ^15.0.4
+  # --- Push FCM ---
+  # Firebase ya está configurado en el proyecto: `android/app/google-services.json`
+  # existe y el plugin de Gradle está activo. En iOS hay que colocar
+  # `ios/Runner/GoogleService-Info.plist` (ver README §Firebase).
+  firebase_core: ^3.3.0
+  firebase_messaging: ^15.0.4
+
+  # Permiso de notificaciones (Android 13+) y acceso a los ajustes de la app.
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

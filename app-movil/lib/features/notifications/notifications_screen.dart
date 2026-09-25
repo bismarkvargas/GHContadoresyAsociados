@@ -15,6 +15,7 @@ import '../../core/widgets/gh_guest.dart';
 import '../../core/widgets/gh_logo.dart';
 import '../../core/widgets/gh_skeleton.dart';
 import '../../core/widgets/gh_state_views.dart';
+import '../../core/widgets/push_permission_ui.dart';
 
 /// Bandeja de notificaciones in-app con filtros, marcado de leído y
 /// navegación por deep link al expediente o pedido correspondiente.
@@ -100,6 +101,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       ),
       body: Column(
         children: <Widget>[
+          // Si el permiso está denegado, se avisa arriba del listado con un
+          // botón para activarlas (o abrir los ajustes si están bloqueadas).
+          const PushDisabledNotice(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(

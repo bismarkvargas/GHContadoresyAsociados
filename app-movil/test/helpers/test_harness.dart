@@ -12,13 +12,17 @@ import 'package:gh_contadores/core/models/site_info.dart';
 import 'package:gh_contadores/core/models/user.dart';
 import 'package:gh_contadores/core/providers/auth_provider.dart';
 import 'package:gh_contadores/core/providers/core_providers.dart';
+import 'package:gh_contadores/core/providers/push_permission_provider.dart';
 import 'package:gh_contadores/core/providers/realtime_provider.dart';
 import 'package:gh_contadores/core/realtime/mock_realtime_service.dart';
 import 'package:gh_contadores/core/push/push_service.dart';
+import 'package:gh_contadores/core/push/push_permission_service.dart';
 import 'package:gh_contadores/core/widgets/product_card.dart';
 import 'package:gh_contadores/features/splash/splash_screen.dart';
 import 'package:gh_contadores/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'fake_push.dart';
 
 /// Helpers compartidos por los tests de widget.
 class TestHarness {
@@ -29,6 +33,9 @@ class TestHarness {
       MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
 
   static final Map<String, String> _secureValues = <String, String>{};
+
+  /// Doble de prueba del permiso de push, compartido por los tests del archivo.
+  static FakePushPermissionService fakePush = FakePushPermissionService();
 
   /// Ruta del catálogo semilla dentro del proyecto.
   static const String _catalogAsset = 'assets/mock/catalog.seed.json';
@@ -50,6 +57,11 @@ class TestHarness {
     pushLocalNotificationsEnabled = false;
     splashMinimumVisible = Duration.zero;
     MockRealtimeService.autoEmitEnabled = false;
+    // El permiso de push se simula **ya concedido** por defecto: los flujos que
+    // no van del permiso (catálogo, carrito, pago) no deben toparse con el aviso
+    // modal. Los tests del permiso lo dejan en «sin decidir» o «bloqueado» con
+    // `fakePush.setStatus(...)`.
+    fakePush = FakePushPermissionService(status: PushPermissionStatus.granted);
     // Estado global del modo demo: sin esto se filtra entre tests.
     MockApiClient.registrationConfig = const RegistrationConfig();
     // Sin latencia simulada: los `Future.delayed` del mock se resuelven en el
@@ -124,9 +136,10 @@ class TestHarness {
 
   /// Monta la app completa con sus providers.
   ///
-  /// Inyecta siempre el [MockApiClient] (nunca red real), desactiva el sondeo de
-  /// respaldo y la emisión periódica del tiempo real: en un test no debe quedar
-  /// ningún `Timer.periodic` vivo ni salir ninguna petición a la red.
+  /// Inyecta siempre el [MockApiClient] (nunca red real), un permiso de push
+  /// simulado (sin canal de plataforma) y desactiva el sondeo de respaldo y la
+  /// emisión periódica del tiempo real: en un test no debe quedar ningún
+  /// `Timer.periodic` vivo ni salir ninguna petición a la red.
   static Future<void> pumpApp(
     WidgetTester tester, {
     List<Override> overrides = const <Override>[],
@@ -136,6 +149,7 @@ class TestHarness {
         overrides: <Override>[
           realtimePollingEnabledProvider.overrideWithValue(false),
           apiClientProvider.overrideWithValue(MockApiClient()),
+          pushPermissionServiceProvider.overrideWithValue(fakePush),
           ...overrides,
         ],
         child: const GhContadoresApp(),

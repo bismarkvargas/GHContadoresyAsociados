@@ -9,6 +9,8 @@ import '../../core/models/user.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/core_providers.dart';
 import '../../core/providers/guest_provider.dart';
+import '../../core/providers/push_permission_provider.dart';
+import '../../core/push/push_permission_service.dart';
 import '../../core/realtime/realtime_service.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
@@ -17,6 +19,7 @@ import '../../core/utils/validators.dart';
 import '../../core/widgets/gh_common.dart';
 import '../../core/widgets/gh_guest.dart';
 import '../../core/widgets/gh_logo.dart';
+import '../../core/widgets/push_permission_ui.dart';
 
 /// Perfil: datos personales y fiscales, preferencias, contacto directo,
 /// modo oscuro, eliminar cuenta y cerrar sesión.
@@ -190,6 +193,8 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.lock_outline_rounded, size: 16),
                   enabled: false,
                 ),
+                const Divider(height: 1),
+                const _PushToggleTile(),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.notifications_outlined,
@@ -645,5 +650,78 @@ class _InfoLine extends StatelessWidget {
 
 extension _IfEmpty on String {
   String ifEmpty(String fallback) => isEmpty ? fallback : this;
+}
+
+/// Interruptor «Notificaciones push» que refleja el estado real del permiso.
+///
+///  * concedido → encendido; apagarlo explica que se gestiona en los ajustes.
+///  * sin decidir → al encenderlo pide el permiso del sistema.
+///  * bloqueado → ofrece abrir los ajustes (Android ya no muestra el diálogo).
+class _PushToggleTile extends ConsumerWidget {
+  const _PushToggleTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statusAsync = ref.watch(pushPermissionProvider);
+    final status = statusAsync.valueOrNull;
+    final loading = statusAsync.isLoading || status == null;
+    final granted = status?.isGranted ?? false;
+    final needsSettings = status?.needsSettings ?? false;
+
+    String subtitle;
+    if (loading) {
+      subtitle = 'Comprobando el estado…';
+    } else if (granted) {
+      subtitle = 'Activadas en este dispositivo';
+    } else if (status == PushPermissionStatus.unavailable) {
+      subtitle = 'No disponibles en este dispositivo';
+    } else if (needsSettings) {
+      subtitle = 'Bloqueadas por el sistema · pulse para abrir los ajustes';
+    } else {
+      subtitle = 'Desactivadas · actívelas para recibir avisos';
+    }
+
+    return SwitchListTile(
+      key: const Key('profile-push-toggle'),
+      value: granted,
+      secondary: Icon(
+        granted
+            ? Icons.notifications_active_outlined
+            : Icons.notifications_off_outlined,
+        color: granted ? GhTokens.success : GhTokens.primary,
+      ),
+      title: const Text('Notificaciones push'),
+      subtitle: Text(subtitle),
+      onChanged: loading
+          ? null
+          : (value) async {
+              if (!value) {
+                // Desactivar push requiere ir a los ajustes del sistema.
+                await ref.read(pushPermissionProvider.notifier).openSettings();
+                return;
+              }
+              if (needsSettings) {
+                await ref.read(pushPermissionProvider.notifier).openSettings();
+                await ref.read(pushPermissionProvider.notifier).refresh();
+                return;
+              }
+              if (status == PushPermissionStatus.unavailable) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Este dispositivo no admite notificaciones push por ahora.',
+                    ),
+                  ),
+                );
+                return;
+              }
+              final ok = await activatePushNotifications(context, ref);
+              if (!context.mounted) return;
+              if (ok) {
+                await ref.read(pushPermissionProvider.notifier).refresh();
+              }
+            },
+    );
+  }
 }
 

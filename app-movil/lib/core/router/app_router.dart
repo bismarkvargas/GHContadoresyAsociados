@@ -31,6 +31,11 @@ import '../../features/splash/splash_screen.dart';
 
 /// Claves de navegación globales (necesarias para el shell stateful).
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+
+/// Navigator raíz expuesto: permite mostrar diálogos sin contexto de pantalla
+/// (por ejemplo el aviso de activar notificaciones tras iniciar sesión).
+GlobalKey<NavigatorState> get rootNavigatorKey => _rootKey;
+
 final _homeKey = GlobalKey<NavigatorState>(debugLabel: 'home');
 final _catalogKey = GlobalKey<NavigatorState>(debugLabel: 'catalog');
 final _casesKey = GlobalKey<NavigatorState>(debugLabel: 'cases');

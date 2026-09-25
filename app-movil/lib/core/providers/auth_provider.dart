@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../error/api_failure.dart';
 import '../models/user.dart';
 import '../network/api_client.dart';
+import '../push/push_permission_service.dart';
 import 'cart_provider.dart';
 import 'core_providers.dart';
 import 'guest_provider.dart';
+import 'push_permission_provider.dart';
 
 /// Estado de autenticación de la app (docs/03 §2).
 enum AuthStage { unknown, unauthenticated, pending, active, suspended, rejected }
@@ -116,6 +119,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       await _resumeGuestIntent();
       _startRealtime();
+      // El token FCM se asocia a la cuenta en cuanto hay sesión (si ya hay
+      // permiso); si no lo hay, el aviso de activación lo registra al concederlo.
+      unawaited(_syncPushToken());
       return true;
     } on ApiFailure catch (e) {
       state = state.copyWith(isBusy: false, error: e.message);
@@ -123,6 +129,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(isBusy: false, error: 'No pudimos iniciar sesión. $e');
       return false;
+    }
+  }
+
+  /// Registra el token FCM del dispositivo si el permiso ya está concedido.
+  ///
+  /// `POST /me/devices` asocia el dispositivo al usuario que acaba de entrar.
+  Future<void> _syncPushToken() async {
+    try {
+      final status =
+          await _ref.read(pushPermissionProvider.notifier).refresh();
+      if (status.isGranted) {
+        await _ref.read(pushPermissionProvider.notifier).registerToken();
+      }
+    } catch (e) {
+      debugPrint('[Push] sincronización de token omitida: $e');
     }
   }
 
@@ -155,15 +176,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {
       await _ref.read(tokenStoreProvider).clear();
     }
+    // Se da de baja el dispositivo para no seguir enviando push a esta cuenta.
+    await _unregisterPushToken();
     await _ref.read(realtimeServiceProvider).disconnect();
     state = const AuthState(stage: AuthStage.unauthenticated);
   }
 
   /// Cierre de sesión forzado (refresh token inválido o cuenta eliminada).
   Future<void> forceLogout({String? message}) async {
+    await _unregisterPushToken();
     await _ref.read(tokenStoreProvider).clear();
     await _ref.read(realtimeServiceProvider).disconnect();
     state = AuthState(stage: AuthStage.unauthenticated, error: message);
+  }
+
+  /// Baja del token FCM en la API (`DELETE /me/devices/{token}`).
+  Future<void> _unregisterPushToken() async {
+    try {
+      await _ref.read(pushPermissionServiceProvider).unregisterToken(
+            unregister: (token) => _api.unregisterDevice(token),
+          );
+    } catch (e) {
+      debugPrint('[Push] baja de token omitida: $e');
+    }
   }
 
   Future<void> refreshProfile() async {
