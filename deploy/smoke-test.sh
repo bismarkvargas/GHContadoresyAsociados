@@ -98,11 +98,30 @@ CODE=$(tail -1 <<<"$RESP"); BODY=$(sed '$d' <<<"$RESP")
 NUEVO_TOKEN=$(json "['accessToken']" <<<"$BODY")
 if [ "$CODE" = "200" ] && [ -n "$NUEVO_TOKEN" ]; then ok "el cliente puede entrar solo tras la aprobación"; else ko "login del cliente nuevo: código $CODE"; echo "$BODY" | head -3; fi
 
-step "7 · Compra con la pasarela simulada"
-RESP=$(api POST /me/orders "{\"useCart\":false,\"items\":[{\"productId\":\"${PRODUCTO_ID}\",\"quantity\":1}],\"customerName\":\"Prueba Humo S.A.\",\"customerEmail\":\"${NUEVO_EMAIL}\",\"requiresInvoice\":true,\"invoiceData\":{\"legalName\":\"Prueba Humo S.A.\",\"idNumber\":\"3-101-000000\"}}" "$NUEVO_TOKEN")
+step "7 · Compra con la pasarela simulada (carrito → checkout → pago)"
+# Se compra desde el carrito, que es el flujo real del app.
+curl -sS -o /dev/null -X DELETE "$BASE/me/cart" -H "Authorization: Bearer $NUEVO_TOKEN"
+RESP=$(api POST /me/cart/items "{\"productId\":\"${PRODUCTO_ID}\",\"quantity\":2}" "$NUEVO_TOKEN")
 CODE=$(tail -1 <<<"$RESP"); BODY=$(sed '$d' <<<"$RESP")
-PEDIDO_ID=$(json "['id']" <<<"$BODY"); PEDIDO_NUM=$(json "['number']" <<<"$BODY")
-if [ "$CODE" = "200" ] && [ -n "$PEDIDO_ID" ]; then ok "pedido $PEDIDO_NUM creado (pendiente de pago)"; else ko "creación de pedido: código $CODE"; echo "$BODY" | head -3; fi
+CARRITO_ITEMS=$(json "['itemCount']" <<<"$BODY"); CARRITO_SUBTOTAL=$(json "['subtotal']" <<<"$BODY")
+if [ "$CODE" = "200" ] && [ "$CARRITO_ITEMS" = "1" ]; then
+  ok "carrito: 1 línea por ${CARRITO_SUBTOTAL} USD"
+else
+  ko "agregar al carrito: código $CODE · $CARRITO_ITEMS líneas"
+fi
+
+RESP=$(api POST /me/cart/items "{\"productId\":\"${PRODUCTO_ID}\",\"quantity\":1}" "$NUEVO_TOKEN")
+CARRITO_ITEMS=$(sed '$d' <<<"$RESP" | json "['itemCount']")
+[ "$CARRITO_ITEMS" = "1" ] && ok "repetir el mismo servicio acumula cantidad en una sola línea" || ko "el carrito duplicó líneas ($CARRITO_ITEMS)"
+
+RESP=$(api POST /me/orders "{\"useCart\":true,\"customerName\":\"Prueba Humo S.A.\",\"customerEmail\":\"${NUEVO_EMAIL}\",\"requiresInvoice\":true,\"invoiceData\":{\"legalName\":\"Prueba Humo S.A.\",\"idNumber\":\"3-101-000000\"}}" "$NUEVO_TOKEN")
+CODE=$(tail -1 <<<"$RESP"); BODY=$(sed '$d' <<<"$RESP")
+PEDIDO_ID=$(json "['id']" <<<"$BODY"); PEDIDO_NUM=$(json "['number']" <<<"$BODY"); PEDIDO_TOTAL=$(json "['total']" <<<"$BODY")
+if [ "$CODE" = "200" ] && [ -n "$PEDIDO_ID" ]; then ok "pedido $PEDIDO_NUM creado desde el carrito por ${PEDIDO_TOTAL} USD"; else ko "checkout: código $CODE"; echo "$BODY" | head -3; fi
+
+RESP=$(api GET /me/cart "" "$NUEVO_TOKEN")
+CARRITO_ITEMS=$(sed '$d' <<<"$RESP" | json "['itemCount']")
+[ "$CARRITO_ITEMS" = "0" ] && ok "el carrito queda vacío tras la compra" || ko "el carrito conserva $CARRITO_ITEMS líneas tras la compra"
 
 if [ -n "$PEDIDO_ID" ]; then
   RESP=$(api POST "/me/orders/${PEDIDO_ID}/pay" '{"method":"Card","card":{"number":"4242 4242 4242 4242","holder":"PRUEBA HUMO","expiry":"12/29","cvv":"123"}}' "$NUEVO_TOKEN")
