@@ -132,6 +132,12 @@ public class AccountRequest
     public string? Message { get; set; }
     public AccountRequestSource Source { get; set; } = AccountRequestSource.App;
     public AccountRequestStatus Status { get; set; } = AccountRequestStatus.Pending;
+    /// <summary>
+    /// Contraseña que eligió el solicitante en el app, ya cifrada.
+    /// Se conserva para que, cuando el administrador apruebe la cuenta, la persona pueda
+    /// entrar con la contraseña que ella misma escogió y no con una temporal por defecto.
+    /// </summary>
+    public string? PasswordHash { get; set; }
     /// <summary>Código de seguimiento que el solicitante consulta desde el app.</summary>
     public string TrackingCode { get; set; } = string.Empty;
     public Guid? ReviewedByUserId { get; set; }

@@ -100,7 +100,17 @@ public class AccountActivationService
                 Status = UserStatus.Active,
                 IsStaff = false,
             };
-            user.PasswordHash = _hasher.HashPassword(user, passwordFinal);
+            // Prioridad de la contraseña:
+            //   1. la que se pasa explícitamente en esta llamada (alta desde el panel),
+            //   2. la que el solicitante eligió en el app al pedir la cuenta,
+            //   3. una temporal por defecto (solo para solicitudes antiguas sin contraseña).
+            if (!string.IsNullOrWhiteSpace(password))
+                user.PasswordHash = _hasher.HashPassword(user, password);
+            else if (!string.IsNullOrWhiteSpace(solicitud.PasswordHash))
+                user.PasswordHash = solicitud.PasswordHash;
+            else
+                user.PasswordHash = _hasher.HashPassword(user, passwordFinal);
+
             _db.Users.Add(user);
             await _db.SaveChangesAsync(ct);
         }
