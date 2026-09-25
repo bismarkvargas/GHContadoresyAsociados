@@ -181,6 +181,26 @@ RESP=$(api GET /admin/clients "" "$NUEVO_TOKEN"); CODE=$(tail -1 <<<"$RESP")
 RESP=$(api GET "/me/documents" "" "$NUEVO_TOKEN"); CODE=$(tail -1 <<<"$RESP")
 [ "$CODE" = "200" ] && ok "el cliente sí accede a sus propios documentos" || ko "/me/documents devolvió $CODE"
 
+step "11 · Roles y permisos granulares (RBAC)"
+RESP=$(api POST /auth/login '{"email":"abogado@ghcontadores.net","password":"Gh.Abogado2026"}')
+CODE=$(tail -1 <<<"$RESP"); BODY=$(sed '$d' <<<"$RESP")
+ABOGADO_TOKEN=$(json "['accessToken']" <<<"$BODY")
+ABOGADO_PERMS=$(python3 -c "import sys,json;print(len(json.load(sys.stdin).get('permissions',[])))" <<<"$BODY" 2>/dev/null || echo 0)
+if [ "$CODE" = "200" ] && [ "$ABOGADO_PERMS" -gt 10 ]; then ok "el rol Abogado tiene $ABOGADO_PERMS permisos asignados"; else ko "login del abogado: código $CODE · $ABOGADO_PERMS permisos"; fi
+
+RESP=$(api GET "/admin/clients?pageSize=1" "" "$ABOGADO_TOKEN"); CODE=$(tail -1 <<<"$RESP")
+[ "$CODE" = "200" ] && ok "el Abogado sí puede ver el CRM (clients.view)" || ko "el Abogado obtuvo $CODE en /admin/clients (se esperaba 200)"
+
+RESP=$(api GET "/admin/users?pageSize=1" "" "$ABOGADO_TOKEN"); CODE=$(tail -1 <<<"$RESP")
+[ "$CODE" = "403" ] && ok "el Abogado NO puede gestionar usuarios (403)" || ko "el Abogado obtuvo $CODE en /admin/users (se esperaba 403)"
+
+RESP=$(api GET "/admin/settings" "" "$ABOGADO_TOKEN"); CODE=$(tail -1 <<<"$RESP")
+[ "$CODE" = "403" ] && ok "el Abogado NO puede ver los ajustes del sistema (403)" || ko "el Abogado obtuvo $CODE en /admin/settings (se esperaba 403)"
+
+RESP=$(api POST "/admin/clients" '{"clientType":"Individual","legalName":"Cliente creado por prueba","status":"Lead","source":"Web"}' "$ABOGADO_TOKEN")
+CODE=$(tail -1 <<<"$RESP")
+[ "$CODE" = "403" ] && ok "el Abogado NO puede crear clientes (sin clients.create)" || ko "el Abogado obtuvo $CODE al crear un cliente (se esperaba 403)"
+
 printf '\n\033[1m==================================================\033[0m\n'
 printf '  Pruebas superadas: \033[32m%d\033[0m   ·   Fallidas: \033[31m%d\033[0m\n' "$PASS" "$FAIL"
 printf '\033[1m==================================================\033[0m\n'
