@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/core_providers.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/gh_common.dart';

@@ -83,7 +83,7 @@ final notificationPreferencesProvider =
 
 /// Guarda un cambio puntual de preferencia (switch de la pantalla de perfil).
 Future<void> savePreference(
-  Ref ref,
+  WidgetRef ref,
   NotificationPreference preference,
 ) async {
   final client = await ref.read(apiBootstrapProvider.future);

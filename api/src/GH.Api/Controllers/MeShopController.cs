@@ -61,6 +61,14 @@ public class MeShopController : ControllerBase
             cart.Items.FirstOrDefault()?.Product?.Currency ?? "USD");
     }
 
+    /// <summary>Relee el carrito sin seguimiento para que la respuesta refleje exactamente lo guardado.</summary>
+    private async Task<CartDto> ReloadCartAsync(Guid cartId, CancellationToken ct)
+    {
+        var cart = await _db.Carts.AsNoTracking().Include(c => c.Items).ThenInclude(i => i.Product)
+            .FirstAsync(c => c.Id == cartId, ct);
+        return ToDto(cart);
+    }
+
     // ------------------------------------------------------------------ carrito
     [HttpGet("cart")]
     public async Task<ActionResult<CartDto>> Cart(CancellationToken ct) => Ok(ToDto(await GetOrCreateCartAsync(ct)));
@@ -83,25 +91,23 @@ public class MeShopController : ControllerBase
         else
         {
             // Se añade al DbSet (no solo a la colección) para que EF lo marque como Added:
-            // con una clave GUID ya asignada, añadirlo a la navegación lo marcaría como
+            // con una clave GUID ya asignada, añadirlo solo a la navegación lo marcaría como
             // Modified e intentaría un UPDATE de una fila que aún no existe.
-            var item = new CartItem
+            // EF rellena la colección del carrito por sí mismo (no hay que añadirlo dos veces).
+            _db.CartItems.Add(new CartItem
             {
                 CartId = cart.Id,
                 ProductId = product.Id,
                 Quantity = request.Quantity,
                 UnitPrice = product.Price,
                 Notes = request.Notes,
-            };
-            _db.CartItems.Add(item);
-            cart.Items.Add(item);
+            });
         }
 
         cart.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
 
-        var refreshed = await GetOrCreateCartAsync(ct);
-        return Ok(ToDto(refreshed));
+        return Ok(await ReloadCartAsync(cart.Id, ct));
     }
 
     [HttpPatch("cart/items/{id:guid}")]
@@ -116,8 +122,7 @@ public class MeShopController : ControllerBase
         cart.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
 
-        var refreshed = await GetOrCreateCartAsync(ct);
-        return Ok(ToDto(refreshed));
+        return Ok(await ReloadCartAsync(cart.Id, ct));
     }
 
     [HttpDelete("cart/items/{id:guid}")]
@@ -131,8 +136,7 @@ public class MeShopController : ControllerBase
             await _db.SaveChangesAsync(ct);
         }
 
-        var refreshed = await GetOrCreateCartAsync(ct);
-        return Ok(ToDto(refreshed));
+        return Ok(await ReloadCartAsync(cart.Id, ct));
     }
 
     [HttpDelete("cart")]

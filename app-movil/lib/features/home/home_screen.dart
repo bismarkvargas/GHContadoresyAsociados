@@ -759,7 +759,7 @@ class _LatestEvents extends ConsumerWidget {
                           Container(
                             width: 2,
                             height: 40,
-                            color: theme(context).colorScheme.outlineVariant,
+                            color: theme.colorScheme.outlineVariant,
                           ),
                         ],
                       ),
