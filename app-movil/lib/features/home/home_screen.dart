@@ -714,7 +714,7 @@ class _LatestEvents extends ConsumerWidget {
                           children: <Widget>[
                             Text(
                               n.title,
-                              style: theme(context).textTheme.titleMedium?.copyWith(
+                              style: theme.textTheme.titleMedium?.copyWith(
                                     fontSize: 14,
                                   ),
                             ),
@@ -723,12 +723,12 @@ class _LatestEvents extends ConsumerWidget {
                               n.body,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: theme(context).textTheme.bodySmall,
+                              style: theme.textTheme.bodySmall,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               GhFormat.relative(n.createdAt),
-                              style: theme(context).textTheme.bodySmall?.copyWith(
+                              style: theme.textTheme.bodySmall?.copyWith(
                                     fontSize: 11,
                                   ),
                             ),
@@ -769,7 +769,7 @@ class _LatestEvents extends ConsumerWidget {
                           children: <Widget>[
                             Text(
                               e.title,
-                              style: theme(context).textTheme.titleMedium?.copyWith(
+                              style: theme.textTheme.titleMedium?.copyWith(
                                     fontSize: 14,
                                   ),
                             ),
@@ -778,12 +778,12 @@ class _LatestEvents extends ConsumerWidget {
                                 e.description!,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme(context).textTheme.bodySmall,
+                                style: theme.textTheme.bodySmall,
                               ),
                             const SizedBox(height: 2),
                             Text(
                               '${e.actor ?? "Sistema"} · ${GhFormat.relative(e.createdAt)}',
-                              style: theme(context).textTheme.bodySmall?.copyWith(
+                              style: theme.textTheme.bodySmall?.copyWith(
                                     fontSize: 11,
                                   ),
                             ),
@@ -800,7 +800,6 @@ class _LatestEvents extends ConsumerWidget {
     );
   }
 
-  ThemeData theme(BuildContext context) => Theme.of(context);
 }
 
 class _DashboardSkeleton extends StatelessWidget {

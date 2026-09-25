@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 import 'gh_tokens.dart';
@@ -154,7 +155,7 @@ class GhTheme {
         unselectedItemColor: scheme.onSurfaceVariant,
         type: BottomNavigationBarType.fixed,
       ),
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: TabBarThemeData(
         labelColor: GhTokens.primary,
         unselectedLabelColor: scheme.onSurfaceVariant,
         indicatorColor: GhTokens.primary,

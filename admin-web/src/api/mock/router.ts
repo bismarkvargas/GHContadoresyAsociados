@@ -169,8 +169,7 @@ function list<T>(
   query: Record<string, string>,
   filter?: (item: T) => boolean,
   search?: (item: T) => (string | null | undefined)[],
-): Paginated<T> {
-  let out = items
+): Paginated<T> {  let out = items
   if (filter) out = out.filter(filter)
   if (search && query.search) out = out.filter((i) => matchesSearch(search(i), query.search))
   out = sortItems(out, query.sort, query.order)
@@ -182,6 +181,16 @@ function inFilter(value: string | null | undefined, raw: string | undefined): bo
   if (values.length === 0) return true
   if (!value) return false
   return values.includes(value)
+}
+
+/** Envuelve `list` con un tipo de retorno explícito (mejor inferencia en los handlers). */
+function paged<T>(
+  items: T[],
+  query: Record<string, string>,
+  filter?: (item: T) => boolean,
+  search?: (item: T) => (string | null | undefined)[],
+): Paginated<T> {
+  return list<T>(items, query, filter, search)
 }
 
 /** Filtro por rango de fechas ISO (se envía como `from`/`to`). */
@@ -1688,20 +1697,18 @@ route('GET', '/admin/payments/:id', (ctx) => {
 /* SOLICITUDES DE CUENTA                                               */
 /* ------------------------------------------------------------------ */
 
-route('GET', '/admin/account-requests', (ctx) => {
+route('GET', '/admin/account-requests', (ctx): Paginated<AccountRequest> & { pendingCount: number } => {
   const db = getDb()
-  return {
-    ...list(
-      db.accountRequests,
-      ctx.query,
-      (a) =>
-        inFilter(a.status, ctx.query.status) &&
-        inFilter(a.source, ctx.query.source) &&
-        inDateRange(a.createdAt, ctx.query),
-      (a) => [a.fullName, a.email, a.idNumber, a.company, a.phone],
-    ),
-    pendingCount: db.accountRequests.filter((a) => a.status === 'Pending').length,
-  }
+  const page = list<AccountRequest>(
+    db.accountRequests,
+    ctx.query,
+    (a) =>
+      inFilter(a.status, ctx.query.status) &&
+      inFilter(a.source, ctx.query.source) &&
+      inDateRange(a.createdAt, ctx.query),
+    (a) => [a.fullName, a.email, a.idNumber, a.company, a.phone],
+  )
+  return { ...page, pendingCount: db.accountRequests.filter((a) => a.status === 'Pending').length }
 })
 
 route('GET', '/admin/account-requests/:id', (ctx) => {

@@ -131,7 +131,7 @@ class GhStatus {
     'Otro',
   ];
 
-  static const Map<String, String> matterIcons = <String, IconData>{
+  static const Map<String, IconData> matterIcons = <String, IconData>{
     'Contable': Icons.calculate_outlined,
     'Tributario': Icons.receipt_long_outlined,
     'Legal': Icons.gavel_outlined,
