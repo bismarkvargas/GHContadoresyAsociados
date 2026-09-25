@@ -81,11 +81,16 @@ Navegador real (Chromium) contra el panel desplegado, con el modo demo **desacti
 
 | Comprobación | Resultado |
 |---|---|
-| `flutter analyze` | **No issues found!** |
+| `flutter analyze` | **No issues found!** (0 problemas) |
+| `flutter test` | **18 pasan · 0 fallan · 10 segundos** |
 | `flutter build apk --release` (con `API_BASE_URL` de producción) | **`app-release.apk` · 63,3 MB** (arm64-v8a, armeabi-v7a, x86_64) |
 | URL de la API embebida en el binario | `demostracion.es/ghcontadores/api/v1` (verificado dentro de `libapp.so`) |
 | Catálogo semilla incluido como activo | `assets/flutter_assets/assets/mock/catalog.seed.json` (89,7 KB) |
 | `dart run tool/verificar_urls.dart` | raíz y hub correctos con el prefijo de despliegue |
+
+Cobertura de la suite: carrito (3) · catálogo real de 62 servicios y 4 categorías (3) ·
+pasarela simulada aprobada/rechazada/pendiente/SINPE (4) · arranque y onboarding (2) ·
+catálogo del activo (2) · URLs del despliegue y enlaces firmados (4).
 
 Comando de compilación:
 
@@ -116,8 +121,19 @@ Todos ellos se detectaron **probando contra producción**, no en revisión de c�
 | 12 | El app vaciaba el carrito con una ruta que no existe | Media | `DELETE /me/cart`, según el contrato |
 | 13 | El app ofrecía eliminar la cuenta sin endpoint en la API | Media | `DELETE /me/profile` con baja, revocación de sesiones y aviso al panel |
 | 14 | `compileSdk` de los complementos Android | Alta: el APK no compilaba | Se unifica a 36 en todos los módulos |
+| 15 | El mock del app usaba esperas reales y colgaba la suite (10 minutos) | Media: la suite no servía como red de seguridad | Latencia inyectable (`mockLatencyOverride`); la suite pasa de 10 min a 10 s |
 
-## 6. Estado final de los datos de demostración
+## 6. Operación en producción
+
+| Elemento | Estado |
+|---|---|
+| `ghcontadores-api` (systemd) | `active (running)` · 249 MB de memoria |
+| Nginx | include `snippets/ghcontadores.conf` dentro del vhost de `demostracion.es`; el resto de aplicaciones del servidor intactas |
+| Copia de seguridad diaria | cron `15 3 * * *` → `/var/backups/ghcontadores` (base + documentos, retención 14 días), probada manualmente |
+| Puerto de la API | `127.0.0.1:8095` (sin exposición directa) |
+| Certificado | Let's Encrypt de `demostracion.es` (ya existente, reutilizado) |
+
+## 7. Estado final de los datos de demostración
 
 ```
 clientes 4 · expedientes 11 · tareas 30 · servicios 62 · pedidos 2 · pagos 2
