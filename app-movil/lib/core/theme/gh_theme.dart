@@ -61,7 +61,8 @@ class GhTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: isDark ? GhTokens.darkSurface2 : GhTokens.surface2,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         hintStyle: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
         labelStyle: text.bodyMedium,
         border: OutlineInputBorder(
@@ -74,7 +75,7 @@ class GhTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: GhTokens.controlRadius,
-          borderSide: const BorderSide(color: GhTokens.primary, width: 1.6),
+          borderSide: BorderSide(color: scheme.primary, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: GhTokens.controlRadius,
@@ -125,41 +126,58 @@ class GhTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: isDark ? GhTokens.darkSurface2 : GhTokens.surface2,
-        selectedColor: scheme.secondaryContainer,
+        // Estado seleccionado = acento de marca: verde lima con texto marino.
+        selectedColor: GhTokens.accent,
+        secondarySelectedColor: GhTokens.accent,
+        checkmarkColor: GhTokens.onAccent,
         side: BorderSide(color: scheme.outlineVariant),
-        labelStyle: text.labelMedium!,
+        labelStyle: text.labelMedium!.copyWith(
+          color: WidgetStateColor.resolveWith((states) =>
+              states.contains(WidgetState.selected)
+                  ? GhTokens.onAccent
+                  : scheme.onSurface),
+        ),
+        secondaryLabelStyle: text.labelMedium!.copyWith(
+          color: GhTokens.onAccent,
+        ),
         shape: RoundedRectangleBorder(borderRadius: GhTokens.controlRadius),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surfaceContainerLowest,
-        indicatorColor: scheme.secondaryContainer,
+        // La pestaña activa se marca con el acento de la marca (verde lima).
+        indicatorColor: GhTokens.accent,
         elevation: 0,
         height: 68,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return text.labelSmall?.copyWith(
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            color: selected ? GhTokens.primary : scheme.onSurfaceVariant,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            // El icono y la etiqueta activos van encima del indicador lima, así
+            // que no pueden ser azul marino (se perderían sobre el lima): blanco.
+            color: selected ? Colors.white : scheme.onSurfaceVariant,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
             size: 24,
-            color: selected ? GhTokens.primary : scheme.onSurfaceVariant,
+            color: selected ? Colors.white : scheme.onSurfaceVariant,
           );
         }),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: scheme.surfaceContainerLowest,
-        selectedItemColor: GhTokens.primary,
+        selectedItemColor: scheme.primary,
         unselectedItemColor: scheme.onSurfaceVariant,
         type: BottomNavigationBarType.fixed,
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: scheme.primary,
+        // La pestaña activa lleva la franja lima de la marca: el texto va blanco,
+        // nunca azul marino, para que se lea sobre el fondo oscuro de la barra.
+        labelColor: Colors.white,
         unselectedLabelColor: scheme.onSurfaceVariant,
-        indicatorColor: GhTokens.primary,
+        indicatorColor: GhTokens.accent,
+        indicatorSize: TabBarIndicatorSize.label,
         dividerColor: scheme.outlineVariant,
         labelStyle: text.labelLarge,
       ),
@@ -194,22 +212,32 @@ class GhTheme {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? Colors.white : null),
+            states.contains(WidgetState.selected) ? GhTokens.onAccent : null),
         trackColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? GhTokens.primary : null),
+            states.contains(WidgetState.selected) ? GhTokens.accent : null),
         trackOutlineColor:
             WidgetStateProperty.resolveWith((states) => scheme.outlineVariant),
       ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected) ? GhTokens.accent : null),
+        checkColor: const WidgetStatePropertyAll(GhTokens.onAccent),
+        side: BorderSide(color: scheme.outlineVariant, width: 1.6),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected) ? GhTokens.accent : null),
+      ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: scheme.primary,
-        linearTrackColor: scheme.secondaryContainer,
+        linearTrackColor: scheme.outlineVariant,
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: scheme.surfaceContainerLowest,
-        indicatorColor: scheme.secondaryContainer,
-        selectedIconTheme: const IconThemeData(color: GhTokens.primary),
-        selectedLabelTextStyle:
-            text.labelSmall?.copyWith(color: GhTokens.primary),
+        indicatorColor: GhTokens.accent,
+        // Igual que en la barra inferior: sobre el indicador lima, blanco.
+        selectedIconTheme: const IconThemeData(color: Colors.white),
+        selectedLabelTextStyle: text.labelSmall?.copyWith(color: Colors.white),
       ),
       dropdownMenuTheme: DropdownMenuThemeData(
         textStyle: text.bodyMedium,
@@ -229,10 +257,10 @@ class GhTheme {
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: GhTokens.ink,
+          color: scheme.inverseSurface,
           borderRadius: BorderRadius.circular(8),
         ),
-        textStyle: text.bodySmall?.copyWith(color: Colors.white),
+        textStyle: text.bodySmall?.copyWith(color: scheme.onInverseSurface),
       ),
     );
   }
@@ -243,14 +271,15 @@ class GhTheme {
     onPrimary: Colors.white,
     primaryContainer: GhTokens.primary50,
     onPrimaryContainer: GhTokens.primary600,
-    // El acento lima va en `tertiary`: franja, badges e indicadores.
+    // El acento lima va en `tertiary` y en `secondaryContainer`: franja, badges,
+    // indicador del elemento activo y fondos de estado seleccionado.
     secondary: GhTokens.accent,
-    onSecondary: GhTokens.primary,
-    secondaryContainer: GhTokens.accent50,
-    onSecondaryContainer: GhTokens.primary,
+    onSecondary: GhTokens.primary700,
+    secondaryContainer: GhTokens.accent,
+    onSecondaryContainer: GhTokens.primary700,
     tertiary: GhTokens.accent600,
     onTertiary: GhTokens.primary,
-    tertiaryContainer: GhTokens.accent50,
+    tertiaryContainer: GhTokens.accent,
     onTertiaryContainer: GhTokens.primary700,
     error: GhTokens.danger,
     onError: Colors.white,
@@ -281,12 +310,14 @@ class GhTheme {
     onPrimaryContainer: GhTokens.accent50,
     secondary: GhTokens.accent,
     onSecondary: GhTokens.primary700,
-    secondaryContainer: GhTokens.darkSurface2,
-    onSecondaryContainer: GhTokens.accent50,
+    // En oscuro el estado seleccionado también es lima: es el color de marca y
+    // el único con contraste suficiente sobre el fondo marino.
+    secondaryContainer: GhTokens.accent,
+    onSecondaryContainer: GhTokens.primary700,
     tertiary: GhTokens.accent,
     onTertiary: GhTokens.primary700,
-    tertiaryContainer: GhTokens.darkSurface2,
-    onTertiaryContainer: GhTokens.accent50,
+    tertiaryContainer: GhTokens.accent,
+    onTertiaryContainer: GhTokens.primary700,
     error: Color(0xFFFF8A7A),
     onError: Color(0xFF3B0A05),
     errorContainer: Color(0xFF5C1A12),

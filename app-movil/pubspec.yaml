@@ -1,7 +1,7 @@
 name: gh_contadores
 description: "GH Contadores y Asociados — app móvil híbrida (Android + iOS) con ecommerce de servicios contables, legales, municipales y tributarios."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.5.0
@@ -49,10 +49,16 @@ dependencies:
   # Permiso de notificaciones (Android 13+) y acceso a los ajustes de la app.
   permission_handler: ^11.3.1
 
+  # Acceso con huella / Face ID (inicio de sesión biométrico opcional).
+  local_auth: ^3.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+  # Tipos de error de local_auth (solo para los tests de la huella).
+  local_auth_platform_interface: ^1.1.0
 
 flutter:
   uses-material-design: true

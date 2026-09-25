@@ -146,7 +146,75 @@ funciona por SignalR, *polling* cada 15 s y notificaciones locales. Para activar
   sea visible sin backend. En la pantalla de cuenta pendiente hay un botón para **simular la
   aprobación del administrador**.
 
-## 6. Compilar para distribución
+## 6. Acceso con huella (inicio de sesion biometrico)
+
+El acceso con huella es **opcional** y se apoya en `local_auth` (huella en Android,
+Touch ID / Face ID en iOS). Nunca sustituye a la contrasena: es un atajo para volver a
+entrar en un dispositivo en el que el usuario ya inicio sesion.
+
+### Como se activa
+
+La huella es **de una cuenta**, no del telefono: se habilita despues de que el usuario
+inicie sesion **al menos una vez** y queda vinculada a esa cuenta (`gh_biometric_user_id`).
+Con eso la app reconoce quien puede entrar con huella:
+
+* **Vinculada a la cuenta con sesion guardada** - el boton dice *Entrar con su huella* y
+  entra directo (renovando la sesion con el refresh token si hacia falta).
+* **Sin vincular** (o vinculada a otra cuenta) - el boton esta igual en el login, dice
+  *Activar acceso con huella* y al pulsarlo **invita** a iniciar sesion con correo y
+  contrasena para habilitarla. Nunca se pide la huella para abrir una cuenta ajena.
+
+Ademas, tras el primer inicio de sesion con contrasena aparece (una sola vez) el aviso de
+marca *Activar acceso con huella* para vincularla, y el interruptor del perfil permite
+desvincularla o volver a vincularla.
+
+1. El usuario inicia sesion con **correo y contrasena** (unico camino obligatorio).
+2. Justo despues, y solo la primera vez, aparece el aviso de marca
+   *Activar acceso con huella* con los botones **Activar huella** / **Ahora no**, para
+   que confirme o descarte lo que ya viene activo. No se ofrece a invitados, ni en
+   arranques en frio, ni si el dispositivo no tiene lector o no tiene huellas registradas.
+3. Si acepta, la sesion guardada por `TokenStore` (tokens en `flutter_secure_storage`)
+   pasa a usarse sin contrasena y la huella queda **vinculada a esa cuenta**
+   (`gh_biometric_enabled` + `gh_biometric_user_id`). La clave `gh_biometric_offered`
+   recuerda que ya se le ofrecio, de modo que no se insiste nunca mas.
+
+### Como se desactiva
+
+* **Desde el perfil** - *Mi cuenta > Acceso con huella* (`SwitchListTile`). El interruptor
+  refleja el estado real y guarda la decision al apagarlo: desactivarla no se revierte sola
+  en el siguiente arranque (deja de pedirse la huella automaticamente al abrir el login).
+  La opcion de huella del login **no desaparece**: se puede volver a usar en cualquier momento.
+* **Automaticamente** - si el dispositivo se queda sin huellas utilizables, o si el
+  *refresh token* guardado deja de ser valido, la huella se desactiva y se explica el motivo.
+
+### Que ocurre en cada caso
+
+| Situacion | Comportamiento |
+|---|---|
+| Dispositivo sin sensor o sin soporte | No se ofrece la opcion; el interruptor del perfil queda deshabilitado con el motivo en el subtitulo. Si estaba activada, se desactiva con un aviso suave. |
+| El dispositivo pierde las huellas (se borraron en el sistema) | Se desvincula sola y se avisa: *El acceso con huella se desactivo porque este dispositivo ya no tiene huellas disponibles*. |
+| La sesion guardada es de otra cuenta | La huella de la cuenta anterior no abre la nueva: se limpia el vinculo y el login invita a habilitarla para el usuario actual. |
+| Lector sin huellas registradas | No se ofrece el boton (no hay nada que verificar) y el login explica en un aviso suave que hay que registrar una huella en los ajustes del sistema. |
+| El usuario cancela el dialogo | No pasa nada: se queda en el login normal, sin mensaje de error. |
+| La huella no se reconoce | Aviso *No pudimos verificar su huella. Ingrese con su contrasena.* y boton **Reintentar con la huella**. |
+| El refresh token caduco | Se pide la contrasena y se **desactiva** la huella con el aviso *Su sesion expiro. Ingrese su contrasena para volver a activar la huella.* |
+| Huella verificada | Entra con la sesion guardada (renovandola con `POST /auth/refresh` si hacia falta) y navega al inicio o a la cuenta pendiente de aprobacion. |
+
+### Requisitos nativos
+
+* **Android** - `MainActivity` extiende `FlutterFragmentActivity` (lo exige `local_auth`) y
+  el manifiesto declara `android.permission.USE_BIOMETRIC`.
+* **iOS** - `NSFaceIDUsageDescription` en `ios/Runner/Info.plist`.
+* Las cadenas de texto del dialogo del sistema las pone `biometricReasonFor(...)` en
+  `lib/core/auth/biometric_service.dart`.
+
+### Como se prueba
+
+`test/biometric_test.dart` usa `FakeBiometricService` (`test/helpers/fake_biometric.dart`)
+inyectado por `biometricServiceProvider`, de modo que no se toca el canal de plataforma:
+simula dispositivo sin lector, sin huellas, huella no reconocida, cancelacion, error del
+plugin y refresh token caducado.
+## 7. Compilar para distribución
 
 ### Android
 
@@ -167,7 +235,7 @@ flutter build ipa --release
 Genera `build/ios/ipa/*.ipa`. Recuerda configurar el *Team* y el *Bundle Identifier*
 (`net.ghcontadores.ghContadores`) en `ios/Runner.xcodeproj`.
 
-## 7. Pruebas
+## 8. Pruebas
 
 ```powershell
 flutter test          # tests de widget
@@ -183,7 +251,7 @@ Cobertura de los tests (`test/`):
 | `cart_flow_test.dart` | Agregar al carrito, badge, cantidades y totales (subtotal/IVA/total) |
 | `checkout_payment_test.dart` | Flujo de pago simulado **aprobado**, **rechazado** y **pendiente**, con recibo y expediente generado |
 
-## 8. Estructura del proyecto
+## 9. Estructura del proyecto
 
 ```
 lib/
@@ -214,7 +282,7 @@ lib/
     └── profile/                           # Datos, preferencias, seguridad, contacto
 ```
 
-## 9. Marca
+## 10. Marca
 
 Tokens en `lib/core/theme/gh_tokens.dart`, exactamente los del sitio en vivo
 (`docs/01-analisis-mercado.md` §7):
@@ -234,7 +302,18 @@ Tipografía del sistema con escala 12/14/16/20/24/32, radios 10 (controles) y 16
 sombra suave única, **Material 3** en claro y oscuro, transiciones Cupertino en iOS y
 `CupertinoTabBar` + hojas de acción nativas, con áreas táctiles ≥ 44 px y texto escalable.
 
-## 10. Contacto de la firma (usado en la app)
+### Elementos activos (pestanas, botones e indicadores)
+
+El elemento activo se marca con el **verde lima** de la marca como fondo (indicador de la
+pestana, franja del TabBar, badge del carrito y de notificaciones) y el texto/icono va en
+blanco. El lima nunca se usa como texto ni como icono sobre blanco: se ve mal y va contra
+la regla de marca.
+
+En `lib/core/theme/gh_theme.dart`: `navigationBarTheme`, `tabBarTheme` y
+`navigationRailTheme` usan `GhTokens.accent` como indicador y blanco como color del
+elemento activo. En `lib/core/layout/app_shell.dart` el badge del carrito/notificaciones
+usa fondo lima con el numero en azul marino (`GhTokens.onAccent`).
+## 11. Contacto de la firma (usado en la app)
 
 * Dirección: Ruta Nacional Secundaria 155, Huacas, Santa Cruz, Guanacaste, Costa Rica
 * Teléfonos: +506 2653 6634 · +506 8846 9454 (WhatsApp)

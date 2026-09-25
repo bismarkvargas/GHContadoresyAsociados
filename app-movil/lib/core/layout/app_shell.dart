@@ -94,12 +94,8 @@ class AppShell extends ConsumerWidget {
                               count: badges[i] ?? 0,
                             ),
                             selectedIcon: _BadgedIcon(
-                              icon: Icon(
-                                _items[i].activeIcon,
-                                color: GhTokens.primary,
-                              ),
+                              icon: Icon(_items[i].activeIcon),
                               count: badges[i] ?? 0,
-                              color: GhTokens.primary,
                             ),
                             label: Text(_items[i].label),
                           ),
@@ -188,11 +184,9 @@ class _MaterialBar extends StatelessWidget {
             selectedIcon: _BadgedIcon(
               icon: Icon(
                 items[i].activeIcon,
-                color: GhTokens.primary,
                 semanticLabel: items[i].label,
               ),
               count: badges[i] ?? 0,
-              color: GhTokens.primary,
             ),
             label: items[i].label,
           ),
@@ -217,10 +211,9 @@ class _CupertinoBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? GhTokens.darkSurface : Colors.white,
+        color: theme.colorScheme.surfaceContainerLowest,
         border: Border(
           top: BorderSide(color: theme.colorScheme.outlineVariant, width: 0.5),
         ),
@@ -233,20 +226,20 @@ class _CupertinoBar extends StatelessWidget {
           backgroundColor: Colors.transparent,
           border: null,
           height: 56,
-          activeColor: GhTokens.primary,
-          inactiveColor: GhTokens.muted,
+          // El elemento activo va en blanco para que se lea sobre el indicador
+          // lima de la marca.
+          activeColor: Colors.white,
+          inactiveColor: theme.colorScheme.onSurfaceVariant,
           items: <BottomNavigationBarItem>[
             for (int i = 0; i < items.length; i++)
               BottomNavigationBarItem(
                 icon: _BadgedIcon(
                   icon: Icon(items[i].cupertinoIcon, size: 24),
                   count: badges[i] ?? 0,
-                  color: GhTokens.primary,
                 ),
                 activeIcon: _BadgedIcon(
                   icon: Icon(items[i].cupertinoActiveIcon, size: 24),
                   count: badges[i] ?? 0,
-                  color: GhTokens.primary,
                 ),
                 label: items[i].label,
               ),
@@ -258,16 +251,17 @@ class _CupertinoBar extends StatelessWidget {
 }
 
 /// Icono con contador (badge) accesible.
+///
+/// El contador va en el acento de la marca con el número en azul marino: el
+/// lima nunca se usa como texto.
 class _BadgedIcon extends StatelessWidget {
   const _BadgedIcon({
     required this.icon,
     required this.count,
-    this.color,
   });
 
   final Widget icon;
   final int count;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +279,7 @@ class _BadgedIcon extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
               constraints: const BoxConstraints(minWidth: 16),
               decoration: BoxDecoration(
-                color: color ?? GhTokens.primary,
+                color: GhTokens.accent,
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -296,7 +290,7 @@ class _BadgedIcon extends StatelessWidget {
                 count > 99 ? '99+' : '$count',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: GhTokens.onAccent,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   height: 1.2,

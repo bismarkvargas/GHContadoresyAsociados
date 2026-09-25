@@ -16,6 +16,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/validators.dart';
+import '../../core/widgets/biometric_ui.dart';
 import '../../core/widgets/gh_common.dart';
 import '../../core/widgets/gh_guest.dart';
 import '../../core/widgets/gh_logo.dart';
@@ -76,7 +77,8 @@ class ProfileScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(user.fullName, style: themeData.textTheme.titleLarge),
+                      Text(user.fullName,
+                          style: themeData.textTheme.titleLarge),
                       const SizedBox(height: 2),
                       Text(user.email, style: themeData.textTheme.bodySmall),
                       const SizedBox(height: 6),
@@ -182,12 +184,15 @@ class ProfileScreen extends ConsumerWidget {
                   subtitle: Text(
                     theme == ThemeMode.system
                         ? 'Siguiendo el sistema'
-                        : (theme == ThemeMode.dark ? 'Activado' : 'Desactivado'),
+                        : (theme == ThemeMode.dark
+                            ? 'Activado'
+                            : 'Desactivado'),
                   ),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.language_rounded, color: GhTokens.primary),
+                  leading: const Icon(Icons.language_rounded,
+                      color: GhTokens.primary),
                   title: const Text('Idioma'),
                   subtitle: const Text('Español (Costa Rica) · es-CR'),
                   trailing: const Icon(Icons.lock_outline_rounded, size: 16),
@@ -196,18 +201,22 @@ class ProfileScreen extends ConsumerWidget {
                 const Divider(height: 1),
                 const _PushToggleTile(),
                 const Divider(height: 1),
+                // Acceso sin contraseña: refleja el estado real del dispositivo.
+                const BiometricToggleTile(),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.notifications_outlined,
                       color: GhTokens.primary),
                   title: const Text('Preferencias de notificación'),
-                  subtitle: const Text('Push, en la app y correo por tipo de aviso'),
+                  subtitle:
+                      const Text('Push, en la app y correo por tipo de aviso'),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () =>
-                      context.push(AppRoutes.notificationPreferences),
+                  onTap: () => context.push(AppRoutes.notificationPreferences),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.sync_rounded, color: GhTokens.primary),
+                  leading:
+                      const Icon(Icons.sync_rounded, color: GhTokens.primary),
                   title: const Text('Tiempo real'),
                   subtitle: Text(
                     useMocks
@@ -285,7 +294,8 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.phone_outlined, color: GhTokens.primary),
+                  leading:
+                      const Icon(Icons.phone_outlined, color: GhTokens.primary),
                   title: const Text('Llamar a la firma'),
                   subtitle: Text(AppConfig.contactPhonePrimaryPretty),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -296,7 +306,8 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.chat_outlined, color: GhTokens.success),
+                  leading:
+                      const Icon(Icons.chat_outlined, color: GhTokens.success),
                   title: const Text('WhatsApp'),
                   subtitle: Text(AppConfig.contactPhoneSecondaryPretty),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -328,7 +339,9 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => _launch(
                     context,
-                    Uri(scheme: 'mailto', path: AppConfig.contactEmailManagement),
+                    Uri(
+                        scheme: 'mailto',
+                        path: AppConfig.contactEmailManagement),
                   ),
                 ),
                 const Divider(height: 1),
@@ -486,7 +499,8 @@ class ProfileScreen extends ConsumerWidget {
   ) async {
     final formKey = GlobalKey<FormState>();
     final fullName = TextEditingController(text: user.fullName);
-    final phone = TextEditingController(text: user.phone ?? AppConfig.crDialCode);
+    final phone =
+        TextEditingController(text: user.phone ?? AppConfig.crDialCode);
     final idNumber = TextEditingController(text: user.idNumber ?? '');
     final company = TextEditingController(text: user.companyName ?? '');
     final address = TextEditingController(text: user.address ?? '');
@@ -519,15 +533,16 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: fullName,
-                  decoration: const InputDecoration(labelText: 'Nombre completo *'),
+                  decoration:
+                      const InputDecoration(labelText: 'Nombre completo *'),
                   validator: GhValidators.fullName,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: idNumber,
                   decoration: const InputDecoration(labelText: 'Cédula / NIT'),
-                  validator: (value) =>
-                      GhValidators.idNumber(value, clientType: user.clientType.name),
+                  validator: (value) => GhValidators.idNumber(value,
+                      clientType: user.clientType.name),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -556,7 +571,8 @@ class ProfileScreen extends ConsumerWidget {
                     Expanded(
                       child: TextFormField(
                         controller: province,
-                        decoration: const InputDecoration(labelText: 'Provincia'),
+                        decoration:
+                            const InputDecoration(labelText: 'Provincia'),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -579,16 +595,17 @@ class ProfileScreen extends ConsumerWidget {
                   child: FilledButton(
                     onPressed: () async {
                       if (!(formKey.currentState?.validate() ?? false)) return;
-                      final ok = await ref.read(authProvider.notifier).updateProfile(
-                            fullName: fullName.text.trim(),
-                            phone: phone.text.trim(),
-                            idNumber: idNumber.text.trim(),
-                            companyName: company.text.trim(),
-                            address: address.text.trim(),
-                            province: province.text.trim(),
-                            canton: canton.text.trim(),
-                            district: district.text.trim(),
-                          );
+                      final ok =
+                          await ref.read(authProvider.notifier).updateProfile(
+                                fullName: fullName.text.trim(),
+                                phone: phone.text.trim(),
+                                idNumber: idNumber.text.trim(),
+                                companyName: company.text.trim(),
+                                address: address.text.trim(),
+                                province: province.text.trim(),
+                                canton: canton.text.trim(),
+                                district: district.text.trim(),
+                              );
                       if (!sheetContext.mounted) return;
                       Navigator.of(sheetContext).pop();
                       if (!context.mounted) return;
@@ -724,4 +741,3 @@ class _PushToggleTile extends ConsumerWidget {
     );
   }
 }
-

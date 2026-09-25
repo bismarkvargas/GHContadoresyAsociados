@@ -6,6 +6,9 @@
     <!-- Push (Firebase Cloud Messaging) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Acceso con huella (local_auth) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+
     <!-- Contacto directo desde el perfil -->
     <uses-permission android:name="android.permission.CALL_PHONE"/>
 
