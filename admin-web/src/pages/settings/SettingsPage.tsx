@@ -53,17 +53,25 @@ export default function SettingsPage() {
     setDraft((d) => ({ ...d, [key]: value }))
   }
 
+  /**
+   * Al guardar se reenvía la **clave real de la API** (`apiKey`): el panel puede
+   * mostrar alias legibles (p. ej. `branding.primary` para `brand.primaryColor`)
+   * sin romper la escritura.
+   */
   function saveGroup(): void {
-    const payload = items.map((s) => ({ key: s.key, value: values[s.key] ?? s.value }))
+    const payload = items.map((s) => ({ key: s.apiKey ?? s.key, value: values[s.key] ?? s.value }))
     save.mutate(payload)
   }
 
   /** Guarda solo las claves indicadas (lo usa el switch de registro). */
   function saveKeys(keys: string[]): void {
-    const payload = keys.map((key) => ({
-      key,
-      value: values[key] ?? query.data?.items.find((s) => s.key === key)?.value ?? '',
-    }))
+    const payload = keys.map((key) => {
+      const ajuste = query.data?.items.find((s) => s.key === key)
+      return {
+        key: ajuste?.apiKey ?? key,
+        value: values[key] ?? ajuste?.value ?? '',
+      }
+    })
     save.mutate(payload)
   }
 

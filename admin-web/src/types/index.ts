@@ -557,6 +557,8 @@ export interface Setting {
   group: string
   /** Grupo tal y como lo devuelve la API (p. ej. «Registro»), para reenviarlo igual. */
   groupRaw?: string
+  /** Clave real en la API cuando el panel usa un alias (p. ej. brand.primaryColor). */
+  apiKey?: string
   description: string
   updatedAt: string
 }

@@ -794,7 +794,41 @@ const GRUPOS_API_A_PANEL: Record<string, string> = {
   messages: 'messages',
   pasarela: 'payment',
   pago: 'payment',
+  pagos: 'payment',
   payment: 'payment',
+  catalogo: 'catalog',
+  catálogo: 'catalog',
+  catalog: 'catalog',
+  expedientes: 'cases',
+  cases: 'cases',
+  ventas: 'sales',
+  sales: 'sales',
+}
+
+/**
+ * La API nombra los ajustes de marca como `brand.primaryColor`, `brand.accentColor`…,
+ * mientras la interfaz usa `branding.primary`, `branding.accent`… Se traducen en
+ * ambos sentidos (y se aceptan las dos formas al leer).
+ */
+const CLAVES_API_A_PANEL: Record<string, string> = {
+  'brand.primaryColor': 'branding.primary',
+  'brand.accentColor': 'branding.accent',
+  'brand.inkColor': 'branding.ink',
+  'brand.successColor': 'branding.success',
+  'brand.logoUrl': 'branding.logoLight',
+  'brand.logoLightUrl': 'branding.logoLight',
+  'brand.iconUrl': 'branding.logoIcon',
+  'brand.name': 'branding.legalName',
+  'brand.shortName': 'branding.shortName',
+}
+
+const CLAVES_PANEL_A_API: Record<string, string> = Object.fromEntries(
+  Object.entries(CLAVES_API_A_PANEL).map(([api, panel]) => [panel, api]),
+)
+
+/** Traduce una clave del panel a la que espera la API (si tiene equivalente). */
+export function claveParaApi(clave: string): string {
+  return CLAVES_PANEL_A_API[clave] ?? clave
 }
 
 export function grupoDeAjuste(grupo: string): string {
@@ -802,26 +836,53 @@ export function grupoDeAjuste(grupo: string): string {
   return GRUPOS_API_A_PANEL[clave] ?? clave
 }
 
+/** ¿Ya hay un ajuste con esa clave entre los leídos? */
+function yaPresente(items: Setting[], clave: string): boolean {
+  return items.some((s) => s.key === clave)
+}
+
 export function normalizeSettings(raw: unknown, fallbackRate = 520): NormalizedSettings {
   const list = Array.isArray(raw) ? raw : asArray<Rec>(asRecord(raw).items)
-  const items: Setting[] = list.map((entry, i) => {
+  const items: Setting[] = []
+  const groups: Record<string, Setting[]> = {}
+
+  for (const [i, entry] of list.entries()) {
     const s = asRecord(entry)
     const grupoOriginal = str(s.group, 'company')
-    return {
-      key: str(s.key, `setting.${i}`),
-      value: str(s.value),
-      // Se conserva el grupo original para poder reenviarlo tal cual a la API.
-      group: grupoDeAjuste(grupoOriginal),
+    const claveApi = str(s.key, `setting.${i}`)
+    const valor = str(s.value)
+    const grupoPanel = grupoDeAjuste(grupoOriginal)
+
+    // Un color de marca expuesto con otro nombre también se publica como token del
+    // panel (branding.primary / branding.accent), sin duplicar si ya existe.
+    const aliasPorColor =
+      /^#[0-9a-f]{6}$/i.test(valor) && grupoPanel === 'branding'
+        ? /primary/i.test(claveApi)
+          ? 'branding.primary'
+          : /accent|lima/i.test(claveApi)
+            ? 'branding.accent'
+            : null
+        : null
+
+    const disponibles = [...items, ...Object.values(groups).flat()]
+    const clavePanel = aliasPorColor && !yaPresente(disponibles, aliasPorColor)
+      ? aliasPorColor
+      : (CLAVES_API_A_PANEL[claveApi] ?? claveApi)
+
+    const item: Setting = {
+      key: clavePanel,
+      value: valor,
+      group: grupoPanel,
       groupRaw: grupoOriginal,
-      description: str(s.description, str(s.key)),
+      description: str(s.description, claveApi),
       updatedAt: str(s.updatedAt ?? new Date().toISOString()),
+      apiKey: claveApi,
     }
-  })
-  const groups: Record<string, Setting[]> = {}
-  for (const s of items) {
-    groups[s.group] = groups[s.group] ?? []
-    groups[s.group]!.push(s)
+    items.push(item)
+    groups[grupoPanel] = groups[grupoPanel] ?? []
+    groups[grupoPanel]!.push(item)
   }
+
   const rate = items.find((s) => /usdToCrc|cambio|exchange/i.test(s.key))
   return { items, groups, exchangeRate: rate ? num(rate.value, fallbackRate) : fallbackRate }
 }
