@@ -24,9 +24,11 @@ public class PublicController : ControllerBase
     private readonly INotificationService _notifications;
     private readonly IStorageService _storage;
     private readonly IAuditLogger _audit;
+    private readonly AccountActivationService _activacion;
 
     public PublicController(GhDbContext db, ICodeGenerator codes, IRealtimeNotifier realtime,
-        INotificationService notifications, IStorageService storage, IAuditLogger audit)
+        INotificationService notifications, IStorageService storage, IAuditLogger audit,
+        AccountActivationService activacion)
     {
         _db = db;
         _codes = codes;
@@ -34,6 +36,7 @@ public class PublicController : ControllerBase
         _notifications = notifications;
         _storage = storage;
         _audit = audit;
+        _activacion = activacion;
     }
 
     /// <summary>Información de marca, contacto y configuración de venta del app.</summary>
@@ -48,13 +51,16 @@ public class PublicController : ControllerBase
             Get("sales.secondaryCurrency", "CRC"),
             decimal.TryParse(Get("sales.usdToCrc", "520"), out var rate) ? rate : 520m);
 
+        var modo = await _activacion.GetModeAsync(ct);
+        var automatico = AccountActivationService.EsAutomatico(modo);
+
         return Ok(new SiteDto(
             new BrandDto(
                 Get("brand.name", "GH Contadores & Asociados"),
                 Get("brand.shortName", "GH Contadores"),
-                Get("brand.primaryColor", "#DF3131"),
-                Get("brand.inkColor", "#212121"),
-                Get("brand.accentColor", "#E62214"),
+                Get("brand.primaryColor", "#1E2B58"),
+                Get("brand.inkColor", "#1E2B58"),
+                Get("brand.accentColor", "#C4D82D"),
                 Get("brand.successColor", "#008250"),
                 Get("brand.logoUrl")),
             new CompanyDto(
@@ -74,6 +80,12 @@ public class PublicController : ControllerBase
                 Get("payments.testCardDeclined", "4000 0000 0000 0002"),
                 Get("payments.testCardPending", "4000 0000 0000 9995"),
                 true),
+            new RegistrationConfigDto(
+                modo,
+                automatico,
+                automatico
+                    ? "Cree su cuenta y empiece a comprar de inmediato: se activa al instante."
+                    : Get("registration.message", "Solicite su cuenta: GH Contadores la revisa y la activa.")),
             Get("catalog.sourceUrl", "https://www.ghcontadores.net/category/servicios")));
     }
 
@@ -203,6 +215,52 @@ public class PublicController : ControllerBase
         _db.AccountRequests.Add(entity);
         await _db.SaveChangesAsync(ct);
 
+        // Modo configurado por el administrador (Ajustes → Registro de clientes):
+        //   · automatic → la cuenta se activa al instante, sin visto bueno.
+        //   · approval  → queda pendiente y aparece en el panel para aprobarla o rechazarla.
+        var modo = await _activacion.GetModeAsync(ct);
+        if (AccountActivationService.EsAutomatico(modo))
+        {
+            if (!string.IsNullOrWhiteSpace(request.Password) && request.Password.Length < 8)
+                return BadRequest(new ProblemDetails
+                {
+                    Title = "Contraseña demasiado corta",
+                    Detail = "La contraseña debe tener al menos 8 caracteres.",
+                    Status = 400,
+                });
+
+            var resultado = await _activacion.ActivarAsync(entity, password: request.Password, ct: ct);
+
+            await _audit.LogAsync("auto-approve", "AccountRequest", entity.Id.ToString(),
+                after: new { entity.Email, clientCode = resultado.Client.Code, modo }, ct: ct);
+
+            await _realtime.ToStaffAsync("accountrequest.created", new
+            {
+                id = entity.Id,
+                fullName = entity.FullName,
+                email = entity.Email,
+                phone = entity.Phone,
+                clientType = entity.ClientType.ToString(),
+                company = entity.Company,
+                trackingCode = entity.TrackingCode,
+                autoApproved = true,
+                createdAt = entity.CreatedAt,
+            }, ct);
+
+            await _notifications.NotifyStaffAsync(NotificationType.System,
+                "Cuenta creada automáticamente",
+                $"{entity.FullName} se registró y su cuenta quedó activa (modo de registro automático).",
+                deepLink: $"/admin/clients/{resultado.Client.Id}",
+                data: new { accountRequestId = entity.Id, clientId = resultado.Client.Id });
+
+            return Ok(new AccountRequestStatusDto(entity.TrackingCode, entity.Email, entity.Status,
+                AccessResolver.Label(entity.Status), null, entity.CreatedAt, entity.ReviewedAt, true,
+                AutoApproved: true,
+                TemporaryPassword: resultado.PasswordTemporal,
+                ClientId: resultado.Client.Id,
+                ClientCode: resultado.Client.Code));
+        }
+
         await OnAccountRequestCreatedAsync(entity, ct);
 
         return Ok(new AccountRequestStatusDto(entity.TrackingCode, entity.Email, entity.Status,
@@ -224,9 +282,16 @@ public class PublicController : ControllerBase
         if (request is null) return NotFound(new ProblemDetails { Title = "Solicitud no encontrada", Status = 404 });
 
         var canLogin = await _db.Users.AnyAsync(u => u.Email == normalized && u.Status == UserStatus.Active && !u.IsDeleted, ct);
+        var cliente = canLogin
+            ? await _db.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Email == normalized || c.User!.Email == normalized, ct)
+            : null;
 
         return Ok(new AccountRequestStatusDto(request.TrackingCode, request.Email, request.Status,
-            AccessResolver.Label(request.Status), request.RejectionReason, request.CreatedAt, request.ReviewedAt, canLogin));
+            AccessResolver.Label(request.Status), request.RejectionReason, request.CreatedAt, request.ReviewedAt,
+            canLogin,
+            AutoApproved: request.ReviewedByUserId is null && request.Status == AccountRequestStatus.Approved,
+            ClientId: request.CreatedClientId,
+            ClientCode: cliente?.Code));
     }
 
     /// <summary>Envía una solicitud de cotización desde la web o el app.</summary>

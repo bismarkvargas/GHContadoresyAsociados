@@ -10,7 +10,7 @@ using TaskStatus = GH.Domain.TaskStatus;
 
 namespace GH.Api.Controllers.Admin;
 
-/// <summary>Panel de control y explotaciÃ³n de datos del negocio.</summary>
+/// <summary>Panel de control y explotación de datos del negocio.</summary>
 [ApiController]
 [Route("api/v1/admin")]
 [Authorize]
@@ -56,7 +56,7 @@ public class AdminDashboardController : ControllerBase
         var unreadMessages = await _db.Messages.CountAsync(m => m.IsFromClient && m.ReadByStaffAt == null, ct);
         var documentsThisMonth = await _db.Documents.CountAsync(d => !d.IsDeleted && d.UploadedAt >= monthStart, ct);
 
-        // Ventas de los Ãºltimos 6 meses.
+        // Ventas de los últimos 6 meses.
         var since = MonthStart(-5);
         var ordersForChart = await _db.Orders.AsNoTracking()
             .Where(o => o.CreatedAt >= since)
@@ -97,7 +97,7 @@ public class AdminDashboardController : ControllerBase
         var recentOrders = await _db.Orders.AsNoTracking().Include(o => o.Client)
             .OrderByDescending(o => o.CreatedAt).Take(6).ToListAsync(ct);
         activity.AddRange(recentOrders.Select(o => new RecentActivityDto(
-            o.Id.ToString(), "order", $"Pedido {o.Number} Â· {o.Total:N2} {o.Currency}",
+            o.Id.ToString(), "order", $"Pedido {o.Number} · {o.Total:N2} {o.Currency}",
             AccessResolver.Label(o.Status), o.CustomerName ?? o.Client?.LegalName, o.CreatedAt, $"/admin/orders/{o.Id}")));
 
         var recentRequests = await _db.AccountRequests.AsNoTracking()
@@ -143,7 +143,7 @@ public class AdminDashboardController : ControllerBase
             .ToList();
 
         var items = paid.SelectMany(o => o.Items).ToList();
-        var byCategory = items.GroupBy(i => i.Product?.Category?.Name ?? "Sin categorÃ­a")
+        var byCategory = items.GroupBy(i => i.Product?.Category?.Name ?? "Sin categoría")
             .Select(g => new NameCountDto(g.Key, null, g.Sum(i => i.Quantity), g.Sum(i => i.Total))).ToList();
         var topProducts = items.GroupBy(i => i.NameSnapshot)
             .Select(g => new NameCountDto(g.Key, null, g.Sum(i => i.Quantity), g.Sum(i => i.Total)))
