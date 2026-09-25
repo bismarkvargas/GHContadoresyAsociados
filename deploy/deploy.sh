@@ -37,9 +37,12 @@ rm -rf "$REPO_DIR/api/src/GH.Api/publish"
 
 log "3/8 · Instalando la API en $API_DIR"
 mkdir -p "$API_DIR" "$API_DIR/storage/documents"
-# Se conserva appsettings.Production.json (secretos) y los documentos subidos.
+# Se conservan los archivos que NO vienen del repositorio: la configuración de producción,
+# los documentos subidos y las credenciales de Firebase. Sin excluir estas últimas, el
+# `--delete` las borra en cada despliegue y el push deja de funcionar en silencio.
 rsync -a --delete \
   --exclude 'appsettings.Production.json' \
+  --exclude 'firebase-service-account.json' \
   --exclude 'storage/' \
   "$REPO_DIR/api/src/GH.Api/publish/" "$API_DIR/"
 
