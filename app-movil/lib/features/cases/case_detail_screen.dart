@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/case_file.dart';
 import '../../core/models/document.dart';
 import '../../core/providers/cases_provider.dart';
-import '../../core/providers/core_providers.dart';
 import '../../core/providers/documents_provider.dart';
 import '../../core/providers/messages_provider.dart';
 import '../../core/router/app_router.dart';

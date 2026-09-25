@@ -6,7 +6,6 @@ import '../mock/mock_api_client.dart';
 import '../mock/mock_seed.dart';
 import '../models/catalog.dart';
 import '../models/site_info.dart';
-import '../models/user.dart';
 import '../network/api_client.dart';
 import '../network/dio_api_client.dart';
 import '../push/push_service.dart';

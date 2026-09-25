@@ -20,7 +20,6 @@ class CartScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(cartProvider);
     final cart = state.cart;
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(

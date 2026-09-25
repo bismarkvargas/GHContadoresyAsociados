@@ -33,6 +33,21 @@ async function call<T = any>(
   })
 }
 
+/** Ejecuta y devuelve el error capturado (sin abortar la prueba). */
+async function expectError(
+  method: string,
+  url: string,
+  body?: unknown,
+  token?: string,
+): Promise<MockHttpError | null> {
+  try {
+    await call(method, url, body, token)
+    return null
+  } catch (error) {
+    return error instanceof MockHttpError ? error : null
+  }
+}
+
 async function main(): Promise<void> {
   console.log('== Seed de la base mock ==')
   const db = await buildSeedDb()
@@ -75,19 +90,10 @@ async function main(): Promise<void> {
     `(${lawyerPerms.length} < ${adminLogin.data.permissions.length})`,
   )
 
-  try {
-    await call('POST', '/auth/login', { email: 'admin@ghcontadores.net', password: 'mala' })
-    check('login con contraseña errónea devuelve 401', false)
-  } catch (error) {
-    check('login con contraseña errónea devuelve 401', error instanceof MockHttpError && error.status === 401)
-  }
-
-  try {
-    await call('GET', '/admin/dashboard/summary')
-    check('sin token devuelve 401', false)
-  } catch (error) {
-    check('sin token devuelve 401', error instanceof MockHttpError && error.status === 401)
-  }
+  check('login con contraseña errónea devuelve 401', (await expectError('POST', '/auth/login', { email: 'admin@ghcontadores.net', password: 'mala' }))?.status === 401)
+  check('sin token devuelve 401', (await expectError('GET', '/admin/dashboard/summary'))?.status === 401)
+  check('sin token en /admin/clients devuelve 401', (await expectError('GET', '/admin/clients'))?.status === 401)
+  check('sin token en /admin/users devuelve 401', (await expectError('GET', '/admin/users'))?.status === 401)
 
   console.log('== Contrato de listados (paginación, filtros, orden) ==')
   const clients = await call('GET', '/admin/clients?page=1&pageSize=5&sort=code&order=asc', undefined, adminToken)
@@ -211,28 +217,28 @@ async function main(): Promise<void> {
   check('historial de 2 versiones', versions.data.length === 2, `(${versions.data.length})`)
   check('solo la última es actual', versions.data.filter((d: any) => d.isCurrent).length === 1)
 
-  try {
-    await call(
-      'POST',
-      '/admin/documents',
-      { originalName: 'virus.exe', contentType: 'application/x-msdownload', sizeBytes: 1000 },
-      adminToken,
-    )
-    check('rechaza tipo de archivo no permitido', false)
-  } catch (error) {
-    check('rechaza tipo de archivo no permitido', error instanceof MockHttpError && error.status === 400)
-  }
-  try {
-    await call(
-      'POST',
-      '/admin/documents',
-      { originalName: 'gigante.pdf', contentType: 'application/pdf', sizeBytes: 30 * 1024 * 1024 },
-      adminToken,
-    )
-    check('rechaza archivos > 25 MB', false)
-  } catch (error) {
-    check('rechaza archivos > 25 MB', error instanceof MockHttpError && error.status === 400)
-  }
+  check(
+    'rechaza tipo de archivo no permitido',
+    (
+      await expectError(
+        'POST',
+        '/admin/documents',
+        { originalName: 'virus.exe', contentType: 'application/x-msdownload', sizeBytes: 1000 },
+        adminToken,
+      )
+    )?.status === 400,
+  )
+  check(
+    'rechaza archivos > 25 MB',
+    (
+      await expectError(
+        'POST',
+        '/admin/documents',
+        { originalName: 'gigante.pdf', contentType: 'application/pdf', sizeBytes: 30 * 1024 * 1024 },
+        adminToken,
+      )
+    )?.status === 400,
+  )
 
   console.log('== Solicitudes de cuenta: aprobar y rechazar ==')
   const pending = await call('GET', '/admin/account-requests?status=Pending', undefined, adminToken)
@@ -256,20 +262,22 @@ async function main(): Promise<void> {
     adminToken,
   )
   check('rechazar guarda motivo', rejected.data.status === 'Rejected' && !!rejected.data.rejectionReason)
-  try {
-    await call(
-      'POST',
-      `/admin/account-requests/${pending.data.items[1].id}/reject`,
-      { reason: 'otra vez' },
-      adminToken,
-    )
-    check('no se puede revisar dos veces', false)
-  } catch (error) {
-    check('no se puede revisar dos veces', error instanceof MockHttpError && error.status === 400)
-  }
+  check(
+    'no se puede revisar dos veces',
+    (
+      await expectError(
+        'POST',
+        `/admin/account-requests/${pending.data.items[1].id}/reject`,
+        { reason: 'otra vez' },
+        adminToken,
+      )
+    )?.status === 400,
+  )
 
   console.log('== Pedidos: pagado, expediente y reembolso ==')
-  const paidOrder = db.orders.find((o) => o.status === 'Paid')!
+  const paidOrder = db.orders.find(
+    (o) => o.status === 'Paid' && o.items.some((i) => !i.caseFileId),
+  )!
   const caseCountBefore = db.caseFiles.length
   const created = await call('POST', `/admin/orders/${paidOrder.id}/create-case`, undefined, adminToken)
   check('genera expediente desde pedido', created.data.created.length > 0, `(${created.data.created.length})`)
@@ -296,12 +304,10 @@ async function main(): Promise<void> {
     'roles del sistema marcados',
     roles.data.filter((r: any) => r.isSystem).length === 6,
   )
-  try {
-    await call('DELETE', `/admin/roles/${roles.data[0].id}`, undefined, adminToken)
-    check('no se puede borrar un rol del sistema', false)
-  } catch (error) {
-    check('no se puede borrar un rol del sistema', error instanceof MockHttpError && error.status === 400)
-  }
+  check(
+    'no se puede borrar un rol del sistema',
+    (await expectError('DELETE', `/admin/roles/${roles.data[0].id}`, undefined, adminToken))?.status === 400,
+  )
   const custom = await call(
     'POST',
     '/admin/roles',
@@ -332,12 +338,17 @@ async function main(): Promise<void> {
   check('suspender usuario', suspended.data.status === 'Suspended')
   const reset = await call('POST', `/admin/users/${staffUser.id}/reset-password`, {}, adminToken)
   check('reset de contraseña devuelve temporal', !!reset.data.temporaryPassword)
-  try {
-    await call('PATCH', `/admin/users/${db.users.find((u) => u.id === 'user-admin')!.id}/status`, { status: 'Suspended' }, adminToken)
-    check('no puede suspenderse a sí mismo', false)
-  } catch (error) {
-    check('no puede suspenderse a sí mismo', error instanceof MockHttpError && error.status === 400)
-  }
+  check(
+    'no puede suspenderse a sí mismo',
+    (
+      await expectError(
+        'PATCH',
+        `/admin/users/${db.users.find((u) => u.id === 'user-admin')!.id}/status`,
+        { status: 'Suspended' },
+        adminToken,
+      )
+    )?.status === 400,
+  )
 
   console.log('== Cotizaciones ==')
   const quotes = await call('GET', '/admin/quotes?status=New', undefined, adminToken)
@@ -399,18 +410,14 @@ async function main(): Promise<void> {
   check('consulta de estado por correo', status.data.status === 'Pending')
   const health = await call('GET', '/health')
   check('health responde', health.data.status === 'Healthy')
-  try {
-    await call('GET', '/admin/cases/inexistente', undefined, adminToken)
-    check('recurso inexistente devuelve 404', false)
-  } catch (error) {
-    check('recurso inexistente devuelve 404', error instanceof MockHttpError && error.status === 404)
-  }
-  try {
-    await call('GET', '/ruta/que/no/existe', undefined, adminToken)
-    check('ruta desconocida devuelve 404', false)
-  } catch (error) {
-    check('ruta desconocida devuelve 404', error instanceof MockHttpError && error.status === 404)
-  }
+  check(
+    'recurso inexistente devuelve 404',
+    (await expectError('GET', '/admin/cases/inexistente', undefined, adminToken))?.status === 404,
+  )
+  check(
+    'ruta desconocida devuelve 404',
+    (await expectError('GET', '/ruta/que/no/existe', undefined, adminToken))?.status === 404,
+  )
 
   console.log('== Latencia simulada ==')
   const t0 = Date.now()

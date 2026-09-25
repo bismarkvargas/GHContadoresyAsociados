@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/cart_provider.dart';
-import '../providers/core_providers.dart';
 import '../providers/notifications_provider.dart';
 import '../theme/gh_tokens.dart';
 import '../widgets/in_app_banner.dart';

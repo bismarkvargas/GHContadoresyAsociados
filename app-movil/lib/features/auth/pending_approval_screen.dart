@@ -13,7 +13,6 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/widgets/gh_branding.dart';
 import '../../core/widgets/gh_common.dart';
-import '../../core/widgets/gh_state_views.dart';
 
 /// Pantalla de espera mientras el administrador aprueba la cuenta.
 ///

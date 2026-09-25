@@ -4,12 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/cases_provider.dart';
-import '../../core/providers/core_providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/async_guard.dart';
 import '../../core/widgets/gh_branding.dart';
-import '../../core/widgets/gh_common.dart';
 import '../../core/widgets/gh_skeleton.dart';
 import '../../core/widgets/gh_state_views.dart';
 import '../../core/widgets/product_card.dart';

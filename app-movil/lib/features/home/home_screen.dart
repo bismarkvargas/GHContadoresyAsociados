@@ -11,7 +11,6 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/cart_provider.dart';
 import '../../core/providers/cases_provider.dart';
 import '../../core/providers/catalog_provider.dart';
-import '../../core/providers/core_providers.dart';
 import '../../core/providers/notifications_provider.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';

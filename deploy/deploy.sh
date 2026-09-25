@@ -47,6 +47,10 @@ log "4/8 · Compilando el panel de administración"
 if [ -d "$REPO_DIR/admin-web" ] && [ -f "$REPO_DIR/admin-web/package.json" ]; then
   cd "$REPO_DIR/admin-web"
   if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+  # El panel desplegado usa la API real: el modo demo solo se activa en local.
+  VITE_API_URL=/ghcontadores/api/v1 \
+  VITE_USE_MOCKS=false \
+  VITE_HUB_URL=/ghcontadores/hubs/realtime \
   npm run build
   mkdir -p "$ADMIN_DIR"
   rsync -a --delete "$REPO_DIR/admin-web/dist/" "$ADMIN_DIR/"

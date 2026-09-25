@@ -7,7 +7,6 @@ import '../models/document.dart';
 import '../models/message.dart';
 import '../models/order.dart';
 import '../models/user.dart';
-import '../utils/json.dart';
 
 /// Datos semilla del modo demo (2 expedientes, tareas, documentos,
 /// pedidos, mensajes y notificaciones coherentes entre sí).

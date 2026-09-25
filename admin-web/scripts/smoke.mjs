@@ -41,6 +41,7 @@ const entry = path.join(outDir, 'smoke-entry.mjs')
 
 await build({
   root,
+  configFile: false,
   logLevel: 'warn',
   resolve: { alias: { '@': path.join(root, 'src') } },
   define: {
@@ -57,7 +58,7 @@ await build({
     minify: false,
     rollupOptions: {
       input: path.join(root, 'scripts', 'smoke.ts'),
-      output: { entryFileNames: 'smoke-entry.mjs' },
+      output: { entryFileNames: 'smoke-entry.mjs', manualChunks: undefined },
     },
   },
 })

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/notification.dart';
 import '../../core/providers/core_providers.dart';
 import '../../core/providers/notifications_provider.dart';
-import '../../core/providers/realtime_provider.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/formatters.dart';

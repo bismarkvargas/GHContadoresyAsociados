@@ -1269,7 +1269,7 @@ route('POST', '/admin/documents', (ctx) => {
       !d.isDeleted &&
       d.originalName === originalName &&
       (d.caseFileId ?? '') === (caseFileId ?? '') &&
-      (d.clientId ?? '') === (str(ctx.body.clientId) || ''),
+      (d.clientId ?? '') === (ctx.body.clientId ? str(ctx.body.clientId) : (caseFile?.clientId ?? '')),
   )
   const version = previous.length + 1
   for (const p of previous) p.isCurrent = false
@@ -1280,7 +1280,7 @@ route('POST', '/admin/documents', (ctx) => {
     caseFileId,
     orderId: ctx.body.orderId ? str(ctx.body.orderId) : null,
     category: (str(ctx.body.category, 'Otro') as DocumentItem['category']) || 'Otro',
-    fileName: `${caseFile ? caseFile.code : 'cliente'}-v${version}-${originalName}`,
+    fileName: `${caseFile ? caseFile.code : 'cliente'}-${originalName}`,
     originalName,
     contentType,
     sizeBytes,
@@ -2417,11 +2417,18 @@ export async function handleMockRequest<T = unknown>(req: MockRequest): Promise<
   }
 
   const { route: matched, params } = matchRoute(req.method.toUpperCase(), path)
+
+  // Todo /admin/* exige token válido (espeja la política de autorización de la API real).
+  const headers: Record<string, string> = req.headers ?? {}
+  if (path.startsWith('/admin') && !currentActorId(headers)) {
+    throw new MockHttpError(401, 'Token ausente o expirado.')
+  }
+
   const data = await matched.handler({
     params,
     query,
     body: parseBody(req.body),
-    headers: req.headers ?? {},
+    headers,
     method: req.method.toUpperCase(),
     path,
   })

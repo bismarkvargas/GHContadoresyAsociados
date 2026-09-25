@@ -46,6 +46,9 @@ app-movil/ios/Runner.xcworkspace/xcuserdata/
 .env
 .env.*
 !.env.example
+# Excepción: la configuración de compilación del panel no contiene secretos
+# (solo rutas públicas de la API) y el servidor la necesita para compilar.
+!admin-web/.env.production
 *.pfx
 *.p12
 *.keystore

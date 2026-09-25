@@ -7,7 +7,6 @@ import '../../core/providers/cart_provider.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/formatters.dart';
-import '../../core/utils/status_labels.dart';
 import '../../core/widgets/gh_common.dart';
 import '../../core/widgets/gh_skeleton.dart';
 import '../../core/widgets/gh_state_views.dart';
