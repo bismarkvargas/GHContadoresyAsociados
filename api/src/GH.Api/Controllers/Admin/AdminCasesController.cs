@@ -564,8 +564,9 @@ public class AdminCasesController : ControllerBase
     [HttpPost("{id:guid}/documents")]
     [HasPermission("documents.upload")]
     [RequestSizeLimit(52_428_800)]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<DocumentDto>> UploadDocument(
-        Guid id, [FromForm] IFormFile file, [FromForm] string? category,
+        Guid id, IFormFile file, [FromForm] string? category,
         [FromForm] string? description, [FromForm] bool clientVisible = true, CancellationToken ct = default)
     {
         var caseFile = await _db.CaseFiles.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, ct)

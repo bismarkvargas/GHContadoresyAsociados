@@ -124,8 +124,9 @@ public class AdminSystemController : ControllerBase
     [HttpPost("documents")]
     [HasPermission("documents.upload")]
     [RequestSizeLimit(52_428_800)]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<DocumentDto>> UploadDocument(
-        [FromForm] IFormFile file, [FromForm] Guid? clientId, [FromForm] Guid? caseFileId,
+        IFormFile file, [FromForm] Guid? clientId, [FromForm] Guid? caseFileId,
         [FromForm] Guid? orderId, [FromForm] string? category, [FromForm] string? description,
         [FromForm] bool clientVisible = true, CancellationToken ct = default)
     {

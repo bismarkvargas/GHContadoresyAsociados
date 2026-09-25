@@ -356,8 +356,9 @@ public class MeController : ControllerBase
     /// <summary>Sube un documento del cliente (PDF, imagen u Office, máx. 25 MB).</summary>
     [HttpPost("documents")]
     [RequestSizeLimit(52_428_800)]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<DocumentDto>> UploadDocument(
-        [FromForm] IFormFile file,
+        IFormFile file,
         [FromForm] string? category,
         [FromForm] Guid? caseFileId,
         [FromForm] string? description,
