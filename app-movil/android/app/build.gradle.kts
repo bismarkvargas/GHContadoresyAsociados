@@ -4,6 +4,9 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Firebase Cloud Messaging: usa android/app/google-services.json para registrar la app
+    // en el proyecto de Firebase y poder recibir notificaciones push.
+    id("com.google.gms.google-services")
 }
 
 // Firma de producción de GH Contadores.

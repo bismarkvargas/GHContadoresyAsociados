@@ -85,3 +85,8 @@ app-movil/android/.gradle/
 
 # Firma de produccion (NUNCA debe subirse al repositorio)
 app-movil/android/keystore/
+
+# Credenciales de Firebase (NUNCA al repositorio)
+brand/firebase-service-account.json
+**/firebase-service-account*.json
+app-movil/android/app/google-services.json
