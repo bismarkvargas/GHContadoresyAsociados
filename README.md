@@ -23,6 +23,7 @@ panel de administración web, API y aplicación móvil híbrida con tienda de se
 2. [`docs/02-modelo-datos.md`](docs/02-modelo-datos.md) — modelo de datos completo (entidades, enums, índices, permisos por rol).
 3. [`docs/03-contrato-api.md`](docs/03-contrato-api.md) — contrato de API compartido entre api, admin y app.
 4. [`docs/04-despliegue.md`](docs/04-despliegue.md) — puesta en producción en `https://demostracion.es/ghcontadores/`.
+5. [`docs/05-verificacion.md`](docs/05-verificacion.md) — evidencia de las verificaciones (28 comprobaciones de API, 11 de tiempo real y 29 del panel) y los defectos corregidos.
 
 ## Entorno desplegado
 
