@@ -12,6 +12,12 @@ class MockRealtimeService implements RealtimeService {
   /// Intervalo entre eventos simulados.
   final Duration tick;
 
+  /// Permite desactivar la emisión periódica (tests).
+  ///
+  /// Sin esto, el `Timer.periodic` del modo demo quedaría vivo al terminar un
+  /// test y rompería la invariante `!timersPending` del binding.
+  static bool autoEmitEnabled = true;
+
   final StreamController<RealtimeEvent> _events =
       StreamController<RealtimeEvent>.broadcast();
   final StreamController<RealtimeStatus> _status =
@@ -52,6 +58,7 @@ class MockRealtimeService implements RealtimeService {
     await Future<void>.delayed(const Duration(milliseconds: 500));
     _setStatus(RealtimeStatus.connected);
     _timer?.cancel();
+    if (!autoEmitEnabled) return;
     _timer = Timer.periodic(tick, (_) => _emitNext());
   }
 

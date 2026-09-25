@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -8,8 +10,10 @@ plugins {
 // Las credenciales viven en android/key.properties (fuera del repositorio). Si el archivo
 // no existe —por ejemplo en un clon limpio— se firma con la clave de depuración para que
 // el proyecto siga compilando en desarrollo.
+// Nota: en el script de Gradle `java` resuelve a la extensión de Java del proyecto, así que
+// `Properties` debe importarse arriba en lugar de escribirse como `java.util.Properties`.
 val archivoClaves = rootProject.file("key.properties")
-val claves = java.util.Properties().apply {
+val claves = Properties().apply {
     if (archivoClaves.exists()) archivoClaves.inputStream().use { load(it) }
 }
 val hayFirmaReal = archivoClaves.exists() && claves.getProperty("storeFile") != null

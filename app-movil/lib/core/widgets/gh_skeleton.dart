@@ -173,19 +173,32 @@ class ProductGridSkeleton extends StatelessWidget {
 }
 
 /// Lista de skeletons.
+///
+/// La lista es desplazable, así que se acota a [maxHeight] para poder usarla
+/// también dentro de un `Column` (por ejemplo en una pestaña) sin que el
+/// viewport quede con altura ilimitada.
 class ListSkeleton extends StatelessWidget {
-  const ListSkeleton({super.key, this.count = 4, this.lines = 2});
+  const ListSkeleton({
+    super.key,
+    this.count = 4,
+    this.lines = 2,
+    this.maxHeight = 420,
+  });
 
   final int count;
   final int lines;
+  final double maxHeight;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: count,
-      itemBuilder: (_, __) => ListTileSkeleton(lines: lines),
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: count,
+        itemBuilder: (_, __) => ListTileSkeleton(lines: lines),
+      ),
     );
   }
 }

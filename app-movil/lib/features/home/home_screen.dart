@@ -51,7 +51,9 @@ class HomeScreen extends ConsumerWidget {
           slivers: <Widget>[
             SliverAppBar(
               pinned: true,
-              expandedHeight: 118,
+              // Alto suficiente para el saludo y el nombre del cliente con la
+              // tipografía Montserrat (métricas más altas que la del sistema).
+              expandedHeight: 148,
               backgroundColor: Theme.of(context).colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               title: Row(
@@ -150,18 +152,18 @@ class _GreetingHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 76, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 84, 16, 12),
       child: Row(
         children: <Widget>[
           CircleAvatar(
-            radius: 24,
+            radius: 22,
             backgroundColor: GhTokens.primary50,
             child: Text(
               user?.initials ?? 'GH',
               style: const TextStyle(
                 color: GhTokens.primary,
                 fontWeight: FontWeight.w700,
-                fontSize: 16,
+                fontSize: 15,
               ),
             ),
           ),
@@ -184,12 +186,13 @@ class _GreetingHeader extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                'Cliente',
+                user == null ? 'Invitado' : 'Cliente',
                 style: theme.textTheme.bodySmall,
               ),
               if (user?.companyName != null)

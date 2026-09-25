@@ -114,8 +114,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: session.user,
         session: session,
       );
-      await _startRealtime();
       await _resumeGuestIntent();
+      _startRealtime();
       return true;
     } on ApiFailure catch (e) {
       state = state.copyWith(isBusy: false, error: e.message);
@@ -129,15 +129,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Retoma lo que el invitado quería hacer antes de iniciar sesión.
   ///
   /// Hoy: si había un producto pendiente para el carrito, se agrega solo.
+  /// La intención se limpia siempre, para que no reaparezca en otra sesión.
   Future<void> _resumeGuestIntent() async {
     final pending = _ref.read(pendingCartProductProvider);
-    if (pending == null) return;
+    if (pending == null) {
+      _ref.read(pendingGuestActionProvider.notifier).clear();
+      return;
+    }
+    _ref.read(pendingCartProductProvider.notifier).state = null;
     try {
       await _ref.read(cartProvider.notifier).add(pending);
     } catch (_) {
       // Si falla, el usuario puede agregarlo de nuevo desde el catálogo.
     } finally {
-      _ref.read(pendingCartProductProvider.notifier).state = null;
+      _ref.read(pendingGuestActionProvider.notifier).clear();
     }
   }
 
@@ -239,14 +244,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> _startRealtime() async {
+  /// Conecta el tiempo real sin bloquear el resultado del login.
+  ///
+  /// El hub tarda en negociar (y en los tests no hay red): esperar aquí
+  /// retrasaría el acceso y dejaría el `await` colgado. Si la conexión falla,
+  /// el respaldo de *polling* cubre la actualización.
+  void _startRealtime() {
     final user = state.user;
     if (user == null) return;
     final token = _ref.read(tokenStoreProvider).accessToken;
-    await _ref.read(realtimeServiceProvider).connect(
-          userId: user.id,
-          accessToken: token,
-        );
+    unawaited(
+      _ref.read(realtimeServiceProvider).connect(
+            userId: user.id,
+            accessToken: token,
+          ),
+    );
   }
 }
 

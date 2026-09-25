@@ -9,12 +9,10 @@ void main() {
 
   /// Flujo completo hasta la pantalla de resultado con la tarjeta indicada.
   Future<void> runCheckout(WidgetTester tester, String cardNumber) async {
-    TestHarness.prepare();
+    TestHarness.prepare(loggedIn: true);
     await TestHarness.pumpApp(tester);
     await TestHarness.waitForBoot(tester);
     await TestHarness.waitForCatalog(tester);
-    // El checkout requiere sesión: se entra con la cuenta demo.
-    await TestHarness.loginAsDemoUser(tester);
     await TestHarness.addFirstProductToCart(tester);
 
     final container = TestHarness.container(tester);
@@ -109,11 +107,10 @@ void main() {
 
   testWidgets('el pago con SINPE Móvil queda pendiente con instrucciones',
       (tester) async {
-    TestHarness.prepare();
+    TestHarness.prepare(loggedIn: true);
     await TestHarness.pumpApp(tester);
     await TestHarness.waitForBoot(tester);
     await TestHarness.waitForCatalog(tester);
-    await TestHarness.loginAsDemoUser(tester);
     await TestHarness.addFirstProductToCart(tester);
 
     await TestHarness.openCart(tester);

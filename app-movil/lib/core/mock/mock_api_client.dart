@@ -20,19 +20,24 @@ import '../network/api_client.dart';
 import '../utils/json.dart';
 import 'mock_seed.dart';
 
+/// Sobrescritura de la latencia simulada del modo demo.
+///
+/// En los tests se pone en [Duration.zero]: los `Future.delayed` del mock se
+/// resuelven en el mismo turno del reloj virtual, de modo que ningún test
+/// depende del avance del tiempo real.
+@visibleForTesting
+Duration? mockLatencyOverride;
+
+/// Usuario con el que arranca el mock cuando el test simula una sesión ya
+/// guardada (el `TokenStore` tiene tokens, así que `me()` debe responder).
+@visibleForTesting
+AppUser? mockSessionUserOverride;
+
 /// Modo de autenticación del mock.
 ///
 /// Permite probar el arranque con una cuenta ya activa o con una cuenta
 /// `Pending` (pantalla de espera de aprobación).
 enum MockAuthMode { active, pending }
-
-/// Sobrescritura de la latencia simulada del modo demo.
-///
-/// En los tests se pone en [Duration.zero] (`MockApiClient.latencyOverride`):
-/// los `Future.delayed` del mock se resuelven en el mismo turno del reloj
-/// virtual, de modo que ningún test depende del avance del tiempo real.
-@visibleForTesting
-Duration? mockLatencyOverride;
 
 /// Modo demo: implementación completa en memoria con el catálogo real
 /// (`assets/mock/catalog.seed.json`, 62 servicios) y datos operativos
@@ -306,6 +311,18 @@ class MockApiClient implements ApiClient {
 
   void _requireSession() {
     if (_session == null) {
+      // Sesión simulada por los tests (tokens ya guardados): el mock la acepta.
+      final seeded = mockSessionUserOverride;
+      if (seeded != null) {
+        _user = seeded;
+        _session = AuthSession(
+          accessToken: 'seeded-access-token',
+          refreshToken: 'seeded-refresh-token',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          user: seeded,
+        );
+        return;
+      }
       throw ApiFailure.unauthorized('Inicia sesión para continuar.');
     }
   }
