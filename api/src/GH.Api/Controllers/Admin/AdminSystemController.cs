@@ -162,6 +162,73 @@ public class AdminSystemController : ControllerBase
     }
 
     // ------------------------------------------------------------------ notificaciones
+    /// <summary>Bandeja de notificaciones del panel: lo que el sistema ha enviado a clientes y al personal.</summary>
+    [HttpGet("notifications")]
+    [HasPermission("notifications.view")]
+    public async Task<ActionResult<PagedResult<object>>> Notifications(
+        [FromQuery] Guid? userId, [FromQuery] NotificationType? type, [FromQuery] bool? unreadOnly,
+        [FromQuery] string? search, [FromQuery] DateTime? from, [FromQuery] DateTime? to,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        var query = _db.Notifications.AsNoTracking().Include(n => n.User).AsQueryable();
+
+        if (userId.HasValue) query = query.Where(n => n.UserId == userId);
+        if (type.HasValue) query = query.Where(n => n.Type == type);
+        if (unreadOnly == true) query = query.Where(n => n.ReadAt == null);
+        if (from.HasValue) query = query.Where(n => n.CreatedAt >= from);
+        if (to.HasValue) query = query.Where(n => n.CreatedAt < to.Value.AddDays(1));
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(n => n.Title.Contains(term) || n.Body.Contains(term)
+                                     || n.User.Email.Contains(term) || n.User.FullName.Contains(term));
+        }
+
+        var paged = await query.OrderByDescending(n => n.CreatedAt).ToPagedResultAsync(page, pageSize, ct);
+
+        var items = paged.Items.Select(n => (object)new
+        {
+            id = n.Id,
+            userId = n.UserId,
+            userEmail = n.User.Email,
+            userName = n.User.FullName,
+            title = n.Title,
+            body = n.Body,
+            type = n.Type.ToString(),
+            channel = n.Channel.ToString(),
+            status = n.Status.ToString(),
+            deepLink = n.DeepLink,
+            dataJson = n.DataJson,
+            isRead = n.ReadAt.HasValue,
+            fcmMessageId = n.FcmMessageId,
+            error = n.Error,
+            createdAt = n.CreatedAt,
+            sentAt = n.SentAt,
+            readAt = n.ReadAt,
+        }).ToList();
+
+        return Ok(new PagedResult<object>(items, paged.Total, paged.Page, paged.PageSize));
+    }
+
+    /// <summary>Resumen de la bandeja: totales por tipo y cuántas quedaron sin leer.</summary>
+    [HttpGet("notifications/summary")]
+    [HasPermission("notifications.view")]
+    public async Task<ActionResult<object>> NotificationsSummary(CancellationToken ct)
+    {
+        var since = DateTime.UtcNow.AddDays(-30);
+        var recent = await _db.Notifications.AsNoTracking().Where(n => n.CreatedAt >= since).ToListAsync(ct);
+
+        return Ok(new
+        {
+            total = recent.Count,
+            unread = recent.Count(n => n.ReadAt is null),
+            byType = recent.GroupBy(n => n.Type)
+                .Select(g => new { type = g.Key.ToString(), label = AccessResolver.Label(g.Key), count = g.Count() })
+                .OrderByDescending(x => x.count).ToList(),
+            last30Days = recent.Count,
+        });
+    }
+
     /// <summary>Envía un aviso manual a un usuario (queda en su bandeja del app y se envía por push).</summary>
     [HttpPost("notifications/send")]
     [HasPermission("notifications.send")]

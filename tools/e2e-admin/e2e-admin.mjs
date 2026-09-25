@@ -68,6 +68,8 @@ async function login(page, credenciales) {
 }
 
 const erroresConsola = []
+/** Respuestas de la API con error, con su URL para que el informe sea accionable. */
+const respuestasConError = []
 
 async function main() {
   console.log(`\n\x1b[1mVerificación E2E del panel — GH Contadores\x1b[0m\nPanel: ${BASE}`)
@@ -77,6 +79,11 @@ async function main() {
   const page = await context.newPage()
   page.on('console', (msg) => { if (msg.type() === 'error') erroresConsola.push(msg.text()) })
   page.on('pageerror', (err) => erroresConsola.push(String(err)))
+  page.on('response', (r) => {
+    if (r.url().includes('/api/') && r.status() >= 400) {
+      respuestasConError.push(`${r.status()} ${r.request().method()} ${r.url().replace(/^https?:\/\/[^/]+/, '')}`)
+    }
+  })
 
   step('1 · Carga del panel')
   const respuesta = await page.goto(BASE, { waitUntil: 'domcontentloaded' })
@@ -241,11 +248,23 @@ async function main() {
   }
   await contexto2.close()
 
-  step('10 · Errores de consola')
-  const graves = erroresConsola.filter((e) => !/favicon|404 \(Not Found\)/i.test(e))
-  graves.length === 0
-    ? ok('sin errores graves en la consola del navegador')
-    : ko(`${graves.length} errores de consola · primero: ${graves[0]?.slice(0, 160)}`)
+  step('10 · Errores de consola y de red')
+  const graves = erroresConsola.filter((e) => !/favicon/i.test(e))
+  if (graves.length === 0) {
+    ok('sin errores en la consola del navegador')
+  } else {
+    ko(`${graves.length} errores de consola · primero: ${graves[0]?.slice(0, 160)}`)
+  }
+
+  // Se ignoran los 401 esperados (comprobación de sesión al arrancar) y los que provoca
+  // la propia prueba (el alta se retira al final).
+  const inesperados = respuestasConError.filter((e) => !/^401 /.test(e))
+  if (inesperados.length === 0) {
+    ok('ninguna llamada a la API terminó en error')
+  } else {
+    const unicos = [...new Set(inesperados)]
+    ko(`${unicos.length} llamadas con error:\n      ${unicos.join('\n      ')}`)
+  }
 
   await page.screenshot({ path: 'panel-dashboard.png', fullPage: false }).catch(() => {})
   await browser.close()
