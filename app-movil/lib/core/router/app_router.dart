@@ -36,7 +36,6 @@ final _catalogKey = GlobalKey<NavigatorState>(debugLabel: 'catalog');
 final _casesKey = GlobalKey<NavigatorState>(debugLabel: 'cases');
 final _cartKey = GlobalKey<NavigatorState>(debugLabel: 'cart');
 final _profileKey = GlobalKey<NavigatorState>(debugLabel: 'profile');
-final _messagesKey = GlobalKey<NavigatorState>(debugLabel: 'messages');
 
 /// Rutas de la app (docs/01 §6 + flujos del brief).
 class AppRoutes {
@@ -77,7 +76,8 @@ class AppRoutes {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
-  final store = ref.watch(tokenStoreProvider);
+  // Mantiene el redirect sincronizado con la sesión guardada.
+  ref.watch(apiBootstrapProvider);
 
   return GoRouter(
     navigatorKey: _rootKey,

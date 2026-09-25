@@ -6,6 +6,7 @@
 
 import type {
   AccountRequest,
+  AuditLog,
   CaseEvent,
   CaseFile,
   CaseTask,
@@ -2284,17 +2285,20 @@ route('PUT', '/admin/settings', (ctx) => {
   return { ok: true, updated: pairs.length }
 })
 
-route('GET', '/admin/audit', (ctx) =>
-  list(
-    getDb().auditLogs.map((l) => ({ ...l, userName: l.userId ? userName(l.userId) : 'Sistema' })),
-    ctx.query,
-    (l) =>
-      (!ctx.query.userId || l.userId === ctx.query.userId) &&
-      inFilter(l.entityName, ctx.query.entityName) &&
-      inFilter(l.action, ctx.query.action) &&
-      inDateRange(l.createdAt, ctx.query),
-    (l) => [l.action, l.entityName, l.entityId, l.userName],
-  ),
+route(
+  'GET',
+  '/admin/audit',
+  (ctx): Paginated<AuditLog & { userName: string }> =>
+    list<AuditLog & { userName: string }>(
+      getDb().auditLogs.map((l) => ({ ...l, userName: l.userId ? userName(l.userId) : 'Sistema' })),
+      ctx.query,
+      (l) =>
+        (!ctx.query.userId || l.userId === ctx.query.userId) &&
+        inFilter(l.entityName, ctx.query.entityName) &&
+        inFilter(l.action, ctx.query.action) &&
+        inDateRange(l.createdAt, ctx.query),
+      (l) => [l.action, l.entityName, l.entityId, l.userName],
+    ),
 )
 
 /* ------------------------------------------------------------------ */

@@ -1,0 +1,14 @@
+{
+  "name": "gh-realtime-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Verifica el tiempo real (SignalR) de GH Contadores a través de Nginx: lo que el admin gestiona debe llegar al app del cliente al instante.",
+  "scripts": {
+    "test": "node realtime-test.mjs"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^8.0.7",
+    "ws": "^8.18.0"
+  }
+}
