@@ -22,6 +22,22 @@ class AppConfig {
   /// Hub SignalR de tiempo real (docs/03 §5).
   static const String realtimeHubPath = '/hubs/realtime';
 
+  /// Raíz pública de la API, sin la ruta de versión.
+  ///
+  /// En producción la API vive bajo un prefijo de despliegue
+  /// (`https://demostracion.es/ghcontadores/api/v1`), así que el hub se construye sobre
+  /// esa misma raíz: `https://demostracion.es/ghcontadores/hubs/realtime`. Reemplazar la
+  /// ruta completa perdería el prefijo `/ghcontadores` y el tiempo real no conectaría.
+  static String get apiRoot {
+    final sinBarra = apiBaseUrl.endsWith('/')
+        ? apiBaseUrl.substring(0, apiBaseUrl.length - 1)
+        : apiBaseUrl;
+    return sinBarra.replaceFirst(RegExp(r'/api/v\d+$'), '');
+  }
+
+  /// URL absoluta del hub de tiempo real (sin el token; el servicio añade `access_token`).
+  static String get realtimeHubUrl => '$apiRoot$realtimeHubPath';
+
   /// Fallback de polling cuando el socket cae o estamos en modo demo.
   static const Duration pollingInterval = Duration(seconds: 15);
 
