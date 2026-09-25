@@ -41,6 +41,24 @@ npm install
 > El servidor de desarrollo publica la app bajo el base `/ghcontadores/`, por lo que la URL es
 > `http://127.0.0.1:5173/ghcontadores/` (no `/`).
 
+### Verificación en navegador real
+
+En `../tools/e2e-admin` (Playwright ya instalado):
+
+| Script | Qué comprueba |
+|---|---|
+| `node e2e-admin.mjs` | **Producción**: login escribiendo credenciales, datos reales en los 14 módulos, alta real de cliente contra la API, control de acceso de un Abogado y errores de consola/red |
+| `node verificar-local.mjs` | Panel local en modo mock: enlace de campos de formulario, KPIs, alias de rutas y validación en español |
+| `node verificar-alta-cliente.mjs` | El alta de cliente navega a la ficha con un identificador **válido** (nunca `/clientes/undefined`) |
+| `node diagnostico-red.mjs` | Registra todas las respuestas ≥ 400 del panel desplegado |
+| `node diagnostico-sesion.mjs` | Ciclo de vida del token y de `/auth/me` al navegar |
+| `node diagnostico-alta.mjs` | Respuesta cruda del alta de cliente y URL final |
+| `node diagnostico-respuestas.mjs` | Compara varios payloads de alta contra la API real |
+| `node diagnostico-formulario.mjs` · `diagnostico-login.mjs` | Diagnóstico del formulario de acceso y de las cuentas demo |
+| `node verificar-bundle.mjs` | Comprueba que el `dist/` construido contiene las correcciones y que el modo mock quedó desactivado |
+
+Despliegue en el servidor (`ssh root@2.25.111.177`): `bash /opt/ghcontadores/deploy/deploy.sh`.
+
 ## 4. Variables de entorno
 
 Crea un `.env` en la raíz de `admin-web/` (hay un `.env.example` de referencia y un `.env.api`
@@ -66,11 +84,15 @@ correspondiente para autocompletar.
 
 | Correo | Contraseña | Rol | Qué demuestra |
 |---|---|---|---|
-| `admin@ghcontadores.net` | `Admin123!` | SuperAdmin | Ve **todo** el menú y todos los botones de acción |
-| `abogado@ghcontadores.net` | `Abogado123!` | Abogado | **No** ve Usuarios, Roles, Ajustes ni Auditoría; sin botones de borrado en el catálogo |
-| `maria.rojas@ghcontadores.net` | `Demo123!` | Admin | Administración operativa completa |
-| `contador@ghcontadores.net` | `Demo123!` | Contador | Expedientes y documentos, sin gestión de usuarios |
-| `asistente@ghcontadores.net` | `Demo123!` | Asistente | Clientes, documentos y pedidos; solicitudes en solo lectura |
+| `admin@ghcontadores.net` | `Gh.Admin2026` | SuperAdmin | Ve **todo** el menú y todos los botones de acción |
+| `gerencia@ghcontadores.net` | `Gh.Gerencia2026` | Administración | Operación completa del despacho |
+| `abogado@ghcontadores.net` | `Gh.Abogado2026` | Abogado | **No** ve Usuarios, Roles, Ajustes ni Auditoría; sin botones de borrado en el catálogo |
+| `contador@ghcontadores.net` | `Gh.Contador2026` | Contador | Expedientes y documentos, sin gestión de usuarios |
+| `asistente@ghcontadores.net` | `Gh.Asistente2026` | Asistente | Clientes, documentos y pedidos; solicitudes en solo lectura |
+
+Estas son **las mismas credenciales que siembra la API en producción**, de modo que el modo demo y el
+modo real se comportan igual. La cuenta de cliente del app sembrada por la API es
+`cliente@demo.cr` / `Gh.Cliente2026`.
 
 **RBAC en la UI:** los permisos efectivos llegan en la respuesta del login (`permissions[]`) y se
 consumen con `usePermission('clients.create')` / `useCan()`; el menú lateral, los botones y las rutas
@@ -80,11 +102,11 @@ Contraseña de los usuarios Cliente creados al aprobar una solicitud: `Cliente12
 
 ### Reiniciar los datos demo
 
-Los datos se persisten en `localStorage` bajo la clave `gh.mock.db.v7`. Para volver al estado
+Los datos se persisten en `localStorage` bajo la clave `gh.mock.db.v8`. Para volver al estado
 inicial, en la consola del navegador:
 
 ```js
-localStorage.removeItem('gh.mock.db.v7'); location.reload()
+localStorage.removeItem('gh.mock.db.v8'); location.reload()
 ```
 
 ## 6. Modo mock y modo API real
@@ -149,60 +171,45 @@ gustavo.ghcontadores@outlook.com · pedidos@ghcontadores.net · moneda base **US
 ## 9. Despliegue en `/ghcontadores/`
 
 La aplicación se publica en `https://demostracion.es/ghcontadores/` **sin tocar otras vhosts**.
+El servidor es un VPS Ubuntu 24.04 con Nginx (ver `../docs/04-despliegue.md`).
 
-1. `vite.config.ts` ya define `base: '/ghcontadores/'`, por eso los assets se referencian como
+### Despliegue real (recomendado)
+
+```bash
+ssh root@2.25.111.177
+bash /opt/ghcontadores/deploy/deploy.sh
+```
+
+El script es idempotente: actualiza el clon de `/opt/ghcontadores`, publica la API, **compila el panel
+con `VITE_USE_MOCKS=false`** y lo instala en `/var/www/ghcontadores/admin`, reinicia el servicio y
+recarga Nginx. El panel desplegado habla siempre con la API real.
+
+### Detalles que hacen posible el despliegue
+
+1. `vite.config.ts` define `base: '/ghcontadores/'`: los assets se referencian como
    `/ghcontadores/assets/…` y el router usa ese `basename`.
-2. Genere el build:
+2. **Reescritura de URL (obligatorio)**: el panel usa `BrowserRouter`, de modo que cualquier ruta
+   interna debe devolver `index.html`. La configuración vive en
+   `/etc/nginx/snippets/ghcontadores.conf` (incluida en el vhost de `demostracion.es`):
 
-   ```powershell
-   npm run build
+   ```nginx
+   location /ghcontadores/ {
+     alias /var/www/ghcontadores/admin/;
+     try_files $uri $uri/ /ghcontadores/index.html;
+   }
+   location /ghcontadores/api/  { proxy_pass http://127.0.0.1:8095/api/; }
+   location /ghcontadores/hubs/ { proxy_pass http://127.0.0.1:8095/hubs/;
+                                  proxy_set_header Upgrade $http_upgrade;
+                                  proxy_set_header Connection "upgrade"; }
    ```
 
-3. Copie el contenido de `dist/` a la carpeta del vhost:
+   Si se desplegara sobre IIS, bastaría con un `web.config` que reescriba a `index.html` excluyendo
+   `^/ghcontadores/(api|hubs)/`.
 
-   ```powershell
-   robocopy .\dist \\SERVIDOR\c$\inetpub\demostracion.es\ghcontadores /MIR
-   ```
-
-4. **Reescritura de URL (obligatorio)**: el panel usa `BrowserRouter`, así que cualquier ruta
-   interna debe devolver `index.html`.
-
-   - **IIS** — `web.config` dentro de `/ghcontadores/`:
-
-     ```xml
-     <?xml version="1.0" encoding="utf-8"?>
-     <configuration>
-       <system.webServer>
-         <rewrite>
-           <rules>
-             <rule name="SPA ghcontadores" stopProcessing="true">
-               <match url=".*" />
-               <conditions logicalGrouping="MatchAll">
-                 <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
-                 <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
-                 <add input="{REQUEST_URI}" pattern="^/ghcontadores/(api|hubs)/" negate="true" />
-               </conditions>
-               <action type="Rewrite" url="/ghcontadores/index.html" />
-             </rule>
-           </rules>
-         </rewrite>
-       </system.webServer>
-     </configuration>
-     ```
-
-   - **Nginx**:
-
-     ```nginx
-     location /ghcontadores/ {
-       alias /var/www/demostracion.es/ghcontadores/;
-       try_files $uri $uri/ /ghcontadores/index.html;
-     }
-     location /ghcontadores/api/ { proxy_pass http://127.0.0.1:5080/api/; }
-     location /ghcontadores/hubs/ { proxy_pass http://127.0.0.1:5080/hubs/; proxy_set_header Upgrade $http_upgrade; }
-     ```
-
-5. La API (.NET) debe servirse bajo `/ghcontadores/api/v1` y el hub bajo `/ghcontadores/hubs/realtime`
-   en el mismo dominio, para que `VITE_API_URL` relativo funcione sin CORS.
+3. La API (.NET) se sirve bajo `/ghcontadores/api/v1` y el hub bajo `/ghcontadores/hubs/realtime` en
+   el mismo dominio, por lo que `VITE_API_URL` relativo funciona sin CORS.
+4. Tras desplegar, comprobar con `node tools/e2e-admin/e2e-admin.mjs` (29 comprobaciones contra
+   producción).
 
 ## 10. Estructura del proyecto
 
@@ -211,6 +218,7 @@ admin-web/
 ├─ public/catalog.seed.json     Catálogo real: 4 categorías + 62 servicios (USD)
 ├─ src/
 │  ├─ api/                      Cliente axios, endpoints del contrato, SignalR
+│  │  ├─ normalize.ts           Traduce las variantes de la API real al modelo interno
 │  │  └─ mock/                  db.ts (seed + persistencia) · router.ts (adaptador) · MockRealtime.ts
 │  ├─ components/
 │  │  ├─ ui/                    Librería propia: Button, Card, DataTable, Modal, EmptyState…
@@ -219,11 +227,11 @@ admin-web/
 │  ├─ config/routes.ts          Menú + permisos por ruta (fuente de RUTAS.md)
 │  ├─ contexts/                 Auth, Tema, Toasts, Realtime
 │  ├─ hooks/                    useAuth/usePermission, useApi (tablas y mutaciones), useUi
-│  ├─ lib/                      Formato (moneda/fecha/CSV), etiquetas y tonos, constantes de negocio
+│  ├─ lib/                      Formato y pickId, etiquetas y tonos, constantes, zod-es
 │  ├─ pages/                    Una carpeta por módulo (14 módulos)
 │  ├─ styles/theme.css          Tokens de marca
 │  ├─ types/index.ts            Modelo de datos completo
-│  ├─ App.tsx                   Definición de rutas
+│  ├─ App.tsx                   Definición de rutas (alias en inglés → rutas españolas)
 │  └─ main.tsx                  Providers: Query, Tema, Toasts, Auth, Realtime, Router
 ├─ RUTAS.md
 └─ README.md
@@ -234,5 +242,18 @@ admin-web/
 - La previsualización de PDF en el modal muestra un marcador en modo mock (no hay archivo físico).
   Con la API real se incrusta la URL firmada HMAC de 15 minutos (`/public/files/{token}`).
 - La exportación CSV usa `;` como separador y BOM UTF-8 para que Excel respete los acentos.
-- No se incluyen pruebas automatizadas: la verificación de entrega es `npm run build` (con
-  `tsc --noEmit`) y el arranque de `npm run dev`.
+- **Normalización de la API**: la API .NET en producción devuelve formas distintas a las del
+  contrato de referencia (nombres de campo como `amount`/`total` o `label`/`month`, envoltorios
+  `{client,cases,tasks…}` en los detalles, etiquetas ya traducidas `{name,slug,count}` y
+  `permissions: ["*"]` para los roles con acceso total). `src/api/normalize.ts` traduce esas
+  variantes en el interceptor de axios, de modo que los componentes consumen un único modelo.
+  Con `VITE_USE_MOCKS=true` no se aplica, porque el adaptador ya devuelve el modelo interno.
+- **Identificadores**: `pickId()` (`src/lib/format.ts`) extrae el id de respuestas envueltas y
+  descarta cadenas vacías, `undefined` y `null`; las fichas de cliente, expediente y pedido no
+  consultan la API con un id inválido. Es la defensa contra rutas tipo `/clientes/undefined`.
+- **Validación**: los mensajes de zod están en español mediante un mapa global
+  (`src/lib/zod-es.ts`), así que nunca aparece el «Required» por defecto en inglés.
+- **Verificación de entrega**: `npm run build` (con `tsc --noEmit`), `npm run smoke` (107
+  comprobaciones del contrato mock), `node tools/e2e-admin/verificar-local.mjs` (17 comprobaciones en
+  navegador real contra el panel local) y `node tools/e2e-admin/e2e-admin.mjs` (29 comprobaciones
+  contra producción).
