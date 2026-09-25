@@ -108,12 +108,35 @@ está, la compilación usa la clave de depuración (solo para desarrollo).
 | `flutter test` | **24/24 en ~12 s** |
 | APK firmado instalado en el teléfono | ✔ funcionando contra la API de producción |
 
-## 9. Qué NO está incluido
+## 9. Firebase Cloud Messaging (push) — configurado
 
-- **Push real con Firebase**: falta colocar el JSON de la cuenta de servicio en
-  `/var/www/ghcontadores/api/firebase-service-account.json`. Sin él, las notificaciones
-  llegan dentro de la app y por WebSocket (que ya funciona); con él, llegan al teléfono con
-  la app cerrada. Es lo único que falta para que el push sea completo.
+Proyecto de Firebase: **`rutas-259514`** (cuenta `firebase-adminsdk-bec2v@rutas-259514.iam.gserviceaccount.com`).
+
+| Pieza | Archivo | Estado |
+|---|---|---|
+| Servidor (enviar) | `/var/www/ghcontadores/api/firebase-service-account.json` (permisos 600) | ✔ instalado y verificado contra FCM |
+| App (recibir) | `app-movil/android/app/google-services.json` | ✔ descargado, con la app Android `net.ghcontadores.gh_contadores` registrada |
+| Plugin de Gradle | `com.google.gms.google-services` 4.4.4 en `settings.gradle.kts` y `app/build.gradle.kts` | ✔ activado |
+
+**Verificación realizada**: se forzó un envío desde la API y FCM respondió
+`400 The registration token is not a valid FCM registration token`. Ese error es de *token*,
+no de autenticación: demuestra que el servidor obtiene el token de OAuth con la cuenta de
+servicio y llega correctamente a la API v1 del proyecto.
+
+**Las credenciales no están en el repositorio** (`.gitignore`). Para rotar la clave:
+
+```bash
+gcloud iam service-accounts keys create brand/firebase-service-account.json \
+  --iam-account=firebase-adminsdk-bec2v@rutas-259514.iam.gserviceaccount.com \
+  --project=rutas-259514
+```
+
+El `google-services.json` se vuelve a descargar desde
+`https://console.firebase.google.com/u/0/project/rutas-259514/settings/general`
+(Configuración del proyecto → Tus apps → GH Contadores → Descargar `google-services.json`).
+
+## 10. Qué NO está incluido
+
 - **Versión para iOS**: el proyecto Flutter es multiplataforma y la carpeta `ios/` está
-  preparada, pero para publicar en App Store hace falta un Mac con Xcode, cuenta de Apple
-  Developer y el certificado de distribución. No se ha compilado ni firmado iOS.
+  preparada (incluido el icono de 1024), pero para publicar en App Store hace falta un Mac con
+  Xcode, cuenta de Apple Developer y certificado de distribución. No se ha compilado ni firmado.
