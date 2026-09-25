@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<string>es_CR</string>
 	<key>CFBundleDisplayName</key>
-	<string>Gh Contadores</string>
+	<string>GH Contadores</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -16,6 +16,29 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>gh_contadores</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>es_CR</string>
+		<string>es</string>
+		<string>en</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>es_CR</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Adjuntar imÃ¡genes y documentos a tus expedientes en GH Contadores.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Subir documentos PDF o de oficina a tus expedientes.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Tomar fotos de documentos para adjuntarlos a tu expediente.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>mailto</string>
+		<string>https</string>
+		<string>whatsapp</string>
+	</array>
+	<key>FirebaseAutomaticScreenReportingEnabled</key>
+	<false/>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

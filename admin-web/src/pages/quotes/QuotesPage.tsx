@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Download, MessageSquareQuote, UserPlus } from 'lucide-react'
-import { catalogApi, quotesApi, usersApi } from '@/api/endpoints'
+import { catalogApi, quotesApi, usersApi, type QuoteRequestPage } from '@/api/endpoints'
 import { useApiMutation, useDebounced, useListQuery, useTableState } from '@/hooks/useApi'
 import { usePermission } from '@/hooks/useAuth'
 import { downloadCsv, formatDateTime, formatNumber } from '@/lib/format'
@@ -45,7 +45,7 @@ export default function QuotesPage() {
     [table.params, table.filters, tab, search],
   )
 
-  const query = useListQuery(['quotes'], quotesApi.list, params)
+  const query = useListQuery<QuoteRequest, QuoteRequestPage>(['quotes'], quotesApi.list, params)
   const products = useQuery({
     queryKey: ['catalog', 'products', 'select'],
     queryFn: () => catalogApi.products({ page: 1, pageSize: 200, sort: 'name', order: 'asc' }),

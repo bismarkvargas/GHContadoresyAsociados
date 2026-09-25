@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Check, Download, UserCheck, X } from 'lucide-react'
-import { accountRequestsApi } from '@/api/endpoints'
+import { accountRequestsApi, type AccountRequestPage } from '@/api/endpoints'
 import { useApiMutation, useDebounced, useListQuery, useTableState } from '@/hooks/useApi'
 import { usePermission } from '@/hooks/useAuth'
 import { downloadCsv, formatDateTime, formatNumber } from '@/lib/format'
@@ -56,14 +56,17 @@ export default function AccountRequestsPage() {
     [table.params, table.filters, tab, search, from, to],
   )
 
-  const query = useListQuery(['account-requests'], accountRequestsApi.list, params)
+  const query = useListQuery<AccountRequest, AccountRequestPage>(
+    ['account-requests'],
+    accountRequestsApi.list,
+    params,
+  )
 
   const approve = useApiMutation((id: string) => accountRequestsApi.approve(id, role), {
     successMessage: 'Solicitud aprobada · usuario Cliente creado',
     invalidate: [['account-requests'], ['users'], ['clients'], ['dashboard']],
     onSuccess: () => setSelected(null),
   })
-
   const reject = useApiMutation((vars: { id: string; reason: string }) =>
     accountRequestsApi.reject(vars.id, vars.reason),
   {

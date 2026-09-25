@@ -16,7 +16,6 @@ import {
 } from 'lucide-react'
 import { casesApi, documentsApi, messagesApi, usersApi } from '@/api/endpoints'
 import { useApiMutation } from '@/hooks/useApi'
-import { usePermission } from '@/hooks/useAuth'
 import { formatBytes, formatDate, formatDateTime, formatMoney, formatRelative, isOverdue } from '@/lib/format'
 import {
   caseEntityList,
@@ -66,7 +65,6 @@ const statusFlow: Record<string, string[]> = {
 
 export default function CaseDetailPage() {
   const { id = '' } = useParams()
-  const { can } = usePermission()
   const [tab, setTab] = useState('tareas')
   const [showTask, setShowTask] = useState(false)
   const [editingTask, setEditingTask] = useState<CaseTask | null>(null)

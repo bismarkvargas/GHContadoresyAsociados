@@ -186,9 +186,13 @@ export const paymentsApi = {
 }
 
 /* ------------------------- Solicitudes de cuenta ----------------------- */
+/** Bandeja de solicitudes: paginado + contador de pendientes. */
+export type AccountRequestPage = Paginated<AccountRequest> & { pendingCount: number }
+/** Bandeja de cotizaciones: paginado + contador de nuevas. */
+export type QuoteRequestPage = Paginated<QuoteRequest> & { newCount: number }
+
 export const accountRequestsApi = {
-  list: (params: ListParams) =>
-    get<Paginated<AccountRequest> & { pendingCount: number }>('/admin/account-requests', params),
+  list: (params: ListParams) => get<AccountRequestPage>('/admin/account-requests', params),
   get: (id: string) => get<AccountRequest>(`/admin/account-requests/${id}`),
   approve: (id: string, role = 'Cliente') =>
     post<{ request: AccountRequest; user: User; clientId: string }>(
@@ -201,8 +205,7 @@ export const accountRequestsApi = {
 
 /* ------------------------------ Cotizaciones --------------------------- */
 export const quotesApi = {
-  list: (params: ListParams) =>
-    get<Paginated<QuoteRequest> & { newCount: number }>('/admin/quotes', params),
+  list: (params: ListParams) => get<QuoteRequestPage>('/admin/quotes', params),
   update: (id: string, body: Partial<QuoteRequest>) =>
     patch<QuoteRequest>(`/admin/quotes/${id}`, body),
   convert: (id: string, body: { idNumber?: string; address?: string } = {}) =>

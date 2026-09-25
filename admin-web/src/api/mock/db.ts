@@ -991,8 +991,7 @@ export async function buildSeedDb(): Promise<MockDb> {
         cardBrand: method === 'Card' ? pick(['Visa', 'Mastercard', 'Amex']) : null,
         cardLast4: method === 'Card' ? pick(['4242', '0002', '9995', '1881', '3456']) : null,
         cardHolder: method === 'Card' ? client.legalName : null,
-        failureReason:
-          payStatus === 'Declined' ? 'Fondos insuficientes (tarjeta de prueba 4000 0000 0000 0002)' : null,
+        failureReason: null,
         rawRequestJson: JSON.stringify({
           amount: Math.round(total * 100),
           currency: 'USD',

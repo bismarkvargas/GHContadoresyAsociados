@@ -65,7 +65,7 @@ class UploadOutcome {
 
 /// Sube un archivo validando tipo y tamaño (docs/02 §5).
 Future<UploadOutcome> uploadDocumentFile(
-  Ref ref, {
+  WidgetRef ref, {
   required String path,
   required String fileName,
   required String category,

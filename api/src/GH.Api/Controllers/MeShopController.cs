@@ -82,14 +82,19 @@ public class MeShopController : ControllerBase
         }
         else
         {
-            cart.Items.Add(new CartItem
+            // Se añade al DbSet (no solo a la colección) para que EF lo marque como Added:
+            // con una clave GUID ya asignada, añadirlo a la navegación lo marcaría como
+            // Modified e intentaría un UPDATE de una fila que aún no existe.
+            var item = new CartItem
             {
                 CartId = cart.Id,
                 ProductId = product.Id,
                 Quantity = request.Quantity,
                 UnitPrice = product.Price,
                 Notes = request.Notes,
-            });
+            };
+            _db.CartItems.Add(item);
+            cart.Items.Add(item);
         }
 
         cart.UpdatedAt = DateTime.UtcNow;

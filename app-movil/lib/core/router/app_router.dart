@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/core_providers.dart';
+import '../layout/app_shell.dart';
 import '../theme/gh_tokens.dart';
 import '../widgets/gh_branding.dart';
 import '../../features/account_request/account_request_screen.dart';
@@ -27,7 +28,6 @@ import '../../features/profile/profile_screen.dart';
 import '../../features/profile/notification_preferences_screen.dart';
 import '../../features/profile/security_screen.dart';
 import '../../features/splash/splash_screen.dart';
-import 'app_shell.dart';
 
 /// Claves de navegación globales (necesarias para el shell stateful).
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');

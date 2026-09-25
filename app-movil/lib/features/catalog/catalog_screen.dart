@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,6 +8,7 @@ import '../../core/providers/core_providers.dart';
 import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/async_guard.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/widgets/gh_branding.dart';
 import '../../core/widgets/gh_common.dart';
 import '../../core/widgets/gh_skeleton.dart';
 import '../../core/widgets/gh_state_views.dart';
@@ -57,9 +58,9 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   void _onSearchChanged(String value) {
     _debouncer.run(() {
-      ref.read(catalogFiltersProvider.notifier).update(
-            (filters) => filters.copyWith(search: value),
-          );
+      final current = ref.read(catalogFiltersProvider);
+      ref.read(catalogFiltersProvider.notifier).state =
+          current.copyWith(search: value);
     });
   }
 
@@ -154,9 +155,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                         label: 'Todos',
                         count: catalog.total,
                         selected: filters.categorySlug == null,
-                        onTap: () => ref
-                            .read(catalogFiltersProvider.notifier)
-                            .update((f) => f.copyWith(clearCategory: true)),
+                        onTap: () {
+                          final current = ref.read(catalogFiltersProvider);
+                          ref.read(catalogFiltersProvider.notifier).state =
+                              current.copyWith(clearCategory: true);
+                        },
                       ),
                       for (final category in list)
                         _CategoryChip(
@@ -164,11 +167,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           count: category.productCount,
                           icon: category.icon,
                           selected: filters.categorySlug == category.slug,
-                          onTap: () => ref
-                              .read(catalogFiltersProvider.notifier)
-                              .update(
-                                (f) => f.copyWith(categorySlug: category.slug),
-                              ),
+                          onTap: () {
+                            final current = ref.read(catalogFiltersProvider);
+                            ref.read(catalogFiltersProvider.notifier).state =
+                                current.copyWith(categorySlug: category.slug);
+                          },
                         ),
                     ],
                   ),

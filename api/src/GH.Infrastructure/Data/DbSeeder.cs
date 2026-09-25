@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using GH.Domain;
 using GH.Domain.Entities;
 using GH.Infrastructure.Data;
@@ -229,7 +229,12 @@ public static class DbSeeder
             var wanted = ResolvePermissions(def.Permissions, allPermissions);
             var current = role.RolePermissions.Select(rp => rp.PermissionId).ToHashSet();
             foreach (var permission in wanted.Where(p => !current.Contains(p.Id)))
+            {
+                // Se registra en el DbSet para que EF lo inserte, en lugar de añadirlo solo a la
+                // navegación (lo marcaría como Modified e intentaría un UPDATE inexistente).
+                db.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permission.Id });
                 role.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionId = permission.Id });
+            }
 
             result[def.Name] = role;
         }

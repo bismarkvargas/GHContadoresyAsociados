@@ -53,7 +53,7 @@ import {
 } from '@/components/ui'
 import { PageHeader } from '@/components/layout/AppShell'
 import { ClientForm } from './ClientForm'
-import type { CaseFile, Client, ClientInteraction, DocumentItem, Order, User } from '@/types'
+import type { CaseFile, ClientInteraction, ClientStatus, DocumentItem, Order, User } from '@/types'
 
 export default function ClientDetailPage() {
   const { id = '' } = useParams()
@@ -130,10 +130,13 @@ export default function ClientDetailPage() {
     invalidate: [['client', id], ['clients']],
   })
 
-  const changeStatus = useApiMutation((status: string) => clientsApi.update(id, { status }), {
-    successMessage: 'Estado del cliente actualizado',
-    invalidate: [['client', id], ['clients'], ['dashboard']],
-  })
+  const changeStatus = useApiMutation(
+    (status: string) => clientsApi.update(id, { status: status as ClientStatus }),
+    {
+      successMessage: 'Estado del cliente actualizado',
+      invalidate: [['client', id], ['clients'], ['dashboard']],
+    },
+  )
 
   const removeClient = useApiMutation(() => clientsApi.remove(id), {
     successMessage: 'Cliente eliminado (soft-delete)',

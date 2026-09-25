@@ -184,16 +184,6 @@ function inFilter(value: string | null | undefined, raw: string | undefined): bo
   return values.includes(value)
 }
 
-/** Envuelve `list` con un tipo de retorno explícito (mejor inferencia en los handlers). */
-function paged<T>(
-  items: T[],
-  query: Record<string, string>,
-  filter?: (item: T) => boolean,
-  search?: (item: T) => (string | null | undefined)[],
-): Paginated<T> {
-  return list<T>(items, query, filter, search)
-}
-
 /** Filtro por rango de fechas ISO (se envía como `from`/`to`). */
 function inDateRange(value: string | null | undefined, query: Record<string, string>): boolean {
   if (!value) return !query.from && !query.to
@@ -334,7 +324,7 @@ function orderRow(o: Order): Order {
 function paymentRow(p: Payment): Payment {
   const db = getDb()
   const order = db.orders.find((o) => o.id === p.orderId)
-  return { ...p, orderNumber: order?.number ?? null }
+  return { ...p, orderNumber: order?.number ?? '' }
 }
 
 function productRow(p: Product): Product {

@@ -648,6 +648,7 @@ class _LatestEvents extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(dashboardProvider);
+    final theme = Theme.of(context);
 
     return dashboard.when(
       loading: () => const ListSkeleton(count: 3, lines: 1),

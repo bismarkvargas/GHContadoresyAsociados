@@ -1,4 +1,11 @@
 /** @type {import('tailwindcss').Config} */
+/**
+ * Los colores de marca se exponen como variables CSS en canal RGB (`--gh-primary-rgb`)
+ * para que Tailwind pueda aplicar modificadores de opacidad (bg-primary/10) y para que
+ * el cambio de tema claro/oscuro funcione sin reconstruir el bundle.
+ */
+const withOpacity = (variable) => `rgb(var(${variable}) / <alpha-value>)`
+
 export default {
   darkMode: ['class', '[data-theme="dark"]'],
   content: ['./index.html', './src/**/*.{ts,tsx}'],
@@ -6,26 +13,26 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: 'var(--gh-primary)',
-          600: 'var(--gh-primary-600)',
-          50: 'var(--gh-primary-50)',
+          DEFAULT: withOpacity('--gh-primary-rgb'),
+          600: withOpacity('--gh-primary-600-rgb'),
+          50: withOpacity('--gh-primary-50-rgb'),
         },
         ink: {
-          DEFAULT: 'var(--gh-ink)',
-          700: 'var(--gh-ink-700)',
+          DEFAULT: withOpacity('--gh-ink-rgb'),
+          700: withOpacity('--gh-ink-700-rgb'),
         },
-        muted: 'var(--gh-muted)',
+        muted: withOpacity('--gh-muted-rgb'),
         surface: {
-          DEFAULT: 'var(--gh-surface)',
-          2: 'var(--gh-surface-2)',
+          DEFAULT: withOpacity('--gh-surface-rgb'),
+          2: withOpacity('--gh-surface-2-rgb'),
         },
-        line: 'var(--gh-border)',
-        success: 'var(--gh-success)',
-        warning: 'var(--gh-warning)',
-        danger: 'var(--gh-danger)',
-        info: 'var(--gh-info)',
-        card: 'var(--gh-card)',
-        page: 'var(--gh-page)',
+        line: withOpacity('--gh-border-rgb'),
+        success: withOpacity('--gh-success-rgb'),
+        warning: withOpacity('--gh-warning-rgb'),
+        danger: withOpacity('--gh-danger-rgb'),
+        info: withOpacity('--gh-info-rgb'),
+        card: withOpacity('--gh-card-rgb'),
+        page: withOpacity('--gh-page-rgb'),
       },
       fontFamily: {
         sans: [

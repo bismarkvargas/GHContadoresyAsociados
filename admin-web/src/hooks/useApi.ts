@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationOptions,
-} from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiErrorMessage } from '@/api/client'
 import { useToast } from './useUi'
 import type { ListParams, Paginated } from '@/types'
@@ -101,10 +95,13 @@ export function useTableState(
   }
 }
 
-/** Listado paginado con TanStack Query. */
-export function useListQuery<T>(
+/**
+ * Listado paginado con TanStack Query.
+ * `TPage` permite tipar respuestas enriquecidas (p. ej. con contadores extra).
+ */
+export function useListQuery<T, TPage extends Paginated<T> = Paginated<T>>(
   key: unknown[],
-  fetcher: (params: ListParams) => Promise<Paginated<T>>,
+  fetcher: (params: ListParams) => Promise<TPage>,
   params: ListParams,
   options: { enabled?: boolean } = {},
 ) {
@@ -129,33 +126,35 @@ export function useDetailQuery<T>(
   })
 }
 
-interface MutationToast {
+interface MutationToast<TData, TVariables> {
   successMessage?: string
   errorMessage?: string
   invalidate?: unknown[][]
   onDone?: () => void
+  onSuccess?: (data: TData, variables: TVariables) => void
+  onError?: (error: unknown) => void
 }
 
 /** Mutación con toast e invalidación de caché automáticos. */
 export function useApiMutation<TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
-  options: MutationToast & Pick<UseMutationOptions<TData, unknown, TVariables>, 'onSuccess' | 'onError'> = {},
+  options: MutationToast<TData, TVariables> = {},
 ) {
   const queryClient = useQueryClient()
   const toast = useToast()
-  const { successMessage, errorMessage, invalidate = [], onDone } = options
+  const { successMessage, errorMessage, invalidate = [], onDone, onSuccess, onError } = options
 
   return useMutation<TData, unknown, TVariables>({
     mutationFn,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables) => {
       for (const key of invalidate) void queryClient.invalidateQueries({ queryKey: key })
       if (successMessage) toast.success(successMessage)
-      options.onSuccess?.(data, variables, context)
+      onSuccess?.(data, variables)
       onDone?.()
     },
-    onError: (error, variables, context) => {
+    onError: (error) => {
       toast.error(errorMessage ?? 'No se pudo completar la operación', apiErrorMessage(error))
-      options.onError?.(error, variables, context)
+      onError?.(error)
     },
   })
 }
