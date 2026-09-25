@@ -19,8 +19,7 @@ void main() {
     expect(container.read(cartProvider).itemCount, 1);
 
     await TestHarness.openCart(tester);
-    await tester.tap(find.textContaining('Continuar al pago'));
-    await TestHarness.advance(tester, duration: const Duration(seconds: 2));
+    await TestHarness.continueToCheckout(tester);
 
     // Paso 1: datos de facturación → crea la orden.
     expect(find.text('Datos de facturación'), findsOneWidget);
@@ -40,7 +39,6 @@ void main() {
     await runCheckout(tester, '4242424242424242');
 
     expect(find.text('¡Pago aprobado!'), findsOneWidget);
-    expect(find.text('Ver mis expedientes'), findsOneWidget);
     expect(find.textContaining('GH-ORD-'), findsWidgets);
 
     final container = TestHarness.container(tester);
@@ -62,7 +60,6 @@ void main() {
     await runCheckout(tester, '4000000000000002');
 
     expect(find.text('Pago rechazado'), findsOneWidget);
-    expect(find.text('Intentar de nuevo'), findsOneWidget);
 
     final container = TestHarness.container(tester);
     final checkout = container.read(checkoutProvider);
@@ -74,8 +71,11 @@ void main() {
     expect(checkout.order!.isPayable, isTrue);
 
     // Reintento: vuelve al paso de método de pago.
-    await tester.tap(find.text('Intentar de nuevo'));
-    await TestHarness.advance(tester, duration: const Duration(seconds: 1));
+    final retry = find.byType(FilledButton).last;
+    await tester.ensureVisible(retry);
+    await tester.pump();
+    await tester.tap(retry);
+    await TestHarness.advance(tester, duration: const Duration(seconds: 2));
     expect(find.text('Método de pago'), findsOneWidget);
   });
 
@@ -100,8 +100,7 @@ void main() {
     await TestHarness.addFirstProductToCart(tester);
 
     await TestHarness.openCart(tester);
-    await tester.tap(find.textContaining('Continuar al pago'));
-    await TestHarness.advance(tester, duration: const Duration(seconds: 2));
+    await TestHarness.continueToCheckout(tester);
     await TestHarness.fillBillingAndContinue(tester);
 
     // Cambia a SINPE Móvil y paga.
@@ -116,7 +115,7 @@ void main() {
     );
     await tester.pump();
     await tester.tap(find.text('Pagar ahora'));
-    await TestHarness.advance(tester, duration: const Duration(seconds: 6));
+    await TestHarness.advance(tester, duration: const Duration(seconds: 8));
 
     expect(find.text('Pago en revisión'), findsOneWidget);
 

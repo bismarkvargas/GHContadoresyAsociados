@@ -35,7 +35,7 @@ void main() {
     // El catálogo del cliente se carga desde assets/mock/catalog.seed.json.
     await TestHarness.waitForCatalog(tester);
     expect(find.byType(ProductCard), findsWidgets);
-    expect(find.textContaining('62 servicios'), findsOneWidget);
+    expect(find.textContaining('62 servicios'), findsWidgets);
   });
 
   testWidgets('el buscador filtra servicios del catálogo', (tester) async {

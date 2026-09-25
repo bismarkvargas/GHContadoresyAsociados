@@ -510,7 +510,8 @@ class DioApiClient implements ApiClient {
 
   @override
   Future<Cart> clearCart() => _guard(() async {
-        await _dio.delete<dynamic>('/me/cart/items');
+        // El contrato vacía el carrito con DELETE /me/cart (no /me/cart/items).
+        await _dio.delete<dynamic>('/me/cart');
         return Cart.empty;
       });
 

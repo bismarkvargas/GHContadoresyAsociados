@@ -75,8 +75,13 @@ class TestHarness {
   }
 
   /// Monta la app completa con sus providers.
+  ///
+  /// Registra además el cierre limpio del test ([teardown]): la app mantiene
+  /// temporizadores vivos (centro de notificaciones, tiempo real simulado,
+  /// SnackBars) y el binding de `flutter_test` exige que no queden pendientes.
   static Future<void> pumpApp(WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: GhContadoresApp()));
+    addTearDown(() => teardown(tester));
   }
 
   /// Contenedor de providers de la app montada (para inspeccionar el estado).
@@ -96,8 +101,18 @@ class TestHarness {
     for (int i = 0; i < 120; i++) {
       await tester.pump(const Duration(milliseconds: 120));
       if (find.text('Buscar trámite, servicio o código…').evaluate().isNotEmpty) {
+        // Deja expirar los temporizadores internos del arranque (por ejemplo
+        // el tope de tiempo del centro de notificaciones).
+        await settleTimers(tester);
         return;
       }
+    }
+  }
+
+  /// Avanza el reloj virtual para que expiren los temporizadores de arranque.
+  static Future<void> settleTimers(WidgetTester tester) async {
+    for (int i = 0; i < 8; i++) {
+      await tester.pump(const Duration(seconds: 1));
     }
   }
 
@@ -117,7 +132,10 @@ class TestHarness {
   static Future<void> waitForCatalog(WidgetTester tester) async {
     for (int i = 0; i < 100; i++) {
       await tester.pump(const Duration(milliseconds: 120));
-      if (find.byType(ProductCard).evaluate().isNotEmpty) return;
+      if (find.byType(ProductCard).evaluate().isNotEmpty) {
+        await settleTimers(tester);
+        return;
+      }
     }
   }
 
@@ -136,6 +154,7 @@ class TestHarness {
 
   /// Agrega el primer servicio del catálogo al carrito.
   static Future<void> addFirstProductToCart(WidgetTester tester) async {
+    await settleTimers(tester);
     final card = find.byType(ProductCard).first;
     expect(card, findsOneWidget);
 
@@ -153,6 +172,24 @@ class TestHarness {
   static Future<void> openCart(WidgetTester tester) async {
     await tester.tap(find.text('Carrito').last);
     await advance(tester, duration: const Duration(milliseconds: 900));
+  }
+
+  /// Pasa del carrito al checkout (el `Text` interno del botón no es táctil).
+  static Future<void> continueToCheckout(WidgetTester tester) async {
+    final byKey = find.byKey(const Key('cart-continue-to-checkout'));
+    final target = byKey.evaluate().isNotEmpty
+        ? byKey
+        : find.ancestor(
+            of: find.textContaining('Continuar al pago'),
+            matching: find.byType(FilledButton),
+          );
+    expect(target, findsOneWidget);
+
+    // El botón vive al final de una lista: hay que garantizar que sea visible.
+    await tester.ensureVisible(target);
+    await tester.pump();
+    await tester.tap(target);
+    await advance(tester, duration: const Duration(seconds: 3));
   }
 
   /// Cierra el test de forma limpia.
