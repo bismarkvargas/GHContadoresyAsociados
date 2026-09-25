@@ -1,122 +1,113 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'core/config/app_config.dart';
+import 'core/providers/auth_provider.dart';
+import 'core/providers/core_providers.dart';
+import 'core/providers/realtime_provider.dart';
+import 'core/router/app_router.dart';
+import 'core/theme/gh_theme.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ProviderScope(child: GhContadoresApp()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+/// Raíz de la aplicación: tema, idioma, escalado de texto y arranque.
+class GhContadoresApp extends ConsumerStatefulWidget {
+  const GhContadoresApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  ConsumerState<GhContadoresApp> createState() => _GhContadoresAppState();
+}
+
+class _GhContadoresAppState extends ConsumerState<GhContadoresApp> {
+  bool _bootstrapped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  Future<void> _bootstrap() async {
+    if (_bootstrapped) return;
+    _bootstrapped = true;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+    // 1) Centro de notificaciones local (tolerante a la ausencia de Firebase).
+    await ref.read(pushServiceProvider).init();
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+    // 2) Sesión guardada + catálogo del modo demo listo antes de pintar.
+    await ref.read(apiBootstrapProvider.future);
+    await ref.read(authProvider.notifier).bootstrap();
 
-  final String title;
+    // 3) Puente de tiempo real (SignalR o simulado) + polling de respaldo.
+    ref.read(realtimeBridgeProvider);
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+    final user = ref.read(authProvider).user;
+    if (user != null) {
+      await ref.read(realtimeServiceProvider).connect(
+            userId: user.id,
+            accessToken: ref.read(tokenStoreProvider).accessToken,
+          );
+    }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+    // 4) Deep link cuando el usuario abre desde una notificación.
+    ref.read(pushServiceProvider).onNotificationTap = (payload) {
+      final link = AppRoutes.normalizeDeepLink(payload.deepLink);
+      if (link != null) {
+        ref.read(realtimeBannerDeepLinkProvider.notifier).state = link;
+      }
+    };
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+    // 5) Cierre de sesión forzado si el refresh token ya no sirve.
+    ref.listen<int>(sessionExpiredProvider, (previous, next) {
+      if (previous != next) {
+        ref.read(authProvider.notifier).forceLogout(
+              message: 'Tu sesión expiró. Inicia sesión de nuevo.',
+            );
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+    final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
+
+    return MaterialApp.router(
+      title: AppConfig.appName,
+      debugShowCheckedModeBanner: false,
+      theme: GhTheme.light(),
+      darkTheme: GhTheme.dark(),
+      themeMode: themeMode,
+      routerConfig: router,
+      locale: const Locale('es', 'CR'),
+      supportedLocales: const <Locale>[
+        Locale('es', 'CR'),
+        Locale('es'),
+        Locale('en'),
+      ],
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      builder: (context, child) {
+        // Respeta el escalado de texto del sistema, acotando los extremos
+        // para que nada se desborde con tamaños muy grandes.
+        final media = MediaQuery.of(context);
+        return MediaQuery(
+          data: media.copyWith(
+            textScaler: media.textScaler.clamp(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.6,
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }
