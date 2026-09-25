@@ -699,8 +699,8 @@ route('GET', '/admin/dashboard/summary', (): DashboardSummary => {
 /* CLIENTES                                                            */
 /* ------------------------------------------------------------------ */
 
-route('GET', '/admin/clients', (ctx) =>
-  list(
+route('GET', '/admin/clients', (ctx): Paginated<Client> =>
+  list<Client>(
     getDb().clients.filter((c) => !c.isDeleted).map(clientRow),
     ctx.query,
     (c) =>
@@ -837,8 +837,8 @@ route('DELETE', '/admin/clients/:id/contacts/:contactId', (ctx) => {
   return { ok: true }
 })
 
-route('GET', '/admin/clients/:id/interactions', (ctx) =>
-  list(
+route('GET', '/admin/clients/:id/interactions', (ctx): Paginated<ClientInteraction> =>
+  list<ClientInteraction>(
     getDb()
       .clientInteractions.filter((i) => i.clientId === ctx.params.id)
       .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()),

@@ -110,9 +110,20 @@ if [ -n "$PEDIDO_ID" ]; then
   EXITO=$(json "['succeeded']" <<<"$BODY"); CASOS=$(json "['createdCaseCodes']" <<<"$BODY")
   if [ "$CODE" = "200" ] && [ "$EXITO" = "True" ]; then ok "pago aprobado · expediente(s) generados: $CASOS"; else ko "pago: código $CODE · $BODY"; fi
 
-  RESP=$(api POST "/me/orders/${PEDIDO_ID}/pay" '{"method":"Card","card":{"number":"4000 0000 0000 0002","holder":"PRUEBA HUMO","expiry":"12/29","cvv":"123"}}' "$NUEVO_TOKEN")
+  # El rechazo se prueba con un pedido nuevo: un pedido ya pagado no admite otro cobro.
+  RESP=$(api POST /me/orders "{\"useCart\":false,\"items\":[{\"productId\":\"${PRODUCTO_ID}\",\"quantity\":1}],\"customerName\":\"Prueba Humo S.A.\",\"customerEmail\":\"${NUEVO_EMAIL}\"}" "$NUEVO_TOKEN")
+  PEDIDO2=$(sed '$d' <<<"$RESP" | json "['id']")
+  RESP=$(api POST "/me/orders/${PEDIDO2}/pay" '{"method":"Card","card":{"number":"4000 0000 0000 0002","holder":"PRUEBA HUMO","expiry":"12/29","cvv":"123"}}' "$NUEVO_TOKEN")
   RECHAZO=$(sed '$d' <<<"$RESP" | json "['payment']['status']")
   [ "$RECHAZO" = "Declined" ] && ok "la tarjeta de prueba de rechazo devuelve Declined" || ko "rechazo inesperado: $RECHAZO"
+
+  RESP=$(api POST "/me/orders/${PEDIDO2}/pay" '{"method":"Sinpe","sinpePhone":"+506 8888 0001"}' "$NUEVO_TOKEN")
+  PENDIENTE=$(sed '$d' <<<"$RESP" | json "['payment']['status']")
+  [ "$PENDIENTE" = "Pending" ] && ok "SINPE Móvil queda pendiente de confirmación" || ko "SINPE inesperado: $PENDIENTE"
+
+  RESP=$(api POST "/me/orders/${PEDIDO2}/pay" '{"method":"Card","card":{"number":"4000 0000 0000 9995","holder":"PRUEBA HUMO","expiry":"12/29","cvv":"123"}}' "$NUEVO_TOKEN")
+  EN_REVISION=$(sed '$d' <<<"$RESP" | json "['payment']['status']")
+  [ "$EN_REVISION" = "Pending" ] && ok "la tarjeta en revisión devuelve Pending" || ko "tarjeta en revisión inesperada: $EN_REVISION"
 fi
 
 step "8 · Gestión del expediente desde el panel"

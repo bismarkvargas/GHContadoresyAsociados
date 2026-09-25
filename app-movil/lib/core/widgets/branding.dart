@@ -19,7 +19,7 @@ class GhLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mark = _GhMark(size: size, onDark: onDark);
+    final mark = _GhMark(size: size);
     if (!showWordmark) return mark;
 
     return Row(
@@ -57,10 +57,9 @@ class GhLogo extends StatelessWidget {
 }
 
 class _GhMark extends StatelessWidget {
-  const _GhMark({required this.size, required this.onDark});
+  const _GhMark({required this.size});
 
   final double size;
-  final bool onDark;
 
   @override
   Widget build(BuildContext context) {
@@ -109,31 +108,23 @@ class _GhMonogramPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // "G"
-    final gRect = Rect.fromLTRB(0, 0, w * 0.46, h);
-    canvas.drawArc(gRect, math.pi * 0.28, math.pi * 1.62, false, paint);
-    final gBarY = h * 0.52;
-    canvas.drawLine(
-      Offset(w * 0.24, gBarY),
-      Offset(w * 0.46, gBarY),
+    // Letra "G".
+    canvas.drawArc(
+      Rect.fromLTRB(0, 0, w * 0.46, h),
+      math.pi * 0.28,
+      math.pi * 1.62,
+      false,
       paint,
     );
-    canvas.drawLine(
-      Offset(w * 0.46, gBarY),
-      Offset(w * 0.46, h * 0.34),
-      paint,
-    );
+    canvas.drawLine(Offset(w * 0.24, h * 0.52), Offset(w * 0.46, h * 0.52), paint);
+    canvas.drawLine(Offset(w * 0.46, h * 0.52), Offset(w * 0.46, h * 0.34), paint);
 
-    // "H"
+    // Letra "H".
     final hLeft = w * 0.62;
     final hRight = w * 0.98;
     canvas.drawLine(Offset(hLeft, 0), Offset(hLeft, h), paint);
     canvas.drawLine(Offset(hRight, 0), Offset(hRight, h), paint);
-    canvas.drawLine(
-      Offset(hLeft, h * 0.5),
-      Offset(hRight, h * 0.5),
-      paint,
-    );
+    canvas.drawLine(Offset(hLeft, h * 0.5), Offset(hRight, h * 0.5), paint);
   }
 
   @override
@@ -141,7 +132,7 @@ class _GhMonogramPainter extends CustomPainter {
       oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
 }
 
-/// Ilustración vectorial para el onboarding y los estados vacíos.
+/// Ilustración vectorial para onboarding, estados vacíos y errores.
 enum GhIllustration { accounting, legal, municipal, tax, empty, success, search }
 
 class GhIllustrationView extends StatelessWidget {
@@ -196,7 +187,7 @@ class _IllustrationPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
-    final h = size.height;
+
     final softPaint = Paint()..color = soft;
     final cardPaint = Paint()..color = surface;
     final linePaint = Paint()
@@ -204,37 +195,48 @@ class _IllustrationPainter extends CustomPainter {
       ..strokeWidth = w * 0.012
       ..style = PaintingStyle.stroke;
     final primaryPaint = Paint()..color = primary;
-    final accentPaint = Paint()
-      ..color = accent.withValues(alpha: 0.75)
-      ..strokeWidth = w * 0.015
-      ..strokeCap = StrokeCap.round;
+    final accentPaint = Paint()..color = accent.withValues(alpha: 0.75);
 
     // Base: círculo suave de fondo.
-    canvas.drawCircle(Offset(w / 2, h / 2), w * 0.46, softPaint);
+    canvas.drawCircle(Offset(w / 2, size.height / 2), w * 0.46, softPaint);
 
     switch (illustration) {
       case GhIllustration.accounting:
-        _drawDocument(canvas, size, cardPaint, linePaint, primaryPaint, accentPaint,
-            bars: true);
+        _drawDocument(
+          canvas,
+          size,
+          cardPaint,
+          linePaint,
+          primaryPaint,
+          accentPaint,
+          bars: true,
+        );
         break;
       case GhIllustration.legal:
-        _drawScales(canvas, size, cardPaint, primaryPaint, accentPaint);
+        _drawScales(canvas, size, accentPaint);
         break;
       case GhIllustration.municipal:
         _drawBuilding(canvas, size, cardPaint, primaryPaint, accentPaint);
         break;
       case GhIllustration.tax:
-        _drawDocument(canvas, size, cardPaint, linePaint, primaryPaint, accentPaint,
-            bars: false);
+        _drawDocument(
+          canvas,
+          size,
+          cardPaint,
+          linePaint,
+          primaryPaint,
+          accentPaint,
+          bars: false,
+        );
         break;
       case GhIllustration.empty:
         _drawEmptyBox(canvas, size, cardPaint, linePaint, primaryPaint);
         break;
       case GhIllustration.success:
-        _drawCheck(canvas, size, primaryPaint);
+        _drawCheck(canvas, size);
         break;
       case GhIllustration.search:
-        _drawSearch(canvas, size, primaryPaint, accentPaint);
+        _drawSearch(canvas, size, accentPaint);
         break;
     }
   }
@@ -242,10 +244,10 @@ class _IllustrationPainter extends CustomPainter {
   void _drawDocument(
     Canvas canvas,
     Size size,
-    Paint card,
-    Paint line,
-    Paint primary,
-    Paint accent, {
+    Paint cardPaint,
+    Paint linePaint,
+    Paint primaryPaint,
+    Paint accentPaint, {
     required bool bars,
   }) {
     final w = size.width;
@@ -254,8 +256,8 @@ class _IllustrationPainter extends CustomPainter {
       Rect.fromLTWH(w * 0.24, h * 0.18, w * 0.52, h * 0.64),
       Radius.circular(w * 0.05),
     );
-    canvas.drawRRect(rect, card);
-    canvas.drawRRect(rect, line);
+    canvas.drawRRect(rect, cardPaint);
+    canvas.drawRRect(rect, linePaint);
 
     // Encabezado de marca.
     canvas.drawRRect(
@@ -263,7 +265,7 @@ class _IllustrationPainter extends CustomPainter {
         Rect.fromLTWH(w * 0.32, h * 0.26, w * 0.2, h * 0.05),
         Radius.circular(w * 0.02),
       ),
-      primary,
+      primaryPaint,
     );
 
     if (bars) {
@@ -271,15 +273,10 @@ class _IllustrationPainter extends CustomPainter {
         final barH = h * (0.14 - i * 0.03);
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              w * (0.34 + i * 0.12),
-              h * 0.68 - barH,
-              w * 0.08,
-              barH,
-            ),
+            Rect.fromLTWH(w * (0.34 + i * 0.12), h * 0.68 - barH, w * 0.08, barH),
             Radius.circular(w * 0.02),
           ),
-          i == 2 ? primary : accent,
+          i == 2 ? primaryPaint : accentPaint,
         );
       }
     } else {
@@ -287,92 +284,113 @@ class _IllustrationPainter extends CustomPainter {
         canvas.drawLine(
           Offset(w * 0.34, h * (0.42 + i * 0.1)),
           Offset(w * 0.66, h * (0.42 + i * 0.1)),
-          line,
+          linePaint,
         );
       }
     }
   }
 
-  void _drawScales(Canvas canvas, Size size, Paint card, Paint primary, Paint accent) {
+  void _drawScales(Canvas canvas, Size size, Paint accentPaint) {
     final w = size.width;
     final h = size.height;
-    canvas.drawLine(Offset(w * 0.5, h * 0.22), Offset(w * 0.5, h * 0.74), primary);
-    canvas.drawLine(Offset(w * 0.32, h * 0.3), Offset(w * 0.68, h * 0.3), primary);
-    canvas.drawLine(Offset(w * 0.36, h * 0.78), Offset(w * 0.64, h * 0.78), primary);
+    final bar = Paint()
+      ..color = primary
+      ..strokeWidth = w * 0.03
+      ..strokeCap = StrokeCap.round;
 
-    // Plato izquierdo.
+    canvas.drawLine(Offset(w * 0.5, h * 0.22), Offset(w * 0.5, h * 0.74), bar);
+    canvas.drawLine(Offset(w * 0.32, h * 0.3), Offset(w * 0.68, h * 0.3), bar);
+    canvas.drawLine(Offset(w * 0.36, h * 0.78), Offset(w * 0.64, h * 0.78), bar);
+
     final leftPan = Path()
       ..moveTo(w * 0.24, h * 0.5)
       ..lineTo(w * 0.4, h * 0.5)
       ..lineTo(w * 0.32, h * 0.62)
       ..close();
-    canvas.drawPath(leftPan, accent);
+    canvas.drawPath(leftPan, accentPaint);
 
-    // Plato derecho.
     final rightPan = Path()
       ..moveTo(w * 0.6, h * 0.5)
       ..lineTo(w * 0.76, h * 0.5)
       ..lineTo(w * 0.68, h * 0.62)
       ..close();
-    canvas.drawPath(rightPan, accent);
+    canvas.drawPath(rightPan, accentPaint);
   }
 
-  void _drawBuilding(Canvas canvas, Size size, Paint card, Paint primary, Paint accent) {
+  void _drawBuilding(
+    Canvas canvas,
+    Size size,
+    Paint cardPaint,
+    Paint primaryPaint,
+    Paint accentPaint,
+  ) {
     final w = size.width;
     final h = size.height;
     final base = RRect.fromRectAndRadius(
       Rect.fromLTWH(w * 0.28, h * 0.36, w * 0.44, h * 0.42),
       Radius.circular(w * 0.04),
     );
-    canvas.drawRRect(base, card);
-    canvas.drawRRect(base, Paint()
-      ..color = primary
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * 0.02);
+    canvas.drawRRect(base, cardPaint);
+    canvas.drawRRect(
+      base,
+      Paint()
+        ..color = primary
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = w * 0.02,
+    );
 
-    // Techo.
     final roof = Path()
       ..moveTo(w * 0.24, h * 0.38)
       ..lineTo(w * 0.5, h * 0.2)
       ..lineTo(w * 0.76, h * 0.38)
       ..close();
-    canvas.drawPath(roof, primary);
+    canvas.drawPath(roof, primaryPaint);
 
-    // Ventanas.
     for (int r = 0; r < 2; r++) {
       for (int c = 0; c < 3; c++) {
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(w * (0.35 + c * 0.11), h * (0.45 + r * 0.14), w * 0.06, h * 0.07),
+            Rect.fromLTWH(
+              w * (0.35 + c * 0.11),
+              h * (0.45 + r * 0.14),
+              w * 0.06,
+              h * 0.07,
+            ),
             Radius.circular(w * 0.015),
           ),
-          accent,
+          accentPaint,
         );
       }
     }
   }
 
-  void _drawEmptyBox(Canvas canvas, Size size, Paint card, Paint line, Paint primary) {
+  void _drawEmptyBox(
+    Canvas canvas,
+    Size size,
+    Paint cardPaint,
+    Paint linePaint,
+    Paint primaryPaint,
+  ) {
     final w = size.width;
     final h = size.height;
     final rect = RRect.fromRectAndRadius(
       Rect.fromLTWH(w * 0.26, h * 0.34, w * 0.48, h * 0.36),
       Radius.circular(w * 0.06),
     );
-    canvas.drawRRect(rect, card);
-    canvas.drawRRect(rect, line);
-    canvas.drawLine(Offset(w * 0.26, h * 0.34), Offset(w * 0.5, h * 0.5), line);
-    canvas.drawLine(Offset(w * 0.74, h * 0.34), Offset(w * 0.5, h * 0.5), line);
+    canvas.drawRRect(rect, cardPaint);
+    canvas.drawRRect(rect, linePaint);
+    canvas.drawLine(Offset(w * 0.26, h * 0.34), Offset(w * 0.5, h * 0.5), linePaint);
+    canvas.drawLine(Offset(w * 0.74, h * 0.34), Offset(w * 0.5, h * 0.5), linePaint);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(w * 0.42, h * 0.22, w * 0.16, h * 0.06),
         Radius.circular(w * 0.02),
       ),
-      primary,
+      primaryPaint,
     );
   }
 
-  void _drawCheck(Canvas canvas, Size size, Paint primary) {
+  void _drawCheck(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
     canvas.drawCircle(
@@ -398,7 +416,7 @@ class _IllustrationPainter extends CustomPainter {
     );
   }
 
-  void _drawSearch(Canvas canvas, Size size, Paint primary, Paint accent) {
+  void _drawSearch(Canvas canvas, Size size, Paint accentPaint) {
     final w = size.width;
     final h = size.height;
     canvas.drawCircle(
@@ -417,11 +435,16 @@ class _IllustrationPainter extends CustomPainter {
         ..strokeWidth = w * 0.06
         ..strokeCap = StrokeCap.round,
     );
-    canvas.drawCircle(Offset(w * 0.46, h * 0.44), w * 0.1, accent);
+    canvas.drawCircle(Offset(w * 0.46, h * 0.44), w * 0.1, accentPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _IllustrationPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _IllustrationPainter oldDelegate) =>
+      oldDelegate.illustration != illustration ||
+      oldDelegate.primary != primary ||
+      oldDelegate.accent != accent ||
+      oldDelegate.soft != soft ||
+      oldDelegate.surface != surface;
 }
 
 /// Marca de agua decorativa con el monograma (para cabeceras).
