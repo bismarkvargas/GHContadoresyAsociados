@@ -31,9 +31,9 @@ export function usePermission(): {
       if (hasGlobalGrant) return true
       if (isSuperAdmin) return true
       if (permissions.includes(code)) return true
-      // Comodín por módulo: `cases.*`
+      // Comodín por módulo: `cases.*` o `cases`
       const [moduleKey] = code.split('.')
-      return permissions.includes(`${moduleKey}.*`)
+      return permissions.includes(`${moduleKey}.*`) || permissions.includes(moduleKey!)
     },
     [permissions, isSuperAdmin, hasGlobalGrant],
   )

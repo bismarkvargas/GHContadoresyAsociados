@@ -49,7 +49,7 @@ const defaults: ClientFormValues = {
   tagsCsv: '',
   notes: '',
   createCase: false,
-}
+} satisfies ClientFormValues
 
 export function ClientForm({
   client,
@@ -90,9 +90,9 @@ export function ClientForm({
           canton: client.canton ?? '',
           district: client.district ?? '',
           status: client.status,
-          source: client.source,
+          source: (client.source as ClientFormValues['source']) ?? 'web',
           assignedToUserId: client.assignedToUserId ?? '',
-          tagsCsv: client.tagsCsv ?? '',
+          tagsCsv: client.tagsCsv ?? (client.tags ?? []).join(','),
           notes: client.notes ?? '',
           createCase: false,
         }

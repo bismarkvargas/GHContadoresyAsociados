@@ -360,7 +360,8 @@ function buildLoginResponse(user: User): LoginResponse {
       clientId: user.clientId ?? null,
     },
     roles: user.roles,
-    permissions,
+    // La API real devuelve `["*"]` para los roles con acceso total: el mock imita esa forma.
+    permissions: permissions.includes('*') ? ['*'] : permissions,
   }
 }
 

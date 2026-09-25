@@ -451,7 +451,7 @@ export interface Order {
   id: string
   number: string
   userId: string
-  customerName?: string
+  customerName?: string | null
   clientId?: string | null
   clientName?: string | null
   status: OrderStatus
@@ -476,7 +476,7 @@ export type PaymentStatus = 'Initiated' | 'Approved' | 'Declined' | 'Pending' | 
 export interface Payment {
   id: string
   orderId: string
-  orderNumber?: string
+  orderNumber?: string | null
   provider: string
   method: PaymentMethod
   status: PaymentStatus

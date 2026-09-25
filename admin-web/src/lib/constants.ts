@@ -68,8 +68,10 @@ function inModule(moduleKey: PermissionModuleKey, actions: string[]): string[] {
 
 /** Permisos semilla por rol (docs/02 — tabla resumen). */
 export const seedRolePermissions: Record<string, string[]> = {
-  SuperAdmin: allPermissionCodes,
-  Admin: allPermissionCodes,
+  // La API real devuelve `["*"]` para los roles con acceso total: se imita esa forma
+  // para que el modo demo y el modo real se comporten igual.
+  SuperAdmin: ['*'],
+  Admin: ['*'],
   Abogado: [
     ...inModule('clients', ['view', 'edit', 'assign']),
     ...inModule('cases', ['view', 'create', 'edit', 'assign']),

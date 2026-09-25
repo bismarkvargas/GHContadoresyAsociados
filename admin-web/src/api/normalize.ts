@@ -293,7 +293,6 @@ export function normalizeDocument(raw: unknown): DocumentItem {
     downloadUrl: (d.downloadUrl as string | undefined) ?? undefined,
   }
 }
-
 function normalizeOrderItem(raw: unknown, orderId: string): Order['items'][number] {
   const i = asRecord(raw)
   return {
@@ -675,14 +674,14 @@ export function normalizeDashboard(raw: unknown): DashboardSummary {
 
 export function normalizeReportSales(raw: unknown): ReportSales {
   const r = asRecord(raw)
+  const totals = asRecord(r.totals)
   const byMonth = asArray<Rec>(r.byMonth).map((m) => ({
     month: str(m.month ?? m.label),
     total: num(m.total ?? m.amount),
     orders: num(m.orders ?? m.count),
   }))
-  const total = num(r.totals?.total ?? r.totalRevenue, byMonth.reduce((s, m) => s + m.total, 0))
-  const orders = num(r.totals?.orders ?? r.totalOrders, byMonth.reduce((s, m) => s + m.orders, 0))
-
+  const total = num(totals.total ?? r.totalRevenue, byMonth.reduce((s, m) => s + m.total, 0))
+  const orders = num(totals.orders ?? r.totalOrders, byMonth.reduce((s, m) => s + m.orders, 0))
   return {
     byMonth,
     byCategory: asArray<Rec>(r.byCategory).map((c) => ({
@@ -697,11 +696,11 @@ export function normalizeReportSales(raw: unknown): ReportSales {
       total: num(p.total ?? p.amount),
     })),
     totals: {
-      subtotal: num(r.totals?.subtotal, total),
-      tax: num(r.totals?.tax),
+      subtotal: num(totals.subtotal, total),
+      tax: num(totals.tax),
       total,
       orders,
-      averageTicket: num(r.totals?.averageTicket ?? r.averageTicket, orders ? total / orders : 0),
+      averageTicket: num(totals.averageTicket ?? r.averageTicket, orders ? total / orders : 0),
     },
   }
 }
