@@ -50,6 +50,7 @@ En `../tools/e2e-admin` (Playwright ya instalado):
 | `node e2e-admin.mjs` | **Producción**: login escribiendo credenciales, datos reales en los 14 módulos, alta real de cliente contra la API, control de acceso de un Abogado y errores de consola/red |
 | `node verificar-local.mjs` | Panel local en modo mock: enlace de campos de formulario, KPIs, alias de rutas y validación en español |
 | `node verificar-alta-cliente.mjs` | El alta de cliente navega a la ficha con un identificador **válido** (nunca `/clientes/undefined`) |
+| `node verificar-marca.mjs` | Identidad corporativa en navegador real: logotipos, franja lima, Montserrat, tokens, tema oscuro y switch de registro |
 | `node verificar-ronda2.mjs` | Campana con el contrato real de notificaciones, rutas con id ausente, etiquetas como arreglo y reenvío |
 | `node diagnostico-red.mjs` | Registra todas las respuestas ≥ 400 del panel desplegado |
 | `node diagnostico-sesion.mjs` | Ciclo de vida del token y de `/auth/me` al navegar |
@@ -101,6 +102,20 @@ se ocultan o bloquean según ese arreglo. Compare el menú de `admin@` con el de
 
 Contraseña de los usuarios Cliente creados al aprobar una solicitud: `Cliente123!`.
 
+### Modo de registro de clientes
+
+En **Ajustes → Registro de clientes** hay un switch que decide cómo se registran los clientes desde
+el app, guardado en el ajuste `registration.mode`:
+
+| Modo | Efecto |
+|---|---|
+| `automatic` | La cuenta se crea **activa al instante**; la solicitud aparece en la bandeja marcada como «Automática». |
+| `approval` | La solicitud queda **pendiente** y debe aprobarse o rechazarse con un motivo. |
+
+El mensaje que ve el solicitante se edita en `registration.message`. En `/solicitudes` la cabecera
+muestra el modo vigente y cada aprobación indica si fue automática o quién la revisó, con enlace al
+cliente creado (`clientCode`).
+
 ### Reiniciar los datos demo
 
 Los datos se persisten en `localStorage` bajo la clave `gh.mock.db.v8`. Para volver al estado
@@ -150,20 +165,42 @@ localStorage.removeItem('gh.mock.db.v8'); location.reload()
 
 ## 8. Marca
 
-Los tokens están en `src/styles/theme.css` exactamente con los valores de `docs/01 §7` y se
-consumen vía clases Tailwind (`bg-primary`, `text-ink`, `border-line`, `bg-surface-2`…) definidas en
-`tailwind.config.js`:
+Identidad corporativa definitiva: **azul marino + verde lima**. Los tokens están en
+`src/styles/theme.css` y se consumen vía clases Tailwind (`bg-primary`, `text-ink`, `border-line`,
+`bg-accent`…) definidas en `tailwind.config.js`. **Los nombres de los tokens no cambian**, solo sus
+valores:
 
 ```
---gh-primary:#DF3131  --gh-primary-600:#C42121  --gh-primary-50:#FDECEC
---gh-ink:#212121      --gh-ink-700:#3A3A3A      --gh-muted:#646464
---gh-surface:#ECEFF3  --gh-surface-2:#F7F8FA    --gh-border:#E2E5E9
---gh-success:#008250  --gh-warning:#D49341      --gh-danger:#E62214  --gh-info:#116DFF
+--gh-primary:#1E2B58  --gh-primary-600:#16214A  --gh-primary-700:#101838  --gh-primary-50:#EEF1F8
+--gh-accent:#C4D82D   --gh-accent-600:#A8BC1F   --gh-accent-50:#F6FAE0
+--gh-ink:#1E2B58      --gh-ink-700:#2A3B70      --gh-muted:#5A6785
+--gh-surface:#F4F6FB  --gh-surface-2:#FAFBFD    --gh-border:#DCE2EE
+--gh-success:#008250  --gh-warning:#D49341      --gh-danger:#C0392B  --gh-info:#2A6FDB
 ```
 
-Tipografía del sistema con escala 12/14/16/20/24/32, radios 10 px (controles) y 16 px (tarjetas),
-sombra suave única. Los colores se exponen además como canales RGB (`--gh-primary-rgb`) para que
-Tailwind pueda aplicar opacidad (`bg-danger/10`) y el **tema claro/oscuro** funcione en caliente.
+Reglas de uso del lima (no tiene contraste para texto):
+
+- **Franja superior de marca** de 4 px pegada al borde de la ventana (login y shell), clase
+  `.gh-brand-strip`. Es el rasgo distintivo.
+- Indicador de la **sección activa** del menú lateral, badges con texto azul marino encima
+  (`bg-accent/30 text-ink`), halo de foco y el KPI de ingresos del dashboard.
+- El **rojo** (`--gh-danger`) queda reservado para acciones destructivas.
+
+Tipografía **Montserrat** (la del logotipo) con los cinco pesos declarados por `@font-face` con
+`font-display: swap` y configurada como familia por defecto en `tailwind.config.js`. Los archivos
+viven en `public/fonts/` y se sirven desde `/ghcontadores/fonts/…`: un plugin de Vite
+(`gh-base-en-css`) sustituye el base en las `url()` del CSS, porque los `url()` relativos no reciben
+el `base` y acababan pidiendo `/fonts/…` (404).
+
+Logotipos en `public/brand/`: `logo-horizontal-blanco.png` sobre azul marino (panel del login y
+sidebar), `logo-horizontal-azul.png` sobre claro (formulario del login) e `icono-azul.png` para el
+sidebar colapsado. Favicons y `apple-touch-icon` enlazados en `index.html` junto con
+`<meta name="theme-color" content="#1E2B58">`.
+
+Escala tipográfica 12/14/16/20/24/32, radios 10 px (controles) y 16 px (tarjetas), sombra suave
+única. Los colores se exponen además como canales RGB (`--gh-primary-rgb`) para que Tailwind pueda
+aplicar opacidad (`bg-danger/10`) y el **tema claro/oscuro** funcione en caliente (en oscuro el lima
+se aclara a `#D4E455`).
 
 Datos reales visibles en Ajustes y en el pie del panel: GH Contadores & Asociados · Ruta Nacional
 Secundaria 155, Huacas, Santa Cruz, Guanacaste, Costa Rica · +506 2653 6634 · +506 8846 9454 ·

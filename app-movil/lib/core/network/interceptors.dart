@@ -6,11 +6,6 @@ import '../models/user.dart';
 import '../storage/token_store.dart';
 
 /// Añade `Authorization: Bearer <token>` a cada petición autenticada.
-///
-/// Si la petición no es pública y no hay sesión, se responde como «no autorizado»
-/// **sin salir a la red**: así un invitado que navega el catálogo no genera 401 en
-/// bucle (batería, datos y ruido en los registros) y la pantalla muestra su estado
-/// correspondiente de inmediato.
 class AuthInterceptor extends Interceptor {
   AuthInterceptor(this._store);
 
@@ -18,34 +13,12 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    options.headers.putIfAbsent('Accept', () => 'application/json');
-
-    if (options.extra['public'] == true) {
-      handler.next(options);
-      return;
-    }
-
     final token = _store.accessToken;
-    if (token == null || token.isEmpty) {
-      handler.reject(
-        DioException(
-          requestOptions: options,
-          type: DioExceptionType.badResponse,
-          error: 'sesión requerida',
-          response: Response<dynamic>(
-            requestOptions: options,
-            statusCode: 401,
-            data: <String, dynamic>{
-              'title': 'Sesión requerida',
-              'detail': 'Inicia sesión para continuar.',
-            },
-          ),
-        ),
-      );
-      return;
+    final isPublic = options.extra['public'] == true;
+    if (!isPublic && token != null && token.isNotEmpty) {
+      options.headers['Authorization'] = 'Bearer $token';
     }
-
-    options.headers['Authorization'] = 'Bearer $token';
+    options.headers.putIfAbsent('Accept', () => 'application/json');
     handler.next(options);
   }
 }

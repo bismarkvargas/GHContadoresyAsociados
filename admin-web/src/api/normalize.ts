@@ -422,9 +422,13 @@ export function normalizeAccountRequest(raw: unknown): AccountRequest {
     source: (str(a.source, 'app').toLowerCase() as AccountRequest['source']) || 'app',
     status: (str(a.status, 'Pending') as AccountRequest['status']) || 'Pending',
     reviewedByUserId: (a.reviewedByUserId as string | null) ?? null,
+    reviewedByName: (a.reviewedByName as string | null) ?? null,
     reviewedAt: (a.reviewedAt as string | null) ?? null,
     rejectionReason: (a.rejectionReason as string | null) ?? null,
     createdUserId: (a.createdUserId as string | null) ?? null,
+    clientId: (a.clientId ?? a.createdClientId ?? null) as string | null,
+    clientCode: (a.clientCode ?? a.createdClientCode ?? null) as string | null,
+    autoApproved: bool(a.autoApproved),
     ipAddress: (a.ipAddress as string | null) ?? null,
     trackingCode: str(a.trackingCode),
     createdAt: str(a.createdAt),
@@ -769,23 +773,116 @@ export interface NormalizedSettings {
   exchangeRate: number
 }
 
+/**
+ * La API agrupa los ajustes con etiquetas en español («Registro», «Catálogo»,
+ * «Marca»…), mientras el panel usa claves internas (`registration`, `company`…).
+ * Se traducen en ambos sentidos para que la interfaz y los guards funcionen.
+ */
+const GRUPOS_API_A_PANEL: Record<string, string> = {
+  empresa: 'company',
+  company: 'company',
+  marca: 'branding',
+  branding: 'branding',
+  registro: 'registration',
+  registration: 'registration',
+  monedas: 'currency',
+  moneda: 'currency',
+  currency: 'currency',
+  notificaciones: 'notifications',
+  notifications: 'notifications',
+  mensajes: 'messages',
+  messages: 'messages',
+  pasarela: 'payment',
+  pago: 'payment',
+  pagos: 'payment',
+  payment: 'payment',
+  catalogo: 'catalog',
+  catálogo: 'catalog',
+  catalog: 'catalog',
+  expedientes: 'cases',
+  cases: 'cases',
+  ventas: 'sales',
+  sales: 'sales',
+}
+
+/**
+ * La API nombra los ajustes de marca como `brand.primaryColor`, `brand.accentColor`…,
+ * mientras la interfaz usa `branding.primary`, `branding.accent`… Se traducen en
+ * ambos sentidos (y se aceptan las dos formas al leer).
+ */
+const CLAVES_API_A_PANEL: Record<string, string> = {
+  'brand.primaryColor': 'branding.primary',
+  'brand.accentColor': 'branding.accent',
+  'brand.inkColor': 'branding.ink',
+  'brand.successColor': 'branding.success',
+  'brand.logoUrl': 'branding.logoLight',
+  'brand.logoLightUrl': 'branding.logoLight',
+  'brand.iconUrl': 'branding.logoIcon',
+  'brand.name': 'branding.legalName',
+  'brand.shortName': 'branding.shortName',
+}
+
+const CLAVES_PANEL_A_API: Record<string, string> = Object.fromEntries(
+  Object.entries(CLAVES_API_A_PANEL).map(([api, panel]) => [panel, api]),
+)
+
+/** Traduce una clave del panel a la que espera la API (si tiene equivalente). */
+export function claveParaApi(clave: string): string {
+  return CLAVES_PANEL_A_API[clave] ?? clave
+}
+
+export function grupoDeAjuste(grupo: string): string {
+  const clave = grupo.trim().toLowerCase()
+  return GRUPOS_API_A_PANEL[clave] ?? clave
+}
+
+/** ¿Ya hay un ajuste con esa clave entre los leídos? */
+function yaPresente(items: Setting[], clave: string): boolean {
+  return items.some((s) => s.key === clave)
+}
+
 export function normalizeSettings(raw: unknown, fallbackRate = 520): NormalizedSettings {
   const list = Array.isArray(raw) ? raw : asArray<Rec>(asRecord(raw).items)
-  const items: Setting[] = list.map((entry, i) => {
-    const s = asRecord(entry)
-    return {
-      key: str(s.key, `setting.${i}`),
-      value: str(s.value),
-      group: str(s.group, 'company').toLowerCase(),
-      description: str(s.description, str(s.key)),
-      updatedAt: str(s.updatedAt ?? new Date().toISOString()),
-    }
-  })
+  const items: Setting[] = []
   const groups: Record<string, Setting[]> = {}
-  for (const s of items) {
-    groups[s.group] = groups[s.group] ?? []
-    groups[s.group]!.push(s)
+
+  for (const [i, entry] of list.entries()) {
+    const s = asRecord(entry)
+    const grupoOriginal = str(s.group, 'company')
+    const claveApi = str(s.key, `setting.${i}`)
+    const valor = str(s.value)
+    const grupoPanel = grupoDeAjuste(grupoOriginal)
+
+    // Un color de marca expuesto con otro nombre también se publica como token del
+    // panel (branding.primary / branding.accent), sin duplicar si ya existe.
+    const aliasPorColor =
+      /^#[0-9a-f]{6}$/i.test(valor) && grupoPanel === 'branding'
+        ? /primary/i.test(claveApi)
+          ? 'branding.primary'
+          : /accent|lima/i.test(claveApi)
+            ? 'branding.accent'
+            : null
+        : null
+
+    const disponibles = [...items, ...Object.values(groups).flat()]
+    const clavePanel = aliasPorColor && !yaPresente(disponibles, aliasPorColor)
+      ? aliasPorColor
+      : (CLAVES_API_A_PANEL[claveApi] ?? claveApi)
+
+    const item: Setting = {
+      key: clavePanel,
+      value: valor,
+      group: grupoPanel,
+      groupRaw: grupoOriginal,
+      description: str(s.description, claveApi),
+      updatedAt: str(s.updatedAt ?? new Date().toISOString()),
+      apiKey: claveApi,
+    }
+    items.push(item)
+    groups[grupoPanel] = groups[grupoPanel] ?? []
+    groups[grupoPanel]!.push(item)
   }
+
   const rate = items.find((s) => /usdToCrc|cambio|exchange/i.test(s.key))
   return { items, groups, exchangeRate: rate ? num(rate.value, fallbackRate) : fallbackRate }
 }

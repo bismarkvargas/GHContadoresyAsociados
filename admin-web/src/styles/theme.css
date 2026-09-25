@@ -1,84 +1,159 @@
 /* =========================================================================
    Tokens de marca — GH Contadores y Asociados
-   Extraídos del sitio en vivo (docs/01-analisis-mercado.md §7).
-   Nunca se escriben colores literales en los componentes: se usan las clases
-   Tailwind derivadas de estas variables (bg-primary, text-ink, border-line...).
+   Identidad corporativa definitiva: azul marino + verde lima.
+
+   Los NOMBRES de los tokens se mantienen (--gh-primary, --gh-ink, …) para que los
+   componentes no cambien; solo cambian los valores.
+
+   Reglas de uso del lima (#C4D82D): es acento, NUNCA texto sobre blanco (no tiene
+   contraste). Se usa en la franja superior, el indicador de la sección activa del
+   menú, badges con texto azul marino encima y bordes de foco.
    ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   Tipografía corporativa (Montserrat, la del logotipo).
+   `__GH_BASE__` lo sustituye el plugin `gh-base-en-css` (vite.config.ts) por el
+   base del despliegue, así las fuentes se sirven desde /ghcontadores/fonts/… en
+   desarrollo y en producción (los url() relativos no reciben el base de Vite).
+   ------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('__GH_BASE__fonts/Montserrat-400.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('__GH_BASE__fonts/Montserrat-500.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('__GH_BASE__fonts/Montserrat-600.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('__GH_BASE__fonts/Montserrat-700.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('__GH_BASE__fonts/Montserrat-800.ttf') format('truetype');
+}
 
 :root,
 [data-theme='light'] {
-  --gh-primary: #df3131; /* rojo corporativo */
-  --gh-primary-600: #c42121; /* hover / pressed */
-  --gh-primary-50: #fdecec; /* fondo suave */
-  --gh-ink: #212121; /* texto principal / sidebar */
-  --gh-ink-700: #3a3a3a;
-  --gh-muted: #646464;
-  --gh-surface: #eceff3;
-  --gh-surface-2: #f7f8fa;
-  --gh-border: #e2e5e9;
+  --gh-primary: #1e2b58; /* azul marino corporativo */
+  --gh-primary-600: #16214a; /* hover / pressed */
+  --gh-primary-700: #101838; /* estados pulsados y sidebar */
+  --gh-primary-50: #eef1f8; /* fondo suave azulado */
+  --gh-ink: #1e2b58; /* texto principal */
+  --gh-ink-700: #2a3b70;
+  --gh-muted: #5a6785;
+  --gh-surface: #f4f6fb;
+  --gh-surface-2: #fafbfd;
+  --gh-border: #dce2ee;
   --gh-success: #008250;
   --gh-warning: #d49341;
-  --gh-danger: #e62214;
-  --gh-info: #116dff;
+  --gh-danger: #c0392b; /* el rojo queda SOLO para acciones destructivas */
+  --gh-info: #2a6fdb;
+
+  /* Acento corporativo: verde lima */
+  --gh-accent: #c4d82d;
+  --gh-accent-600: #a8bc1f;
+  --gh-accent-50: #f6fae0;
+
   --gh-card: #ffffff;
-  --gh-page: #f7f8fa;
+  --gh-page: #fafbfd;
 
   /* Canales RGB: los usa Tailwind para permitir bg-primary/10, border-danger/30, etc. */
-  --gh-primary-rgb: 223 49 49;
-  --gh-primary-600-rgb: 196 33 33;
-  --gh-primary-50-rgb: 253 236 236;
-  --gh-ink-rgb: 33 33 33;
-  --gh-ink-700-rgb: 58 58 58;
-  --gh-muted-rgb: 100 100 100;
-  --gh-surface-rgb: 236 239 243;
-  --gh-surface-2-rgb: 247 248 250;
-  --gh-border-rgb: 226 229 233;
+  --gh-primary-rgb: 30 43 88;
+  --gh-primary-600-rgb: 22 33 74;
+  --gh-primary-700-rgb: 16 24 56;
+  --gh-primary-50-rgb: 238 241 248;
+  --gh-ink-rgb: 30 43 88;
+  --gh-ink-700-rgb: 42 59 112;
+  --gh-muted-rgb: 90 103 133;
+  --gh-surface-rgb: 244 246 251;
+  --gh-surface-2-rgb: 250 251 253;
+  --gh-border-rgb: 220 226 238;
   --gh-success-rgb: 0 130 80;
   --gh-warning-rgb: 212 147 65;
-  --gh-danger-rgb: 230 34 20;
-  --gh-info-rgb: 17 109 255;
+  --gh-danger-rgb: 192 57 43;
+  --gh-info-rgb: 42 111 219;
+  --gh-accent-rgb: 196 216 45;
+  --gh-accent-600-rgb: 168 188 31;
+  --gh-accent-50-rgb: 246 250 224;
   --gh-card-rgb: 255 255 255;
-  --gh-page-rgb: 247 248 250;
+  --gh-page-rgb: 250 251 253;
 
   /* Superficies derivadas */
-  --gh-sidebar: #212121;
-  --gh-sidebar-hover: #2e2e2e;
-  --gh-overlay: rgba(16, 24, 40, 0.45);
+  --gh-sidebar: #1e2b58;
+  --gh-sidebar-hover: #16214a;
+  --gh-overlay: rgba(16, 24, 56, 0.5);
+  --gh-brand-strip: #c4d82d; /* franja superior de marca */
 
   /* Tipografía y forma */
+  --gh-font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
   --gh-radius-control: 10px;
   --gh-radius-card: 16px;
-  --gh-shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.06);
+  --gh-shadow-soft: 0 1px 2px rgba(30, 43, 88, 0.06), 0 4px 12px rgba(30, 43, 88, 0.07);
 
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --gh-ink: #f2f4f7; /* invertido: texto claro sobre fondo oscuro */
-  --gh-ink-700: #d0d5dd;
-  --gh-muted: #98a2b3;
-  --gh-surface: #1b1d21;
-  --gh-surface-2: #14161a;
-  --gh-border: #2a2e35;
-  --gh-card: #1b1d21;
-  --gh-page: #101215;
+  --gh-ink: #eef1f8; /* invertido: texto claro sobre fondo oscuro */
+  --gh-ink-700: #cdd6ec;
+  --gh-muted: #93a0bf;
+  --gh-surface: #16204a;
+  --gh-surface-2: #101838;
+  --gh-border: #2b3763;
+  --gh-card: #1a2450;
+  --gh-page: #0d1430;
 
-  --gh-ink-rgb: 242 244 247;
-  --gh-ink-700-rgb: 208 213 221;
-  --gh-muted-rgb: 152 162 179;
-  --gh-surface-rgb: 27 29 33;
-  --gh-surface-2-rgb: 20 22 26;
-  --gh-border-rgb: 42 46 53;
-  --gh-card-rgb: 27 29 33;
-  --gh-page-rgb: 16 18 21;
+  --gh-ink-rgb: 238 241 248;
+  --gh-ink-700-rgb: 205 214 236;
+  --gh-muted-rgb: 147 160 191;
+  --gh-surface-rgb: 22 32 74;
+  --gh-surface-2-rgb: 16 24 56;
+  --gh-border-rgb: 43 55 99;
+  --gh-card-rgb: 26 36 80;
+  --gh-page-rgb: 13 20 48;
 
-  /* El rojo corporativo se aclara para mantener contraste AA sobre oscuro */
-  --gh-primary-50: #3a1d1d;
-  --gh-primary-50-rgb: 58 29 29;
+  /* Sobre azul marino el azul claro mantiene el contraste de los fondos suaves,
+     y el lima sigue siendo el acento (luce especialmente bien). */
+  --gh-primary: #8fa6e8;
+  --gh-primary-600: #6f8ade;
+  --gh-primary-700: #5570c9;
+  --gh-primary-50: #24305e;
+  --gh-primary-rgb: 143 166 232;
+  --gh-primary-600-rgb: 111 138 222;
+  --gh-primary-700-rgb: 85 112 201;
+  --gh-primary-50-rgb: 36 48 94;
 
-  --gh-sidebar: #14161a;
-  --gh-sidebar-hover: #22262c;
-  --gh-overlay: rgba(0, 0, 0, 0.6);
+  --gh-accent: #d4e455;
+  --gh-accent-600: #c4d82d;
+  --gh-accent-50: #2c3413;
+  --gh-accent-rgb: 212 228 85;
+  --gh-accent-600-rgb: 196 216 45;
+  --gh-accent-50-rgb: 44 52 19;
+
+  --gh-sidebar: #101838;
+  --gh-sidebar-hover: #1a2450;
+  --gh-overlay: rgba(0, 0, 0, 0.65);
   --gh-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.35);
 
   color-scheme: dark;
@@ -96,14 +171,24 @@ body,
 
 body {
   margin: 0;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif;
+  font-family: var(--gh-font-sans);
   font-size: 14px;
   line-height: 20px;
   background-color: var(--gh-page);
   color: var(--gh-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Franja superior de marca: 4 px de lima pegada al borde superior de la ventana. */
+.gh-brand-strip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: var(--gh-brand-strip);
+  z-index: 100;
 }
 
 /* Barra de desplazamiento discreta, coherente con la marca */
@@ -125,10 +210,19 @@ body {
   background-clip: content-box;
 }
 
-/* Foco accesible consistente */
+/* Foco accesible: aro azul marino con halo lima (el lima no tiene contraste para texto). */
 :focus-visible {
   outline: 2px solid var(--gh-primary);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgb(var(--gh-accent-rgb) / 0.35);
+}
+
+/* Marcadores de acento reutilizables */
+.gh-accent-dot {
+  background-color: var(--gh-accent);
+}
+.gh-accent-underline {
+  box-shadow: inset 0 -2px 0 0 var(--gh-accent);
 }
 
 @keyframes gh-shimmer {

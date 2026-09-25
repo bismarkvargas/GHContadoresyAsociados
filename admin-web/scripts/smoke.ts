@@ -433,12 +433,53 @@ async function main(): Promise<void> {
 
   console.log('== Ajustes y auditoría ==')
   const settings = await call('GET', '/admin/settings', undefined, adminToken)
-  check('ajustes agrupados', Object.keys(settings.data.groups).length === 6, `(${Object.keys(settings.data.groups).length})`)
+  check('ajustes agrupados', Object.keys(settings.data.groups).length === 7, `(${Object.keys(settings.data.groups).length})`)
+  check('grupo de registro presente', Array.isArray(settings.data.groups.registration))
   check('tipo de cambio presente', settings.data.exchangeRate > 0, `(${settings.data.exchangeRate})`)
-  const saved = await call('PUT', '/admin/settings', { items: [{ key: 'currency.usdToCrc', value: '515' }] }, adminToken)
-  check('guardar ajuste', saved.data.updated === 1)
+  // La API real espera { values: [...] }; el mock acepta esa forma.
+  const saved = await call('PUT', '/admin/settings', { values: [{ key: 'currency.usdToCrc', value: '515' }] }, adminToken)
+  check('guardar ajuste con { values }', saved.data.updated === 1)
   const settings2 = await call('GET', '/admin/settings', undefined, adminToken)
   check('el ajuste quedó persistido', settings2.data.exchangeRate === 515, `(${settings2.data.exchangeRate})`)
+
+  console.log('== Modo de registro de clientes ==')
+  const modoInicial = settings2.data.items.find((s: any) => s.key === 'registration.mode')
+  check('registration.mode existe', !!modoInicial, `(${modoInicial?.value})`)
+  check('registration.message existe', !!settings2.data.items.find((s: any) => s.key === 'registration.message'))
+
+  // Con «approval» la solicitud queda pendiente.
+  await call('PUT', '/admin/settings', { values: [{ key: 'registration.mode', value: 'approval' }] }, adminToken)
+  const conAprobacion = await call(
+    'POST',
+    '/public/account-requests',
+    { fullName: 'Registro Pendiente', email: 'pendiente@ejemplo.cr', phone: '+506 8000 0001', idNumber: '1-0001-0001', clientType: 'Individual' },
+  )
+  check('modo approval: la solicitud queda pendiente', conAprobacion.data.status === 'Pending')
+
+  // Con «automatic» la cuenta se crea activa al instante.
+  await call('PUT', '/admin/settings', { values: [{ key: 'registration.mode', value: 'automatic' }] }, adminToken)
+  const clientesAntes = (await call('GET', '/admin/clients?pageSize=1', undefined, adminToken)).data.total
+  const automatica = await call(
+    'POST',
+    '/public/account-requests',
+    { fullName: 'Registro Automatico', email: 'automatico@ejemplo.cr', phone: '+506 8000 0002', idNumber: '1-0002-0002', clientType: 'Company', company: 'Automatica S.A.' },
+  )
+  check('modo automatic: la cuenta nace aprobada', automatica.data.status === 'Approved')
+  const clientesDespues = (await call('GET', '/admin/clients?pageSize=1', undefined, adminToken)).data.total
+  check('modo automatic: se crea el cliente', clientesDespues === clientesAntes + 1, `(${clientesAntes} → ${clientesDespues})`)
+
+  const aprobadas = await call('GET', '/admin/account-requests?status=Approved&pageSize=5', undefined, adminToken)
+  const auto = aprobadas.data.items.find((a: any) => a.email === 'automatico@ejemplo.cr')
+  check('la solicitud automática se marca como tal', auto?.autoApproved === true)
+  check('la solicitud automática trae el código de cliente', typeof auto?.clientCode === 'string', `(${auto?.clientCode})`)
+
+  // Se restaura el modo original para no alterar el estado por defecto.
+  await call('PUT', '/admin/settings', { values: [{ key: 'registration.mode', value: modoInicial?.value ?? 'approval' }] }, adminToken)
+  const restaurado = await call('GET', '/admin/settings', undefined, adminToken)
+  check(
+    'el modo se restaura',
+    restaurado.data.items.find((s: any) => s.key === 'registration.mode')?.value === (modoInicial?.value ?? 'approval'),
+  )
 
   const audit = await call('GET', '/admin/audit?page=1&pageSize=10', undefined, adminToken)
   check('auditoría paginada', audit.data.items.length === 10, `(${audit.data.items.length})`)

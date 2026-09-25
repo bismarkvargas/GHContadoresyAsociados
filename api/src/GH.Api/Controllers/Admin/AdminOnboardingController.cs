@@ -24,11 +24,10 @@ public class AdminOnboardingController : ControllerBase
     private readonly IAuditLogger _audit;
     private readonly INotificationService _notifications;
     private readonly IRealtimeNotifier _realtime;
-    private readonly AccountActivationService _activacion;
     private readonly PasswordHasher<User> _hasher = new();
 
     public AdminOnboardingController(GhDbContext db, ICurrentUser current, ICodeGenerator codes, IAuditLogger audit,
-        INotificationService notifications, IRealtimeNotifier realtime, AccountActivationService activacion)
+        INotificationService notifications, IRealtimeNotifier realtime)
     {
         _db = db;
         _current = current;
@@ -36,7 +35,6 @@ public class AdminOnboardingController : ControllerBase
         _audit = audit;
         _notifications = notifications;
         _realtime = realtime;
-        _activacion = activacion;
     }
 
     // ------------------------------------------------------------------ solicitudes de cuenta
@@ -90,39 +88,105 @@ public class AdminOnboardingController : ControllerBase
         if (accountRequest.Status == AccountRequestStatus.Approved)
             throw new InvalidOperationException("Esta solicitud ya fue aprobada.");
 
-        var resultado = await _activacion.ActivarAsync(
-            accountRequest,
-            roleId: request?.RoleId,
-            clientType: request?.ClientType,
-            tags: request?.Tags,
-            assignedToUserId: request?.AssignedToUserId,
-            notificarBienvenida: true,
-            ct: ct);
+        var email = accountRequest.Email.Trim().ToLowerInvariant();
+        var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
 
+        User user;
+        if (existingUser is not null)
+        {
+            user = existingUser;
+            user.Status = UserStatus.Active;
+            user.IsDeleted = false;
+            user.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            user = new User
+            {
+                Email = email,
+                FullName = accountRequest.FullName,
+                Phone = accountRequest.Phone,
+                IdNumber = accountRequest.IdNumber,
+                Status = UserStatus.Active,
+                IsStaff = false,
+            };
+            user.PasswordHash = _hasher.HashPassword(user, "Gh.Cliente2026");
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        // Ficha de cliente en el CRM vinculada a la cuenta del app.
+        var client = await _db.Clients.FirstOrDefaultAsync(c => c.UserId == user.Id && !c.IsDeleted, ct);
+        if (client is null)
+        {
+            client = new Client
+            {
+                Code = await _codes.NextClientCodeAsync(ct),
+                ClientType = request?.ClientType ?? accountRequest.ClientType,
+                LegalName = string.IsNullOrWhiteSpace(accountRequest.Company) ? accountRequest.FullName : accountRequest.Company!,
+                TradeName = accountRequest.Company,
+                IdNumber = accountRequest.IdNumber,
+                Email = email,
+                Phone = accountRequest.Phone,
+                Whatsapp = accountRequest.Phone,
+                Country = "Costa Rica",
+                Status = ClientStatus.Active,
+                Source = accountRequest.Source == AccountRequestSource.Web ? ClientSource.Web : ClientSource.App,
+                Notes = accountRequest.Message,
+                TagsCsv = request?.Tags,
+                AssignedToUserId = request?.AssignedToUserId ?? _current.UserId,
+                UserId = user.Id,
+                LastContactAt = DateTime.UtcNow,
+            };
+            _db.Clients.Add(client);
+            await _db.SaveChangesAsync(ct);
+        }
+
+        user.ClientId = client.Id;
+
+        var roleId = request?.RoleId;
+        Role? role;
+        if (roleId.HasValue)
+            role = await _db.Roles.FirstOrDefaultAsync(r => r.Id == roleId, ct);
+        else
+            role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "Cliente", ct);
+
+        if (role is not null && !await _db.UserRoles.AnyAsync(ur => ur.UserId == user.Id && ur.RoleId == role.Id, ct))
+            _db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
+
+        accountRequest.Status = AccountRequestStatus.Approved;
+        accountRequest.ReviewedByUserId = _current.UserId;
+        accountRequest.ReviewedAt = DateTime.UtcNow;
+        accountRequest.CreatedUserId = user.Id;
+        accountRequest.CreatedClientId = client.Id;
+        accountRequest.RejectionReason = null;
+
+        await _db.SaveChangesAsync(ct);
         await _audit.LogAsync("approve", "AccountRequest", accountRequest.Id.ToString(),
-            after: new { accountRequest.Email, clientCode = resultado.Client.Code, userId = resultado.User.Id }, ct: ct);
+            after: new { accountRequest.Email, clientCode = client.Code, userId = user.Id }, ct: ct);
+
+        await _notifications.NotifyUserAsync(user.Id, NotificationType.AccountApproved,
+            "¡Su cuenta fue aprobada!",
+            request?.WelcomeMessage ?? "Ya puede iniciar sesión y consultar sus expedientes, documentos y pedidos desde el app.",
+            deepLink: "/home",
+            data: new { clientId = client.Id, clientCode = client.Code }, ct: ct);
 
         await _realtime.ToStaffAsync("accountrequest.approved", new
         {
-            accountRequestId = accountRequest.Id,
-            email = accountRequest.Email,
-            userId = resultado.User.Id,
-            clientId = resultado.Client.Id,
-            clientCode = resultado.Client.Code,
-            at = DateTime.UtcNow,
+            accountRequestId = accountRequest.Id, email, userId = user.Id, clientId = client.Id,
+            clientCode = client.Code, at = DateTime.UtcNow,
         }, ct);
 
-        // El app que espera en la pantalla de seguimiento recibe el cambio al instante.
-        await _realtime.ToUserAsync(resultado.User.Id, "account.approved",
-            new { clientId = resultado.Client.Id, clientCode = resultado.Client.Code, canLogin = true }, ct);
+        // El app que está esperando en la pantalla de seguimiento recibe el cambio al instante.
+        await _realtime.ToUserAsync(user.Id, "account.approved", new { clientId = client.Id, clientCode = client.Code, canLogin = true }, ct);
 
         return Ok(new
         {
             message = "Solicitud aprobada. El cliente ya puede iniciar sesión.",
-            userId = resultado.User.Id,
-            clientId = resultado.Client.Id,
-            clientCode = resultado.Client.Code,
-            temporaryPassword = resultado.PasswordTemporal,
+            userId = user.Id,
+            clientId = client.Id,
+            clientCode = client.Code,
+            temporaryPassword = existingUser is null ? "Gh.Cliente2026" : null,
         });
     }
 

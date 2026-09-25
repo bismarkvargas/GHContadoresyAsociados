@@ -76,9 +76,8 @@ class AppRoutes {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authProvider);
-  // Mantiene el redirect sincronizado con la sesión guardada y el onboarding.
+  // Mantiene el redirect sincronizado con la sesión guardada.
   ref.watch(apiBootstrapProvider);
-  final onboardingDone = ref.watch(onboardingDoneProvider);
 
   return GoRouter(
     navigatorKey: _rootKey,
@@ -103,16 +102,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (stage == AuthStage.unauthenticated) {
-        // El onboarding se muestra una sola vez; después, el catálogo público
-        // y la solicitud de cuenta quedan abiertos sin sesión.
-        if (onboardingDone == null) {
-          // Aún se está leyendo la preferencia: el splash permanece visible.
-          return location == AppRoutes.splash ? null : AppRoutes.splash;
-        }
-        if (location == AppRoutes.splash ||
-            location == AppRoutes.pendingApproval) {
-          return onboardingDone ? AppRoutes.services : AppRoutes.onboarding;
-        }
+        // El catálogo público y la solicitud de cuenta están abiertos.
+        if (location == AppRoutes.splash) return AppRoutes.services;
+        if (location == AppRoutes.pendingApproval) return AppRoutes.services;
         return null;
       }
 
@@ -456,4 +448,3 @@ class _NotFoundScreen extends StatelessWidget {
     );
   }
 }
-

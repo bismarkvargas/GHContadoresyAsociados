@@ -1,5 +1,5 @@
-# ---------------------------------------------------------------------------
-# GH Contadores y Asociados — archivos que NUNCA deben versionarse
+﻿# ---------------------------------------------------------------------------
+# GH Contadores y Asociados â€” archivos que NUNCA deben versionarse
 # ---------------------------------------------------------------------------
 
 # --- .NET -------------------------------------------------------------------
@@ -46,8 +46,8 @@ app-movil/ios/Runner.xcworkspace/xcuserdata/
 .env
 .env.*
 !.env.example
-# Excepción: la configuración de compilación del panel no contiene secretos
-# (solo rutas públicas de la API) y el servidor la necesita para compilar.
+# ExcepciÃ³n: la configuraciÃ³n de compilaciÃ³n del panel no contiene secretos
+# (solo rutas pÃºblicas de la API) y el servidor la necesita para compilar.
 !admin-web/.env.production
 *.pfx
 *.p12

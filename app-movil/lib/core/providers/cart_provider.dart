@@ -58,10 +58,8 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
       final cart = await client.getCart();
-      if (!mounted) return;
       state = state.copyWith(cart: cart, isLoading: false);
     } on ApiFailure catch (e) {
-      if (!mounted) return;
       state = state.copyWith(isLoading: false, error: e.message);
     }
   }
@@ -74,7 +72,6 @@ class CartNotifier extends StateNotifier<CartState> {
         productId: product.id,
         quantity: quantity,
       );
-      if (!mounted) return true;
       state = state.copyWith(
         cart: cart,
         isMutating: false,
@@ -82,7 +79,6 @@ class CartNotifier extends StateNotifier<CartState> {
       );
       return true;
     } on ApiFailure catch (e) {
-      if (!mounted) return false;
       state = state.copyWith(isMutating: false, error: e.message);
       return false;
     }
@@ -93,10 +89,8 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
       final cart = await client.updateCartItem(itemId: itemId, quantity: quantity);
-      if (!mounted) return;
       state = state.copyWith(cart: cart, isMutating: false);
     } on ApiFailure catch (e) {
-      if (!mounted) return;
       state = state.copyWith(isMutating: false, error: e.message);
     }
   }
@@ -106,10 +100,8 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
       final cart = await client.removeCartItem(itemId);
-      if (!mounted) return;
       state = state.copyWith(cart: cart, isMutating: false);
     } on ApiFailure catch (e) {
-      if (!mounted) return;
       state = state.copyWith(isMutating: false, error: e.message);
     }
   }
@@ -119,10 +111,8 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
       final cart = await client.clearCart();
-      if (!mounted) return;
       state = state.copyWith(cart: cart, isMutating: false);
     } on ApiFailure catch (e) {
-      if (!mounted) return;
       state = state.copyWith(isMutating: false, error: e.message);
     }
   }
@@ -247,7 +237,6 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
         requiresInvoice: state.requiresInvoice,
         notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
       );
-      if (!mounted) return true;
       state = state.copyWith(
         order: order,
         isBusy: false,
@@ -255,7 +244,6 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       );
       return true;
     } on ApiFailure catch (e) {
-      if (!mounted) return false;
       state = state.copyWith(isBusy: false, error: e.message);
       return false;
     }
@@ -288,20 +276,8 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       try {
         updated = await client.getOrder(order.id);
       } catch (_) {
-        // La consulta posterior puede fallar (por ejemplo sin sesión en modo
-        // demo): se reconstruye la orden con el resultado del cobro, que ya
-        // incluye el expediente generado.
-        updated = order.copyWith(
-          status: payment.orderStatus ??
-              (payment.isApproved ? 'InProcess' : order.status),
-          payment: payment,
-          paidAt: payment.isApproved ? payment.processedAt : null,
-          caseCodes: payment.caseCodes.isNotEmpty
-              ? payment.caseCodes
-              : order.caseCodes,
-        );
+        updated = order;
       }
-      if (!mounted) return payment;
       state = state.copyWith(
         isBusy: false,
         payment: payment,
@@ -309,26 +285,10 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
         step: CheckoutStep.result,
       );
       if (payment.isApproved) {
-        try {
-          await _ref.read(cartProvider.notifier).load();
-        } catch (_) {
-          // El carrito se refresca en la siguiente apertura.
-        }
+        await _ref.read(cartProvider.notifier).load();
       }
       return payment;
     } on ApiFailure catch (e) {
-      // Nunca se pierde un cobro ya procesado: si el pago se resolvió, el
-      // resultado se muestra aunque falle una consulta posterior.
-      if (state.payment != null) {
-        if (mounted) {
-          state = state.copyWith(
-            isBusy: false,
-            step: CheckoutStep.result,
-          );
-        }
-        return state.payment;
-      }
-      if (!mounted) return null;
       state = state.copyWith(
         isBusy: false,
         error: e.message,

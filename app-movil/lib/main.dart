@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,20 +36,11 @@ class _GhContadoresAppState extends ConsumerState<GhContadoresApp> {
     _bootstrapped = true;
 
     // 1) Centro de notificaciones local (tolerante a la ausencia de Firebase).
-    //
-    // No se espera: el registro del plugin puede tardar en algunos
-    // dispositivos y en los tests no hay canal de plataforma. Se lanza y el
-    // arranque continúa, así el splash nunca se queda esperando.
-    unawaited(ref.read(pushServiceProvider).init());
+    await ref.read(pushServiceProvider).init();
 
     // 2) Sesión guardada + catálogo del modo demo listo antes de pintar.
     await ref.read(apiBootstrapProvider.future);
-    if (!mounted) return;
-    // El router necesita saber si el onboarding ya se vio.
-    await loadOnboardingDone(ref);
-    if (!mounted) return;
     await ref.read(authProvider.notifier).bootstrap();
-    if (!mounted) return;
 
     // 3) Puente de tiempo real (SignalR o simulado) + polling de respaldo.
     ref.read(realtimeBridgeProvider);
@@ -62,7 +51,6 @@ class _GhContadoresAppState extends ConsumerState<GhContadoresApp> {
             userId: user.id,
             accessToken: ref.read(tokenStoreProvider).accessToken,
           );
-      if (!mounted) return;
     }
 
     // 4) Deep link cuando el usuario abre desde una notificación.
@@ -72,6 +60,15 @@ class _GhContadoresAppState extends ConsumerState<GhContadoresApp> {
         ref.read(realtimeBannerDeepLinkProvider.notifier).state = link;
       }
     };
+
+    // 5) Cierre de sesión forzado si el refresh token ya no sirve.
+    ref.listen<int>(sessionExpiredProvider, (previous, next) {
+      if (previous != next) {
+        ref.read(authProvider.notifier).forceLogout(
+              message: 'Tu sesión expiró. Inicia sesión de nuevo.',
+            );
+      }
+    });
   }
 
   @override
@@ -79,62 +76,38 @@ class _GhContadoresAppState extends ConsumerState<GhContadoresApp> {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
 
-    return _SessionExpiryListener(
-      child: MaterialApp.router(
-        title: AppConfig.appName,
-        debugShowCheckedModeBanner: false,
-        theme: GhTheme.light(),
-        darkTheme: GhTheme.dark(),
-        themeMode: themeMode,
-        routerConfig: router,
-        locale: const Locale('es', 'CR'),
-        supportedLocales: const <Locale>[
-          Locale('es', 'CR'),
-          Locale('es'),
-          Locale('en'),
-        ],
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        builder: (context, child) {
-          // Respeta el escalado de texto del sistema, acotando los extremos
-          // para que nada se desborde con tamaños muy grandes.
-          final media = MediaQuery.of(context);
-          return MediaQuery(
-            data: media.copyWith(
-              textScaler: media.textScaler.clamp(
-                minScaleFactor: 0.85,
-                maxScaleFactor: 1.6,
-              ),
+    return MaterialApp.router(
+      title: AppConfig.appName,
+      debugShowCheckedModeBanner: false,
+      theme: GhTheme.light(),
+      darkTheme: GhTheme.dark(),
+      themeMode: themeMode,
+      routerConfig: router,
+      locale: const Locale('es', 'CR'),
+      supportedLocales: const <Locale>[
+        Locale('es', 'CR'),
+        Locale('es'),
+        Locale('en'),
+      ],
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      builder: (context, child) {
+        // Respeta el escalado de texto del sistema, acotando los extremos
+        // para que nada se desborde con tamaños muy grandes.
+        final media = MediaQuery.of(context);
+        return MediaQuery(
+          data: media.copyWith(
+            textScaler: media.textScaler.clamp(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.6,
             ),
-            child: child ?? const SizedBox.shrink(),
-          );
-        },
-      ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }
-
-/// Cierra la sesión cuando el refresh token deja de ser válido.
-///
-/// `ref.listen` solo puede usarse dentro de un `build`, de ahí este widget.
-class _SessionExpiryListener extends ConsumerWidget {
-  const _SessionExpiryListener({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<int>(sessionExpiredProvider, (previous, next) {
-      if (previous != next && next != 0) {
-        ref.read(authProvider.notifier).forceLogout(
-              message: 'Tu sesión expiró. Inicia sesión de nuevo.',
-            );
-      }
-    });
-    return child;
-  }
-}
-

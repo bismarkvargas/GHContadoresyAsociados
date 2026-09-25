@@ -239,8 +239,6 @@ class PaymentResult {
     this.createdAt,
     this.processedAt,
     this.instructions,
-    this.orderStatus,
-    this.caseCodes = const <String>[],
   });
 
   final String id;
@@ -260,12 +258,6 @@ class PaymentResult {
 
   /// Instrucciones para SINPE / transferencia en modo demo.
   final String? instructions;
-
-  /// Estado en que queda la orden tras el cobro (lo devuelve la pasarela).
-  final String? orderStatus;
-
-  /// Expedientes generados por el pago aprobado (docs/01 §5).
-  final List<String> caseCodes;
 
   bool get isApproved => status == 'Approved';
   bool get isDeclined => status == 'Declined';
@@ -294,8 +286,6 @@ class PaymentResult {
       createdAt: asDate(json['createdAt']),
       processedAt: asDate(json['processedAt']),
       instructions: asString(json['instructions']),
-      orderStatus: asString(json['orderStatus']),
-      caseCodes: asStringList(json['caseCodes']),
     );
   }
 
@@ -315,7 +305,5 @@ class PaymentResult {
         'createdAt': createdAt?.toIso8601String(),
         'processedAt': processedAt?.toIso8601String(),
         'instructions': instructions,
-        'orderStatus': orderStatus,
-        'caseCodes': caseCodes,
       };
 }

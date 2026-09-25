@@ -15,7 +15,14 @@ export default {
         primary: {
           DEFAULT: withOpacity('--gh-primary-rgb'),
           600: withOpacity('--gh-primary-600-rgb'),
+          700: withOpacity('--gh-primary-700-rgb'),
           50: withOpacity('--gh-primary-50-rgb'),
+        },
+        /** Verde lima corporativo: acento (franja, indicadores, badges). */
+        accent: {
+          DEFAULT: withOpacity('--gh-accent-rgb'),
+          600: withOpacity('--gh-accent-600-rgb'),
+          50: withOpacity('--gh-accent-50-rgb'),
         },
         ink: {
           DEFAULT: withOpacity('--gh-ink-rgb'),
@@ -35,8 +42,9 @@ export default {
         page: withOpacity('--gh-page-rgb'),
       },
       fontFamily: {
+        // Montserrat (la del logotipo), declarada por @font-face en theme.css.
         sans: [
-          'Inter',
+          'Montserrat',
           '-apple-system',
           'BlinkMacSystemFont',
           'Segoe UI',
@@ -59,8 +67,8 @@ export default {
         card: '16px',
       },
       boxShadow: {
-        soft: '0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.06)',
-        pop: '0 8px 28px rgba(16, 24, 40, 0.14)',
+        soft: '0 1px 2px rgba(30, 43, 88, 0.06), 0 4px 12px rgba(30, 43, 88, 0.07)',
+        pop: '0 8px 28px rgba(30, 43, 88, 0.16)',
       },
       keyframes: {
         'fade-in': {
