@@ -201,6 +201,77 @@ RESP=$(api POST "/admin/clients" '{"clientType":"Individual","legalName":"Client
 CODE=$(tail -1 <<<"$RESP")
 [ "$CODE" = "403" ] && ok "el Abogado NO puede crear clientes (sin clients.create)" || ko "el Abogado obtuvo $CODE al crear un cliente (se esperaba 403)"
 
+step "12 · Modo de registro configurable (automático / con aprobación)"
+# El administrador decide desde el panel si el registro es abierto o con visto bueno.
+MODO_INICIAL=$(api GET /public/site | sed '$d' | python3 -c "import sys,json;print(json.load(sys.stdin).get('registration',{}).get('mode','?'))" 2>/dev/null)
+[ -n "$MODO_INICIAL" ] && ok "el modo de registro se publica en /public/site (actual: $MODO_INICIAL)" || ko "/public/site no informa del modo de registro"
+
+cambiar_modo() {
+  api PUT /admin/settings "{\"values\":[{\"key\":\"registration.mode\",\"value\":\"$1\"}]}" "$ADMIN_TOKEN" >/dev/null
+  sleep 1
+}
+
+# --- 12.a Registro automático: la cuenta se activa al instante ---
+cambiar_modo automatic
+AUTO_EMAIL="auto.${SUFFIX}@ejemplo.cr"
+AUTO_PASS="Auto.Cliente2026"
+RESP=$(api POST /public/account-requests "{\"fullName\":\"Registro Automatico ${SUFFIX}\",\"email\":\"${AUTO_EMAIL}\",\"phone\":\"+506 8888 1234\",\"clientType\":\"Individual\",\"password\":\"${AUTO_PASS}\"}")
+CODE=$(tail -1 <<<"$RESP"); BODY=$(sed '$d' <<<"$RESP")
+AUTO_OK=$(json "['autoApproved']" <<<"$BODY"); AUTO_LOGIN=$(json "['canLogin']" <<<"$BODY")
+if [ "$CODE" = "200" ] && [ "$AUTO_OK" = "True" ] && [ "$AUTO_LOGIN" = "True" ]; then
+  ok "con registro automático la cuenta queda activa al instante (autoApproved/canLogin)"
+else
+  ko "registro automático: código $CODE · autoApproved=$AUTO_OK · canLogin=$AUTO_LOGIN"
+fi
+
+RESP=$(api POST /auth/login "{\"email\":\"${AUTO_EMAIL}\",\"password\":\"${AUTO_PASS}\"}")
+CODE=$(tail -1 <<<"$RESP")
+[ "$CODE" = "200" ] && ok "el cliente entra de inmediato con la contraseña que eligió" || ko "login automático: código $CODE"
+
+RESP=$(api GET "/admin/clients?search=${AUTO_EMAIL}&pageSize=5" "" "$ADMIN_TOKEN")
+AUTO_CLIENTE=$(sed '$d' <<<"$RESP" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['items'][0]['code'] if d.get('items') else '')" 2>/dev/null)
+[ -n "$AUTO_CLIENTE" ] && ok "el cliente aparece en el CRM ($AUTO_CLIENTE)" || ko "el cliente automático no llegó al CRM"
+
+RESP=$(api GET /public/site | sed '$d' | python3 -c "import sys,json;r=json.load(sys.stdin).get('registration',{});print(r.get('autoApprove'),'|',r.get('message','')[:40])" 2>/dev/null)
+case "$RESP" in True*) ok "con registro automático el app recibe autoApprove=true y el mensaje correspondiente" ;; *) ko "/public/site no refleja el registro automático: $RESP" ;; esac
+
+# --- 12.b Validación de contraseña demasiado corta ---
+RESP=$(api POST /public/account-requests "{\"fullName\":\"Clave Corta\",\"email\":\"corta.${SUFFIX}@ejemplo.cr\",\"phone\":\"+506 8888 0001\",\"clientType\":\"Individual\",\"password\":\"corta12\"}")
+CODE=$(tail -1 <<<"$RESP")
+[ "$CODE" = "400" ] && ok "una contraseña de menos de 8 caracteres se rechaza (400)" || ko "contraseña corta devolvió $CODE (se esperaba 400)"
+
+# --- 12.c Con aprobación: la contraseña elegida por el cliente es la que queda activa ---
+cambiar_modo approval
+APR_EMAIL="aprob.${SUFFIX}@ejemplo.cr"
+APR_PASS="Aprob.Cliente2026"
+RESP=$(api POST /public/account-requests "{\"fullName\":\"Con Aprobacion ${SUFFIX}\",\"email\":\"${APR_EMAIL}\",\"phone\":\"+506 8888 5678\",\"clientType\":\"Individual\",\"password\":\"${APR_PASS}\"}")
+CODE=$(tail -1 <<<"$RESP"); BODY=$(sed '$d' <<<"$RESP")
+APR_LOGIN=$(json "['canLogin']" <<<"$BODY")
+[ "$CODE" = "200" ] && [ "$APR_LOGIN" = "False" ] && ok "con aprobación la solicitud queda pendiente y sin acceso" || ko "solicitud con aprobación: código $CODE · canLogin=$APR_LOGIN"
+
+RESP=$(api POST /auth/login "{\"email\":\"${APR_EMAIL}\",\"password\":\"${APR_PASS}\"}")
+CODE=$(tail -1 <<<"$RESP")
+[ "$CODE" = "403" ] || [ "$CODE" = "401" ] && ok "antes de aprobarla no puede iniciar sesión ($CODE)" || ko "la solicitud pendiente obtuvo $CODE al entrar"
+
+SOLICITUD_ID=$(api GET "/admin/account-requests?status=Pending&search=${APR_EMAIL}" "" "$ADMIN_TOKEN" | sed '$d' | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['items'][0]['id'] if d.get('items') else '')" 2>/dev/null)
+if [ -n "$SOLICITUD_ID" ]; then
+  RESP=$(api POST "/admin/account-requests/${SOLICITUD_ID}/approve" '{}' "$ADMIN_TOKEN")
+  CODE=$(tail -1 <<<"$RESP")
+  [ "$CODE" = "200" ] && ok "el administrador aprueba la solicitud" || ko "aprobación: código $CODE"
+
+  # Lo importante: debe entrar con LA CONTRASEÑA QUE ELIGIÓ, no con una por defecto.
+  RESP=$(api POST /auth/login "{\"email\":\"${APR_EMAIL}\",\"password\":\"${APR_PASS}\"}")
+  CODE=$(tail -1 <<<"$RESP")
+  [ "$CODE" = "200" ] && ok "tras aprobarla entra con la contraseña que eligió el cliente" || ko "no entra con su propia contraseña (código $CODE): se está usando una por defecto"
+else
+  ko "no se encontró la solicitud pendiente en el panel"
+fi
+
+# --- 12.d Se restaura el modo con el que estaba producción ---
+cambiar_modo "$MODO_INICIAL"
+MODO_FINAL=$(api GET /public/site | sed '$d' | python3 -c "import sys,json;print(json.load(sys.stdin).get('registration',{}).get('mode','?'))" 2>/dev/null)
+[ "$MODO_FINAL" = "$MODO_INICIAL" ] && ok "modo de registro restaurado a «$MODO_INICIAL»" || ko "el modo quedó en $MODO_FINAL (se esperaba $MODO_INICIAL)"
+
 printf '\n\033[1m==================================================\033[0m\n'
 printf '  Pruebas superadas: \033[32m%d\033[0m   ·   Fallidas: \033[31m%d\033[0m\n' "$PASS" "$FAIL"
 printf '\033[1m==================================================\033[0m\n'

@@ -102,8 +102,11 @@ async function main() {
   if (/cliente/i.test(cuerpo) && /expediente/i.test(cuerpo)) ok('el dashboard muestra indicadores de clientes y expedientes')
   else ko('el dashboard no muestra los indicadores esperados')
 
-  // Con el modo demo activado aparecerían estos datos inventados; con la API real, no.
-  if (!/Pacífico Azul|Acme|Empresa Demo/i.test(cuerpo)) ok('no hay datos simulados: el panel está conectado a la API real')
+  // «Inversiones Pacífico Azul S.A.» es un cliente REAL sembrado por la API, así que para
+  // detectar el modo demo se buscan nombres que solo existen en los datos simulados del panel
+  // (src/api/mock/db.ts). Comprobar el nombre real daría un falso positivo.
+  const marcasDeDemo = /Marco Vinicio Alfaro|Silvia Eugenia Mora|Randall Esteban Quesada|Karla Patricia Solano/i
+  if (!marcasDeDemo.test(cuerpo)) ok('no hay datos simulados: el panel está conectado a la API real')
   else ko('el panel sigue mostrando datos de demostración (VITE_USE_MOCKS no está en false)')
 
   step('4 · Catálogo migrado desde ghcontadores.net')
