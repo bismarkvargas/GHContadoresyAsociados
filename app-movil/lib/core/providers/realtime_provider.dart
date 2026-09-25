@@ -182,9 +182,15 @@ class RealtimeBridge {
   /// Polling de respaldo cada 15 s (docs/03 §5).
   ///
   /// Se desactiva si [realtimePollingIntervalProvider] devuelve `null`, lo que
-  /// evita dejar un `Timer.periodic` vivo cuando no se necesita.
+  /// evita dejar un `Timer.periodic` vivo cuando no se necesita. Tampoco se
+  /// activa sin sesión: sin token las consultas autenticadas devolverían 401 en
+  /// bucle y gastarían batería y datos sin aportar nada.
   void _startPolling() {
     _pollTimer?.cancel();
+    if (!_haySesion()) {
+      debugPrint('[Realtime][polling] sin sesión: no se activa');
+      return;
+    }
     final interval = _ref.read(realtimePollingIntervalProvider);
     if (interval == null) {
       debugPrint('[Realtime][polling] desactivado');
@@ -193,12 +199,19 @@ class RealtimeBridge {
     _pollTimer = Timer.periodic(interval, (_) => _poll());
   }
 
+  /// Comprueba que hay una sesión iniciada antes de consultar la API.
+  bool _haySesion() => _ref.read(tokenStoreProvider).isLoggedIn;
+
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
   }
 
   Future<void> _poll() async {
+    if (!_haySesion()) {
+      _stopPolling();
+      return;
+    }
     try {
       final client = _ref.read(apiClientProvider);
       final since = _lastPoll;
