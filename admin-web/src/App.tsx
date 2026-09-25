@@ -1,0 +1,237 @@
+import { lazy, Suspense } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { AppShell } from '@/components/layout/AppShell'
+import { Forbidden, FullPageLoader, NotFound, ProtectedRoute } from '@/components/layout/guards'
+import { routeViewPermission } from '@/config/routes'
+
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'))
+const ClientNewPage = lazy(() => import('@/pages/clients/ClientNewPage'))
+const ClientDetailPage = lazy(() => import('@/pages/clients/ClientDetailPage'))
+const CasesPage = lazy(() => import('@/pages/cases/CasesPage'))
+const CaseNewPage = lazy(() => import('@/pages/cases/CaseNewPage'))
+const CaseBoardPage = lazy(() => import('@/pages/cases/CaseBoardPage'))
+const CaseDetailPage = lazy(() => import('@/pages/cases/CaseDetailPage'))
+const DocumentsPage = lazy(() => import('@/pages/documents/DocumentsPage'))
+const CatalogPage = lazy(() => import('@/pages/catalog/CatalogPage'))
+const CatalogCategoriesPage = lazy(() => import('@/pages/catalog/CatalogCategoriesPage'))
+const OrdersPage = lazy(() => import('@/pages/orders/OrdersPage'))
+const OrderDetailPage = lazy(() => import('@/pages/orders/OrderDetailPage'))
+const PaymentsPage = lazy(() => import('@/pages/payments/PaymentsPage'))
+const QuotesPage = lazy(() => import('@/pages/quotes/QuotesPage'))
+const AccountRequestsPage = lazy(() => import('@/pages/accountRequests/AccountRequestsPage'))
+const UsersPage = lazy(() => import('@/pages/users/UsersPage'))
+const RolesPage = lazy(() => import('@/pages/roles/RolesPage'))
+const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
+const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'))
+const AuditPage = lazy(() => import('@/pages/audit/AuditPage'))
+
+function Page({ path, children }: { path: string; children: React.ReactNode }) {
+  return <ProtectedRoute permission={routeViewPermission[path]}>{children}</ProtectedRoute>
+}
+
+export default function App() {
+  return (
+    <Suspense fallback={<FullPageLoader />}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppShell />
+            </ProtectedRoute>
+          }
+        >
+          <Route
+            index
+            element={
+              <Page path="/">
+                <DashboardPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="clientes"
+            element={
+              <Page path="/clientes">
+                <ClientsPage />
+              </Page>
+            }
+          />
+          <Route
+            path="clientes/nuevo"
+            element={
+              <Page path="/clientes">
+                <ClientNewPage />
+              </Page>
+            }
+          />
+          <Route
+            path="clientes/:id"
+            element={
+              <Page path="/clientes">
+                <ClientDetailPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="expedientes"
+            element={
+              <Page path="/expedientes">
+                <CasesPage />
+              </Page>
+            }
+          />
+          <Route
+            path="expedientes/nuevo"
+            element={
+              <Page path="/expedientes">
+                <CaseNewPage />
+              </Page>
+            }
+          />
+          <Route
+            path="expedientes/tablero"
+            element={
+              <Page path="/expedientes">
+                <CaseBoardPage />
+              </Page>
+            }
+          />
+          <Route
+            path="expedientes/:id"
+            element={
+              <Page path="/expedientes">
+                <CaseDetailPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="documentos"
+            element={
+              <Page path="/documentos">
+                <DocumentsPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="catalogo"
+            element={
+              <Page path="/catalogo">
+                <CatalogPage />
+              </Page>
+            }
+          />
+          <Route
+            path="catalogo/categorias"
+            element={
+              <Page path="/catalogo">
+                <CatalogCategoriesPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="pedidos"
+            element={
+              <Page path="/pedidos">
+                <OrdersPage />
+              </Page>
+            }
+          />
+          <Route
+            path="pedidos/:id"
+            element={
+              <Page path="/pedidos">
+                <OrderDetailPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="pagos"
+            element={
+              <Page path="/pagos">
+                <PaymentsPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="cotizaciones"
+            element={
+              <Page path="/cotizaciones">
+                <QuotesPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="solicitudes"
+            element={
+              <Page path="/solicitudes">
+                <AccountRequestsPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="usuarios"
+            element={
+              <Page path="/usuarios">
+                <UsersPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="roles"
+            element={
+              <Page path="/roles">
+                <RolesPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="informes"
+            element={
+              <Page path="/informes">
+                <ReportsPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="ajustes"
+            element={
+              <Page path="/ajustes">
+                <SettingsPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="auditoria"
+            element={
+              <Page path="/auditoria">
+                <AuditPage />
+              </Page>
+            }
+          />
+
+          <Route path="sin-permiso" element={<Forbidden required={['permiso requerido']} />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
+  )
+}

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GH.Domain\GH.Domain.csproj" />
+    <ProjectReference Include="..\GH.Infrastructure\GH.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- Catálogo real migrado desde https://www.ghcontadores.net/category/servicios:
+       se copia a la salida para que el sembrador lo cargue al arrancar. -->
+  <ItemGroup>
+    <Content Update="Seed\catalog.seed.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

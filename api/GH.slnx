@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GH.Api/GH.Api.csproj" />
+    <Project Path="src/GH.Domain/GH.Domain.csproj" />
+    <Project Path="src/GH.Infrastructure/GH.Infrastructure.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,103 @@
+@import './theme.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1 {
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+  }
+  h2 {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+  }
+  h3 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+  }
+}
+
+@layer components {
+  /* Superficies */
+  .gh-card {
+    @apply rounded-card border border-line bg-card shadow-soft;
+  }
+  .gh-card-pad {
+    @apply rounded-card border border-line bg-card p-5 shadow-soft;
+  }
+
+  /* Controles */
+  .gh-input {
+    @apply w-full rounded-control border border-line bg-card px-3 py-2 text-sm text-ink
+      placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2
+      focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .gh-label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted;
+  }
+  .gh-select {
+    @apply gh-input appearance-none bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23646464' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 10px center;
+  }
+  .gh-checkbox {
+    @apply h-4 w-4 rounded border-line text-primary focus:ring-2 focus:ring-primary/30;
+    accent-color: var(--gh-primary);
+  }
+
+  /* Botones */
+  .gh-btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-control border
+      border-transparent px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed
+      disabled:opacity-50;
+  }
+  .gh-btn-primary {
+    @apply gh-btn bg-primary text-white hover:bg-primary-600;
+  }
+  .gh-btn-secondary {
+    @apply gh-btn border-line bg-card text-ink hover:bg-surface-2;
+  }
+  .gh-btn-ghost {
+    @apply gh-btn text-ink-700 hover:bg-surface;
+  }
+  .gh-btn-danger {
+    @apply gh-btn bg-danger text-white hover:brightness-95;
+  }
+  .gh-btn-success {
+    @apply gh-btn bg-success text-white hover:brightness-95;
+  }
+  .gh-btn-sm {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+
+  /* Tablas */
+  .gh-table {
+    @apply w-full border-collapse text-sm;
+  }
+  .gh-th {
+    @apply whitespace-nowrap border-b border-line bg-surface-2 px-3 py-2.5 text-left text-xs
+      font-semibold uppercase tracking-wide text-muted;
+  }
+  .gh-td {
+    @apply border-b border-line px-3 py-3 align-middle text-ink;
+  }
+  .gh-tr-hover {
+    @apply transition-colors hover:bg-surface-2;
+  }
+
+  /* Etiquetas */
+  .gh-chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .gh-link {
+    @apply text-primary hover:text-primary-600 hover:underline;
+  }
+  .gh-section-title {
+    @apply text-base font-semibold text-ink;
+  }
+}

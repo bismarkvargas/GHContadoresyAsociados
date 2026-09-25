@@ -1,0 +1,72 @@
+# ---------------------------------------------------------------------------
+# GH Contadores y Asociados — archivos que NUNCA deben versionarse
+# ---------------------------------------------------------------------------
+
+# --- .NET -------------------------------------------------------------------
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.dll
+*.pdb
+artifacts/
+publish/
+
+# --- Node / React -----------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Flutter / Dart ---------------------------------------------------------
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+app-movil/android/.gradle/
+app-movil/android/local.properties
+app-movil/android/key.properties
+app-movil/ios/Pods/
+app-movil/ios/.symlinks/
+app-movil/ios/Flutter/Flutter.framework/
+app-movil/ios/Flutter/Flutter.podspec
+app-movil/ios/Runner.xcworkspace/xcuserdata/
+
+# --- Secretos y credenciales ------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.keystore
+*.jks
+appsettings.Production.json
+appsettings.Local.json
+google-services.json
+GoogleService-Info.plist
+firebase-service-account*.json
+deploy/secrets/
+storage/
+api/src/GH.Api/storage/
+
+# --- Evidencia de crawl (se regenera con tools/catalog-import) --------------
+_analysis/
+tools/catalog-import/out/*.html
+tools/catalog-import/out/servicios.html
+
+# --- Sistema operativo ------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp

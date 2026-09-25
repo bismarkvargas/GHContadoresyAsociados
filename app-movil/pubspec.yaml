@@ -1,0 +1,55 @@
+name: gh_contadores
+description: "GH Contadores y Asociados — app móvil híbrida (Android + iOS) con ecommerce de servicios contables, legales, municipales y tributarios."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Estado y navegación
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.0
+
+  # Red
+  dio: ^5.5.0
+
+  # Almacenamiento
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.2.3
+
+  # UI / media
+  cached_network_image: ^3.3.1
+  intl: ">=0.19.0 <0.23.0"
+  fl_chart: ">=0.68.0 <2.0.0"
+  shimmer: ^3.0.0
+  url_launcher: ^6.2.6
+  file_picker: ^8.0.5
+
+  # Tiempo real (SignalR) con respaldo automático de polling cada 15 s
+  signalr_netcore: ^1.3.7
+
+  cupertino_icons: ^1.0.8
+
+  # --- Push FCM + centro de notificaciones local (ver README §Firebase) ---
+  # Descomenta estas 4 líneas cuando existan las credenciales de Firebase
+  # (`android/app/google-services.json` y `ios/Runner/GoogleService-Info.plist`).
+  # La app arranca sin ellas: el servicio de push se auto-desactiva.
+  # firebase_core: ^3.3.0
+  # firebase_messaging: ^15.0.4
+  # flutter_local_notifications: ^17.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/mock/

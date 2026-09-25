@@ -1,0 +1,142 @@
+/* =========================================================================
+   Tokens de marca — GH Contadores y Asociados
+   Extraídos del sitio en vivo (docs/01-analisis-mercado.md §7).
+   Nunca se escriben colores literales en los componentes: se usan las clases
+   Tailwind derivadas de estas variables (bg-primary, text-ink, border-line...).
+   ========================================================================= */
+
+:root,
+[data-theme='light'] {
+  --gh-primary: #df3131; /* rojo corporativo */
+  --gh-primary-600: #c42121; /* hover / pressed */
+  --gh-primary-50: #fdecec; /* fondo suave */
+  --gh-ink: #212121; /* texto principal / sidebar */
+  --gh-ink-700: #3a3a3a;
+  --gh-muted: #646464;
+  --gh-surface: #eceff3;
+  --gh-surface-2: #f7f8fa;
+  --gh-border: #e2e5e9;
+  --gh-success: #008250;
+  --gh-warning: #d49341;
+  --gh-danger: #e62214;
+  --gh-info: #116dff;
+
+  /* Derivadas de superficie (tema claro) */
+  --gh-card: #ffffff;
+  --gh-page: #f7f8fa;
+  --gh-sidebar: #212121;
+  --gh-sidebar-hover: #2e2e2e;
+  --gh-overlay: rgba(16, 24, 40, 0.45);
+
+  /* Tipografía y forma */
+  --gh-radius-control: 10px;
+  --gh-radius-card: 16px;
+  --gh-shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.06);
+
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --gh-ink: #f2f4f7; /* invertido: texto claro sobre fondo oscuro */
+  --gh-ink-700: #d0d5dd;
+  --gh-muted: #98a2b3;
+  --gh-surface: #1b1d21;
+  --gh-surface-2: #14161a;
+  --gh-border: #2a2e35;
+  --gh-card: #1b1d21;
+  --gh-page: #101215;
+  --gh-sidebar: #14161a;
+  --gh-sidebar-hover: #22262c;
+  --gh-overlay: rgba(0, 0, 0, 0.6);
+
+  /* El rojo corporativo se aclara para mantener contraste AA sobre oscuro */
+  --gh-primary-50: #3a1d1d;
+  --gh-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.35);
+
+  color-scheme: dark;
+}
+
+* {
+  border-color: var(--gh-border);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  background-color: var(--gh-page);
+  color: var(--gh-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Barra de desplazamiento discreta, coherente con la marca */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gh-border);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gh-muted);
+  background-clip: content-box;
+}
+
+/* Foco accesible consistente */
+:focus-visible {
+  outline: 2px solid var(--gh-primary);
+  outline-offset: 2px;
+}
+
+@keyframes gh-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.gh-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--gh-surface);
+}
+.gh-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.35) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: gh-shimmer 1.4s infinite;
+}
+
+.gh-scroll-hidden {
+  scrollbar-width: none;
+}
+.gh-scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
