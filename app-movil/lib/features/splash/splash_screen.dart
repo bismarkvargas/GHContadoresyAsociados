@@ -9,8 +9,17 @@ import '../../core/theme/gh_tokens.dart';
 import '../../core/utils/async_guard.dart';
 import '../../core/widgets/gh_branding.dart';
 
-/// Pantalla de arranque: decide a dónde ir según sesión, onboarding y estado
-/// de la cuenta (docs/03 §7).
+/// Pantalla de arranque.
+///
+/// Mientras está visible: inicializa el cliente del modo demo (catálogo real),
+/// restaura la sesión guardada y muestra la marca. Apenas el estado de sesión
+/// queda decidido, el `redirect` del router envía a:
+///  * `/onboarding` si el usuario aún no lo vio,
+///  * `/services` (catálogo público) si no hay sesión,
+///  * `/pending` si la cuenta espera aprobación,
+///  * `/home` si la cuenta está `Active`.
+///
+/// El splash tiene un tope de tiempo: nunca bloquea la app más de lo previsto.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -48,12 +57,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   );
 
   String _status = 'Preparando tu espacio de trabajo…';
-  bool _navigated = false;
+  bool _bootstrapped = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _decide());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
   @override
@@ -62,72 +71,61 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     super.dispose();
   }
 
-  Future<void> _decide() async {
+  /// Arranque tolerante: si algo falla, se avanza igual al destino por defecto.
+  Future<void> _bootstrap() async {
+    if (_bootstrapped) return;
+    _bootstrapped = true;
     final stopwatch = Stopwatch()..start();
 
-    // Espera tolerante: la app nunca se queda pegada en el splash.
     try {
-      await AsyncGuard.retry<void>(
-        () async {
-          await AsyncGuard.timeout(
-            ref.read(apiBootstrapProvider.future),
-            limit: const Duration(seconds: 12),
-          );
-          await AsyncGuard.timeout(
-            ref.read(authProvider.notifier).bootstrap(),
-            limit: const Duration(seconds: 12),
-          );
-        },
-        attempts: 2,
-        initialDelay: const Duration(milliseconds: 400),
+      await AsyncGuard.timeout(
+        ref.read(apiBootstrapProvider.future),
+        limit: const Duration(seconds: 12),
+      );
+      await AsyncGuard.timeout(
+        ref.read(authProvider.notifier).bootstrap(),
+        limit: const Duration(seconds: 12),
+      );
+      await AsyncGuard.timeout(
+        ref.read(onboardingDoneProvider.notifier).state == null
+            ? loadOnboardingDone(ref)
+            : Future<void>.value(),
+        limit: const Duration(seconds: 5),
       );
     } catch (_) {
-      // Arrancamos igual: el modo demo y el catálogo público no dependen de red.
+      // El modo demo y el catálogo público no dependen de la red.
     }
 
     if (mounted) {
       setState(() => _status = 'Verificando tu sesión…');
     }
 
-    final store = ref.read(tokenStoreProvider);
-    final onboardingDone = await store.isOnboardingDone();
-    final auth = ref.read(authProvider);
-
     // Mínimo visible para que la animación de marca se aprecie.
-    const minimum = Duration(milliseconds: 1400);
+    const minimum = Duration(milliseconds: 1200);
     if (stopwatch.elapsed < minimum) {
       await Future<void>.delayed(minimum - stopwatch.elapsed);
     }
 
     if (!mounted) return;
 
-    if (!onboardingDone) {
-      _go(AppRoutes.onboarding);
-      return;
-    }
-
-    switch (auth.stage) {
-      case AuthStage.unknown:
-      case AuthStage.unauthenticated:
-        _go(AppRoutes.services);
-        break;
-      case AuthStage.pending:
-        _go(AppRoutes.pendingApproval);
-        break;
-      case AuthStage.active:
-        _go(AppRoutes.home);
-        break;
-      case AuthStage.suspended:
-      case AuthStage.rejected:
-        _go(AppRoutes.login);
-        break;
+    // El router ya navega al reaccionar al estado; este respaldo garantiza que
+    // la app nunca se quede en el splash (por ejemplo si el redirect no corre).
+    if (ref.read(authProvider).stage != AuthStage.unknown) {
+      _fallbackNavigation();
     }
   }
 
-  /// Navega una sola vez (evita reentradas si el widget se reconstruye).
-  void _go(String location) {
-    if (_navigated || !mounted) return;
-    _navigated = true;
+  void _fallbackNavigation() {
+    if (!mounted) return;
+    final auth = ref.read(authProvider);
+    final onboardingDone = ref.read(onboardingDoneProvider) ?? true;
+    final location = switch (auth.stage) {
+      AuthStage.active => AppRoutes.home,
+      AuthStage.pending => AppRoutes.pendingApproval,
+      AuthStage.suspended || AuthStage.rejected => AppRoutes.login,
+      AuthStage.unauthenticated || AuthStage.unknown =>
+        onboardingDone ? AppRoutes.services : AppRoutes.onboarding,
+    };
     context.go(location);
   }
 
@@ -153,16 +151,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         ),
         child: Stack(
           children: <Widget>[
-            Positioned(
-              right: -40,
-              top: -30,
-              child: GhWatermark(size: 220),
-            ),
-            Positioned(
-              left: -60,
-              bottom: -40,
-              child: GhWatermark(size: 180),
-            ),
+            Positioned(right: -40, top: -30, child: GhWatermark(size: 220)),
+            Positioned(left: -60, bottom: -40, child: GhWatermark(size: 180)),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),

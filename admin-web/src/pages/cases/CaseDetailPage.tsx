@@ -15,7 +15,7 @@ import {
   User,
 } from 'lucide-react'
 import { casesApi, documentsApi, messagesApi, usersApi } from '@/api/endpoints'
-import { useApiMutation } from '@/hooks/useApi'
+import { useApiMutation, useRouteId } from '@/hooks/useApi'
 import { formatBytes, formatDate, formatDateTime, formatMoney, formatRelative, isOverdue } from '@/lib/format'
 import {
   caseEntityList,
@@ -64,7 +64,10 @@ const statusFlow: Record<string, string[]> = {
 }
 
 export default function CaseDetailPage() {
-  const { id = '' } = useParams()
+  const { id: rawId } = useParams()
+  // Guarda: un identificador ausente o literal «undefined» nunca debe llegar a la API.
+  const id = useRouteId(rawId) ?? ''
+  const idValido = id !== ''
   const [tab, setTab] = useState('tareas')
   const [showTask, setShowTask] = useState(false)
   const [editingTask, setEditingTask] = useState<CaseTask | null>(null)
@@ -78,7 +81,7 @@ export default function CaseDetailPage() {
   const query = useQuery({
     queryKey: ['case', id],
     queryFn: () => casesApi.get(id),
-    enabled: !!id,
+    enabled: idValido,
   })
 
   const staff = useQuery({
@@ -247,6 +250,20 @@ export default function CaseDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   )
+
+  // Un identificador ausente no se consulta: se informa en lugar de dejar la
+  // pantalla en un esqueleto indefinido.
+  if (!idValido) {
+    return (
+      <>
+        <PageHeader title="Expediente" backTo="/expedientes" />
+        <ErrorState
+          title="Expediente no encontrado"
+          message={`La dirección solicitada no incluye un identificador de expediente válido${rawId ? ` («${rawId}»)` : ''}.`}
+        />
+      </>
+    )
+  }
 
   if (query.isLoading) {
     return (

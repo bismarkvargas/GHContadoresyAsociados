@@ -14,6 +14,20 @@ export function useDebounced<T>(value: T, delay = 350): T {
   return debounced
 }
 
+/**
+ * Valida un identificador de ruta antes de usarlo.
+ * Evita llamadas a la API con `undefined`, `null` o cadena vacía (que producen
+ * 400/404 en el servidor real).
+ */
+export function isValidId(value: string | undefined | null): value is string {
+  return !!value && value !== 'undefined' && value !== 'null' && value.trim() !== ''
+}
+
+/** Devuelve el id de ruta saneado, o `null` si no es utilizable. */
+export function useRouteId(raw: string | undefined): string | null {
+  return isValidId(raw) ? raw : null
+}
+
 export interface TableState {
   page: number
   pageSize: number

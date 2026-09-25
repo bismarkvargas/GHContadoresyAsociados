@@ -58,8 +58,10 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
       final cart = await client.getCart();
+      if (!mounted) return;
       state = state.copyWith(cart: cart, isLoading: false);
     } on ApiFailure catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, error: e.message);
     }
   }
@@ -72,6 +74,7 @@ class CartNotifier extends StateNotifier<CartState> {
         productId: product.id,
         quantity: quantity,
       );
+      if (!mounted) return true;
       state = state.copyWith(
         cart: cart,
         isMutating: false,
@@ -79,6 +82,7 @@ class CartNotifier extends StateNotifier<CartState> {
       );
       return true;
     } on ApiFailure catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isMutating: false, error: e.message);
       return false;
     }
@@ -89,8 +93,10 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
       final cart = await client.updateCartItem(itemId: itemId, quantity: quantity);
+      if (!mounted) return;
       state = state.copyWith(cart: cart, isMutating: false);
     } on ApiFailure catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isMutating: false, error: e.message);
     }
   }
@@ -100,8 +106,10 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
       final cart = await client.removeCartItem(itemId);
+      if (!mounted) return;
       state = state.copyWith(cart: cart, isMutating: false);
     } on ApiFailure catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isMutating: false, error: e.message);
     }
   }
@@ -111,8 +119,10 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
       final cart = await client.clearCart();
+      if (!mounted) return;
       state = state.copyWith(cart: cart, isMutating: false);
     } on ApiFailure catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isMutating: false, error: e.message);
     }
   }
@@ -237,6 +247,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
         requiresInvoice: state.requiresInvoice,
         notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
       );
+      if (!mounted) return true;
       state = state.copyWith(
         order: order,
         isBusy: false,
@@ -244,6 +255,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       );
       return true;
     } on ApiFailure catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(isBusy: false, error: e.message);
       return false;
     }
@@ -278,6 +290,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       } catch (_) {
         updated = order;
       }
+      if (!mounted) return payment;
       state = state.copyWith(
         isBusy: false,
         payment: payment,
@@ -289,6 +302,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       }
       return payment;
     } on ApiFailure catch (e) {
+      if (!mounted) return null;
       state = state.copyWith(
         isBusy: false,
         error: e.message,

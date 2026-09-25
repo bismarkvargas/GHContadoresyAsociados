@@ -148,6 +148,38 @@ export function truncate(value: string, max = 80): string {
   return value.length > max ? `${value.slice(0, max - 1)}…` : value
 }
 
+/**
+ * Extrae un identificador de una respuesta de la API de forma tolerante.
+ * Acepta `{id}`, `{Id}`, `{clientId}`, envoltorios (`{client:{id}}`, `{data:{id}}`)
+ * y cadenas vacías o el literal «undefined». Devuelve `null` si no hay id válido,
+ * para que la interfaz nunca construya rutas como `/clientes/undefined`.
+ */
+export function pickId(payload: unknown, ...keys: string[]): string | null {
+  const claves = keys.length ? keys : ['id', 'Id', 'clientId', 'caseFileId', 'orderId', 'userId']
+  const visitar = (valor: unknown, profundidad: number): string | null => {
+    if (!valor || typeof valor !== 'object' || profundidad > 2) return null
+    const registro = valor as Record<string, unknown>
+    for (const clave of claves) {
+      const candidato = registro[clave]
+      if (isUsableId(candidato)) return String(candidato)
+    }
+    for (const envoltorio of ['client', 'data', 'item', 'result', 'order', 'caseFile']) {
+      const anidado = registro[envoltorio]
+      const encontrado = visitar(anidado, profundidad + 1)
+      if (encontrado) return encontrado
+    }
+    return null
+  }
+  return visitar(payload, 0)
+}
+
+/** ¿Es un identificador utilizable (no vacío ni los literales «undefined»/«null»)? */
+export function isUsableId(valor: unknown): boolean {
+  if (typeof valor !== 'string' && typeof valor !== 'number') return false
+  const texto = String(valor).trim()
+  return texto !== '' && texto !== 'undefined' && texto !== 'null'
+}
+
 /** Escapa lo mínimo para un diff legible en HTML. */
 export function prettyJson(value: string | null | undefined): string {
   if (!value) return '—'

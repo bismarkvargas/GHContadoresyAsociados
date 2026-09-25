@@ -7,6 +7,7 @@
 import {
   Activity,
   BarChart3,
+  BellRing,
   Briefcase,
   ClipboardList,
   CreditCard,
@@ -158,6 +159,14 @@ export const navItems: NavItem[] = [
     description: 'Matriz de permisos por módulo y acción.',
   },
   {
+    path: '/notificaciones',
+    label: 'Notificaciones',
+    icon: BellRing,
+    permission: 'notifications.view',
+    group: 'Configuración',
+    description: 'Bandeja de notificaciones enviadas con filtros y reenvío.',
+  },
+  {
     path: '/auditoria',
     label: 'Auditoría',
     icon: Activity,
@@ -202,6 +211,7 @@ export const routePermissions: {
   { path: '/usuarios', screen: 'Usuarios', view: 'users.view', extra: ['users.create', 'users.edit', 'users.delete'] },
   { path: '/roles', screen: 'Roles y permisos', view: 'roles.view', extra: ['roles.create', 'roles.edit', 'roles.delete'] },
   { path: '/ajustes', screen: 'Ajustes', view: 'settings.view', extra: ['settings.edit'] },
+  { path: '/notificaciones', screen: 'Notificaciones enviadas (bandeja con filtros y reenvío)', view: 'notifications.view', extra: ['notifications.send'] },
   { path: '/auditoria', screen: 'Auditoría', view: 'settings.view', extra: [] },
   { path: '*', screen: 'Página no encontrada / sin permiso', view: null, extra: [] },
 ]
@@ -221,6 +231,7 @@ export const routeViewPermission: Record<string, string> = {
   '/usuarios': 'users.view',
   '/roles': 'roles.view',
   '/ajustes': 'settings.view',
+  '/notificaciones': 'notifications.view',
   '/auditoria': 'settings.view',
 }
 

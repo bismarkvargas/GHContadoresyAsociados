@@ -8,6 +8,38 @@ import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from '
 import { handleMockRequest, MockHttpError } from './mock/router'
 import { normalizeApiPayload } from './normalize'
 
+/**
+ * Limpia el cuerpo de una petición antes de enviarla:
+ * - `''`, `null` y `undefined` se omiten para que un PUT/PATCH no borre datos
+ *   existentes con cadenas vacías (la API los interpreta como «vaciar el campo»).
+ * - `false`, `0` y los arreglos vacíos se conservan siempre (son valores legítimos).
+ * - Los `File` y `Blob` pasan intactos; `FormData` no se toca.
+ */
+export function limpiarCuerpo(valor: unknown): unknown {
+  if (Array.isArray(valor)) return valor.map((item) => limpiarCuerpo(item))
+  if (valor === null || valor === undefined) return valor
+  if (typeof valor !== 'object') return valor
+  if (typeof File !== 'undefined' && valor instanceof File) return valor
+  if (typeof Blob !== 'undefined' && valor instanceof Blob) return valor
+
+  const salida: Record<string, unknown> = {}
+  for (const [clave, entrada] of Object.entries(valor as Record<string, unknown>)) {
+    if (entrada === '' || entrada === null || entrada === undefined) continue
+    salida[clave] = limpiarCuerpo(entrada)
+  }
+  return salida
+}
+
+/** ¿El cuerpo se puede limpiar como JSON? (no se toca multipart ni binarios). */
+function cuerpoLimpiable(dato: unknown): boolean {
+  if (dato === null || dato === undefined) return false
+  if (typeof dato === 'string') return false
+  if (typeof FormData !== 'undefined' && dato instanceof FormData) return false
+  if (typeof Blob !== 'undefined' && dato instanceof Blob) return false
+  if (typeof ArrayBuffer !== 'undefined' && dato instanceof ArrayBuffer) return false
+  return typeof dato === 'object'
+}
+
 export const USE_MOCKS = String(import.meta.env.VITE_USE_MOCKS ?? 'true') !== 'false'
 
 export const API_URL: string =
@@ -62,6 +94,12 @@ api.interceptors.request.use((config) => {
     config.headers = config.headers ?? {}
     config.headers.Authorization = `Bearer ${token}`
   }
+
+  // Se omiten los campos vacíos para no borrar datos existentes en PUT/PATCH.
+  if (cuerpoLimpiable(config.data)) {
+    config.data = limpiarCuerpo(config.data)
+  }
+
   return config
 })
 

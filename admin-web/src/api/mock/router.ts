@@ -43,6 +43,7 @@ import {
   userName,
 } from './db'
 import { emitRealtime } from './realtime-bus'
+import { registrarPeticionMock } from './request-log'
 
 export class MockHttpError extends Error {
   status: number
@@ -244,15 +245,22 @@ function notify(
   data: Record<string, unknown> = {},
 ): Notification {
   const db = getDb()
+  const destinatario = db.users.find((u) => u.id === userId)
   const n: Notification = {
     id: uid('notif'),
     userId,
+    userEmail: destinatario?.email ?? null,
+    userName: destinatario?.fullName ?? null,
     title,
     body,
     type,
     dataJson: JSON.stringify(data),
+    deepLink: typeof data.deepLink === 'string' ? data.deepLink : null,
     channel: 'InApp',
     status: 'Sent',
+    isRead: false,
+    fcmMessageId: null,
+    error: null,
     createdAt: new Date().toISOString(),
     sentAt: new Date().toISOString(),
     readAt: null,
@@ -262,6 +270,24 @@ function notify(
 }
 
 /* --- Enriquecimiento de entidades ---------------------------------- */
+
+/** Normaliza las etiquetas del cliente: la API recibe `tags` como arreglo. */
+function leerEtiquetas(body: Record<string, unknown>): string[] {
+  if (Array.isArray(body.tags)) {
+    return body.tags.map((t) => str(t).trim()).filter(Boolean)
+  }
+  const csv = str(body.tagsCsv)
+  return csv
+    ? csv
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : []
+}
+
+function etiquetasACsv(tags: string[]): string | null {
+  return tags.length ? tags.join(',') : null
+}
 
 function clientRow(c: Client): Client {
   const db = getDb()
@@ -734,7 +760,9 @@ route('POST', '/admin/clients', (ctx) => {
     status: (str(ctx.body.status, 'Lead') as Client['status']) || 'Lead',
     source: (str(ctx.body.source, 'admin') as Client['source'] & string as Client['source']) || 'web',
     assignedToUserId: ctx.body.assignedToUserId ? str(ctx.body.assignedToUserId) : null,
-    tagsCsv: ctx.body.tagsCsv ? str(ctx.body.tagsCsv) : null,
+    // La API real recibe `tags` como arreglo de cadenas; `tagsCsv` se deriva.
+    tags: leerEtiquetas(ctx.body),
+    tagsCsv: etiquetasACsv(leerEtiquetas(ctx.body)),
     notes: ctx.body.notes ? str(ctx.body.notes) : null,
     userId: null,
     createdAt: new Date().toISOString(),
@@ -769,13 +797,18 @@ route('PUT', '/admin/clients/:id', (ctx) => {
     'status',
     'source',
     'assignedToUserId',
-    'tagsCsv',
     'notes',
   ] as const) {
     if (key in ctx.body) {
       // @ts-expect-error asignación dinámica controlada por la lista de claves
       client[key] = ctx.body[key] === null || ctx.body[key] === '' ? null : ctx.body[key]
     }
+  }
+  // Las etiquetas llegan como arreglo (`tags`) o como CSV heredado (`tagsCsv`).
+  if ('tags' in ctx.body || 'tagsCsv' in ctx.body) {
+    const etiquetas = leerEtiquetas(ctx.body)
+    client.tags = etiquetas
+    client.tagsCsv = etiquetasACsv(etiquetas)
   }
   touch(client)
   audit(actor, 'update', 'Client', client.id, before, { ...client })
@@ -2296,15 +2329,62 @@ route(
 /* NOTIFICACIONES                                                      */
 /* ------------------------------------------------------------------ */
 
-route('GET', '/admin/notifications', (ctx) => {
+/** Bandeja de administración: imita el contrato real (todos los destinatarios). */
+route('GET', '/admin/notifications', (ctx): Paginated<Notification> => {
+  requireActor(ctx)
+  const db = getDb()
+  return list<Notification>(
+    db.notifications,
+    ctx.query,
+    (n) =>
+      inFilter(n.type, ctx.query.type) &&
+      inFilter(n.channel, ctx.query.channel) &&
+      (!ctx.query.userId || n.userId === ctx.query.userId) &&
+      (bool(ctx.query.unreadOnly) !== true || !n.isRead) &&
+      inDateRange(n.createdAt, ctx.query),
+    (n) => [n.title, n.body, n.userName, n.userEmail],
+  )
+})
+
+/** Contadores de la campana. */
+route('GET', '/admin/notifications/summary', (ctx) => {
+  requireActor(ctx)
+  const db = getDb()
+  const porTipo = new Map<string, number>()
+  for (const n of db.notifications) porTipo.set(n.type, (porTipo.get(n.type) ?? 0) + 1)
+  const hace30 = Date.now() - 30 * 86400000
+  return {
+    total: db.notifications.length,
+    unread: db.notifications.filter((n) => !n.isRead).length,
+    byType: Array.from(porTipo.entries()).map(([type, count]) => ({
+      type,
+      label: type,
+      count,
+    })),
+    last30Days: db.notifications.filter((n) => new Date(n.createdAt).getTime() >= hace30).length,
+  }
+})
+
+/** Reenvío de una notificación concreta. */
+route('POST', '/admin/notifications/:id/resend', (ctx) => {
   const actor = requireActor(ctx)
   const db = getDb()
-  return list(
-    db.notifications.filter((n) => n.userId === actor),
-    ctx.query,
-    (n) => (ctx.query.unread === undefined || !bool(ctx.query.unread) || !n.readAt),
-    (n) => [n.title, n.body],
-  )
+  const n = db.notifications.find((x) => x.id === ctx.params.id)
+  if (!n) throw new MockHttpError(404, 'Notificación no encontrada.')
+  db.notifications.unshift({
+    ...n,
+    id: uid('notif'),
+    status: 'Sent',
+    isRead: false,
+    error: null,
+    createdAt: new Date().toISOString(),
+    sentAt: new Date().toISOString(),
+    readAt: null,
+  })
+  audit(actor, 'resend', 'Notification', n.id, null, { id: n.id })
+  persistDb()
+  emitRealtime({ type: 'notification', payload: { id: n.id, title: n.title, body: n.body } })
+  return { message: 'Notificación reenviada.' }
 })
 
 route('POST', '/admin/notifications/:id/read', (ctx) => {
@@ -2312,6 +2392,7 @@ route('POST', '/admin/notifications/:id/read', (ctx) => {
   const n = db.notifications.find((x) => x.id === ctx.params.id)
   if (!n) throw new MockHttpError(404, 'Notificación no encontrada.')
   n.readAt = new Date().toISOString()
+  n.isRead = true
   n.status = 'Read'
   persistDb()
   return n
@@ -2322,6 +2403,7 @@ route('POST', '/admin/notifications/read-all', (ctx) => {
   const db = getDb()
   for (const n of db.notifications.filter((x) => x.userId === actor)) {
     n.readAt = n.readAt ?? new Date().toISOString()
+    n.isRead = true
     n.status = 'Read'
   }
   persistDb()
@@ -2335,12 +2417,12 @@ route('POST', '/admin/notifications/send', (ctx) => {
     str(ctx.body.title, 'Aviso'),
     str(ctx.body.body, ''),
     (str(ctx.body.type, 'System') as Notification['type']) || 'System',
-    {},
+    ctx.body.deepLink ? { deepLink: str(ctx.body.deepLink) } : {},
   )
   audit(actor, 'send', 'Notification', n.id, null, n)
   persistDb()
   emitRealtime({ type: 'notification', payload: { id: n.id, title: n.title, body: n.body } })
-  return n
+  return { message: 'Notificación enviada.', userId: n.userId }
 })
 
 /* ------------------------------------------------------------------ */
@@ -2418,6 +2500,9 @@ export async function handleMockRequest<T = unknown>(req: MockRequest): Promise<
   }
 
   const { route: matched, params } = matchRoute(req.method.toUpperCase(), path)
+
+  // Registro visible solo en desarrollo (para las verificaciones en navegador).
+  registrarPeticionMock({ method: req.method.toUpperCase(), url: req.url, body: req.body })
 
   // Todo /admin/* exige token válido (espeja la política de autorización de la API real).
   const headers: Record<string, string> = req.headers ?? {}

@@ -26,6 +26,7 @@ const RolesPage = lazy(() => import('@/pages/roles/RolesPage'))
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'))
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'))
 const AuditPage = lazy(() => import('@/pages/audit/AuditPage'))
+const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'))
 
 function Page({ path, children }: { path: string; children: React.ReactNode }) {
   return <ProtectedRoute permission={routeViewPermission[path]}>{children}</ProtectedRoute>
@@ -54,6 +55,7 @@ const aliases: { from: string; to: string }[] = [
   { from: 'roles', to: '/roles' },
   { from: 'reports', to: '/informes' },
   { from: 'settings', to: '/ajustes' },
+  { from: 'notifications', to: '/notificaciones' },
   { from: 'audit', to: '/auditoria' },
   // Detalle con identificador
   { from: 'clients/:id', to: '/clientes/:id' },
@@ -61,15 +63,30 @@ const aliases: { from: string; to: string }[] = [
   { from: 'orders/:id', to: '/pedidos/:id' },
 ]
 
-/** Sustituye `:param` por el valor real de la ruta entrante. */
-function resolveAlias(to: string, params: Record<string, string | undefined>): string {
-  return to.replace(/:([a-zA-Z]+)/g, (_, name: string) => params[name] ?? '')
+/**
+ * Sustituye `:param` por el valor real de la ruta entrante.
+ * Devuelve `null` si falta algún parámetro: sin esta guarda un alias como
+ * `/clients/` generaría `/clientes/undefined` y la API respondería 400/404.
+ */
+function resolveAlias(to: string, params: Record<string, string | undefined>): string | null {
+  let faltante = false
+  const resuelto = to.replace(/:([a-zA-Z]+)/g, (_, name: string) => {
+    const valor = params[name]
+    if (!valor || valor === 'undefined' || valor === 'null') {
+      faltante = true
+      return ''
+    }
+    return valor
+  })
+  return faltante ? null : resuelto
 }
 
 /** Redirección permanente de un alias en inglés a la ruta canónica española. */
 function AliasRedirect({ target }: { target: string }) {
   const params = useParams()
-  return <Navigate to={resolveAlias(target, params)} replace />
+  const destino = resolveAlias(target, params)
+  if (!destino) return <NotFound />
+  return <Navigate to={destino} replace />
 }
 
 export default function App() {
@@ -263,6 +280,15 @@ export default function App() {
             element={
               <Page path="/auditoria">
                 <AuditPage />
+              </Page>
+            }
+          />
+
+          <Route
+            path="notificaciones"
+            element={
+              <Page path="/notificaciones">
+                <NotificationsPage />
               </Page>
             }
           />

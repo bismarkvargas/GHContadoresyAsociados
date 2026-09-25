@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gh_contadores/core/providers/core_providers.dart';
 import 'package:gh_contadores/core/widgets/product_card.dart';
 
 import 'helpers/test_harness.dart';
@@ -16,10 +17,20 @@ void main() {
     // Encabezado del catálogo.
     expect(find.text('Servicios'), findsWidgets);
 
-    // Pestañas de las 4 categorías reales (docs/01 §2).
+    // Pestañas de categorías (la primera siempre visible).
     await TestHarness.waitForText(tester, 'Todos');
     expect(find.text('Todos'), findsOneWidget);
-    expect(find.text('Servicios Tributarios'), findsWidgets);
+
+    // Las 4 categorías reales del cliente están cargadas (docs/01 §2).
+    final container = TestHarness.container(tester);
+    final categories = await container.read(categoriesProvider.future);
+    expect(categories.map((c) => c.slug).toList(), <String>[
+      'servicios-contables',
+      'servicios-legales',
+      'servicios-municipales',
+      'servicios-tributarios',
+    ]);
+    expect(categories.map((c) => c.productCount).reduce((a, b) => a + b), 62);
 
     // El catálogo del cliente se carga desde assets/mock/catalog.seed.json.
     await TestHarness.waitForCatalog(tester);

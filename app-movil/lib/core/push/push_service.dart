@@ -85,19 +85,23 @@ class LocalNotificationService {
     if (_initialized) return;
     _initialized = true;
 
+    // Tope de tiempo: si la plataforma no responde (emulador, tests, o un
+    // dispositivo sin el plugin listo) la app no se queda esperando.
     try {
-      await _plugin.initialize(
-        const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-          iOS: DarwinInitializationSettings(
-            requestAlertPermission: false,
-            requestBadgePermission: false,
-            requestSoundPermission: false,
-          ),
-        ),
-        onDidReceiveNotificationResponse: _handleResponse,
-        onDidReceiveBackgroundNotificationResponse: _handleBackgroundResponse,
-      );
+      await _plugin
+          .initialize(
+            const InitializationSettings(
+              android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+              iOS: DarwinInitializationSettings(
+                requestAlertPermission: false,
+                requestBadgePermission: false,
+                requestSoundPermission: false,
+              ),
+            ),
+            onDidReceiveNotificationResponse: _handleResponse,
+            onDidReceiveBackgroundNotificationResponse: _handleBackgroundResponse,
+          )
+          .timeout(const Duration(seconds: 3));
     } catch (e) {
       debugPrint('[Push] notificaciones locales no disponibles: $e');
     }
@@ -106,7 +110,8 @@ class LocalNotificationService {
       await _plugin
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(_channel);
+          ?.createNotificationChannel(_channel)
+          .timeout(const Duration(seconds: 3));
     } catch (e) {
       debugPrint('[Push] no se pudo crear el canal Android: $e');
     }

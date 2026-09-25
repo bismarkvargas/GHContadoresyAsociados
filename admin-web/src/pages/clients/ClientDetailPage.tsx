@@ -15,7 +15,7 @@ import {
   UserCog,
 } from 'lucide-react'
 import { casesApi, clientsApi, documentsApi, messagesApi, ordersApi, usersApi } from '@/api/endpoints'
-import { useApiMutation } from '@/hooks/useApi'
+import { useApiMutation, useRouteId } from '@/hooks/useApi'
 import { usePermission } from '@/hooks/useAuth'
 import { formatBytes, formatDate, formatDateTime, formatMoney, formatRelative, isOverdue } from '@/lib/format'
 import {
@@ -56,7 +56,10 @@ import { ClientForm } from './ClientForm'
 import type { CaseFile, ClientInteraction, ClientStatus, DocumentItem, Order, User } from '@/types'
 
 export default function ClientDetailPage() {
-  const { id = '' } = useParams()
+  const { id: rawId } = useParams()
+  // Guarda: un identificador ausente o literal «undefined» nunca debe llegar a la API.
+  const id = useRouteId(rawId) ?? ''
+  const idValido = id !== ''
   const { can } = usePermission()
   const [tab, setTab] = useState('datos')
   const [showEdit, setShowEdit] = useState(false)
@@ -68,49 +71,49 @@ export default function ClientDetailPage() {
   const client = useQuery({
     queryKey: ['client', id],
     queryFn: () => clientsApi.get(id),
-    enabled: !!id,
+    enabled: idValido,
   })
 
   const contacts = useQuery({
     queryKey: ['client', id, 'contacts'],
     queryFn: () => clientsApi.contacts(id),
-    enabled: !!id && tab === 'contactos',
+    enabled: idValido && tab === 'contactos',
   })
 
   const interactions = useQuery({
     queryKey: ['client', id, 'interactions'],
     queryFn: () => clientsApi.interactions(id, { page: 1, pageSize: 50 }),
-    enabled: !!id && tab === 'interacciones',
+    enabled: idValido && tab === 'interacciones',
   })
 
   const timeline = useQuery({
     queryKey: ['client', id, 'timeline'],
     queryFn: () => clientsApi.timeline(id),
-    enabled: !!id && tab === 'timeline',
+    enabled: idValido && tab === 'timeline',
   })
 
   const cases = useQuery({
     queryKey: ['cases', { clientId: id }],
     queryFn: () => casesApi.list({ page: 1, pageSize: 50, clientId: id, sort: 'openedAt', order: 'desc' }),
-    enabled: !!id,
+    enabled: idValido,
   })
 
   const documents = useQuery({
     queryKey: ['documents', { clientId: id }],
     queryFn: () => documentsApi.list({ page: 1, pageSize: 50, clientId: id }),
-    enabled: !!id && tab === 'documentos',
+    enabled: idValido && tab === 'documentos',
   })
 
   const orders = useQuery({
     queryKey: ['orders', { clientId: id }],
     queryFn: () => ordersApi.list({ page: 1, pageSize: 50, clientId: id }),
-    enabled: !!id && tab === 'pedidos',
+    enabled: idValido && tab === 'pedidos',
   })
 
   const messages = useQuery({
     queryKey: ['messages', { clientId: id }],
     queryFn: () => messagesApi.list({ page: 1, pageSize: 50, clientId: id, sort: 'createdAt', order: 'asc' }),
-    enabled: !!id && tab === 'mensajes',
+    enabled: idValido && tab === 'mensajes',
   })
 
   const staff = useQuery({
@@ -247,6 +250,20 @@ export default function ClientDetailPage() {
     ],
     [],
   )
+
+  // Un identificador ausente no se consulta: se informa en lugar de dejar la
+  // pantalla en un esqueleto indefinido.
+  if (!idValido) {
+    return (
+      <>
+        <PageHeader title="Ficha de cliente" backTo="/clientes" />
+        <ErrorState
+          title="Cliente no encontrado"
+          message={`La dirección solicitada no incluye un identificador de cliente válido${rawId ? ` («${rawId}»)` : ''}.`}
+        />
+      </>
+    )
+  }
 
   if (client.isLoading) {
     return (

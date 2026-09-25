@@ -17,11 +17,15 @@ class ProductCard extends ConsumerWidget {
     required this.product,
     this.showAddButton = true,
     this.onTap,
+    this.compact = true,
   });
 
   final Product product;
   final bool showAddButton;
   final VoidCallback? onTap;
+
+  /// Ajusta el alto a la grilla (2 columnas) evitando desbordes de layout.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,38 +47,44 @@ class ProductCard extends ConsumerWidget {
               border: Border.all(color: theme.colorScheme.outlineVariant),
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Hero(
                   tag: 'product-image-${product.slug}',
                   child: GhProductImage(
                     imageUrl: product.imageUrl,
-                    height: 104,
+                    height: compact ? 88 : 104,
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Row(
                         children: <Widget>[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: GhTokens.primary50,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              product.categoryName.split(' ').last.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: GhTokens.primary600,
-                                letterSpacing: 0.4,
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: GhTokens.primary50,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                product.categoryName.split(' ').last.toUpperCase(),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: GhTokens.primary600,
+                                  letterSpacing: 0.4,
+                                ),
                               ),
                             ),
                           ),
@@ -89,13 +99,15 @@ class ProductCard extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        product.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontSize: 14,
-                          height: 1.25,
+                      Flexible(
+                        child: Text(
+                          product.name,
+                          maxLines: compact ? 2 : 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 14,
+                            height: 1.2,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 6),
