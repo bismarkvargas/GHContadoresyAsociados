@@ -237,7 +237,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: ':id',
                     name: 'case-detail',
-                    parentNavigatorKey: _rootKey,
                     builder: (context, state) => CaseDetailScreen(
                       caseId: state.pathParameters['id'] ?? '',
                       initialTab: state.uri.queryParameters['tab'],
@@ -248,7 +247,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.documents,
                 name: 'documents',
-                parentNavigatorKey: _rootKey,
                 builder: (context, state) => DocumentsScreen(
                   caseFileId: state.uri.queryParameters['caseFileId'],
                 ),
@@ -261,13 +259,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.orders,
                 name: 'orders',
-                parentNavigatorKey: _rootKey,
                 builder: (context, state) => const OrdersScreen(),
                 routes: <RouteBase>[
                   GoRoute(
                     path: ':id',
                     name: 'order-detail',
-                    parentNavigatorKey: _rootKey,
                     builder: (context, state) => OrderDetailScreen(
                       orderId: state.pathParameters['id'] ?? '',
                     ),

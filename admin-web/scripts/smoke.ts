@@ -326,7 +326,7 @@ async function main(): Promise<void> {
   check('borrar rol no-sistema', removed.data.ok === true)
 
   console.log('== Usuarios ==')
-  const staffUser = db.users.find((u) => u.isStaff && u.status === 'Active')!
+  const staffUser = db.users.find((u) => u.isStaff && u.status === 'Active' && u.id !== 'user-admin')!
   const rolesChanged = await call(
     'PUT',
     `/admin/users/${staffUser.id}/roles`,

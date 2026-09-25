@@ -36,7 +36,18 @@ async function esperarTexto(page, texto, ms = 15000) {
 async function irA(page, ruta, marcador) {
   await page.goto(`${BASE}${ruta.replace(/^\//, '')}`, { waitUntil: 'domcontentloaded' })
   await page.waitForLoadState('networkidle').catch(() => {})
+  // Si la sesión no es válida el router devuelve a /login: entonces no vale
+  // encontrar el texto por casualidad en la pantalla de acceso.
+  if (/\/login\/?$/.test(page.url())) return false
   return esperarTexto(page, marcador)
+}
+
+/** Comprueba que hay sesión iniciada de verdad (shell del panel, no la pantalla de acceso). */
+async function haySesion(page) {
+  const url = page.url()
+  if (/\/login\/?$/.test(url)) return false
+  const cuerpo = await page.locator('body').innerText()
+  return !/Acceso restringido al personal de la firma/i.test(cuerpo)
 }
 
 async function login(page, credenciales) {
@@ -47,9 +58,13 @@ async function login(page, credenciales) {
   await email.waitFor({ state: 'visible', timeout: 20000 })
   await email.fill(credenciales.email)
   await page.locator('input[type="password"]').first().fill(credenciales.password)
+  // Se comprueba que el formulario recibió lo escrito antes de enviarlo (detecta fallos de registro de campos).
+  const leido = await email.inputValue()
+  if (leido !== credenciales.email) throw new Error(`el formulario no conserva el correo escrito (leyó «${leido}»)`)
   await page.locator('button[type="submit"], button:has-text("Entrar"), button:has-text("Iniciar")').first().click()
   await page.waitForLoadState('networkidle').catch(() => {})
   await page.waitForTimeout(2500)
+  return haySesion(page)
 }
 
 const erroresConsola = []
@@ -71,31 +86,32 @@ async function main() {
   titulo ? ok(`título de la página: «${titulo}»`) : ko('la página no tiene título')
 
   step('2 · Inicio de sesión de la firma')
-  await login(page, ADMIN)
-  const entro = !(await page.locator('input[type="password"]').first().isVisible().catch(() => false))
+  const entro = await login(page, ADMIN)
   entro ? ok(`sesión iniciada como ${ADMIN.email}`) : ko('no se pudo iniciar sesión con las credenciales de la firma')
 
   step('3 · Datos reales de la API en el dashboard')
   await page.waitForTimeout(2000)
   const cuerpo = await page.locator('body').innerText()
-  /cliente/i.test(cuerpo) && /expediente/i.test(cuerpo)
-    ? ok('el dashboard muestra indicadores de clientes y expedientes')
-    : ko('el dashboard no muestra los indicadores esperados')
+  if (/cliente/i.test(cuerpo) && /expediente/i.test(cuerpo)) ok('el dashboard muestra indicadores de clientes y expedientes')
+  else ko('el dashboard no muestra los indicadores esperados')
 
   // Con el modo demo activado aparecerían estos datos inventados; con la API real, no.
-  !/Pacífico Azul|Acme|Empresa Demo/i.test(cuerpo)
-    ? ok('no hay datos simulados: el panel está conectado a la API real')
-    : ko('el panel sigue mostrando datos de demostración (VITE_USE_MOCKS no está en false)')
+  if (!/Pacífico Azul|Acme|Empresa Demo/i.test(cuerpo)) ok('no hay datos simulados: el panel está conectado a la API real')
+  else ko('el panel sigue mostrando datos de demostración (VITE_USE_MOCKS no está en false)')
 
   step('4 · Catálogo migrado desde ghcontadores.net')
   if (await irA(page, 'catalog', 'Servicio')) {
     const texto = await page.locator('body').innerText()
     const conocidos = ['Contabilidad', 'Patente', 'SUGEF', 'D-104', 'Tributaria', 'Póliza']
     const encontrados = conocidos.filter((k) => new RegExp(k, 'i').test(texto))
-    encontrados.length >= 3
-      ? ok(`el catálogo muestra los servicios reales (coincidencias: ${encontrados.join(', ')})`)
-      : ko(`el catálogo no muestra servicios reales (coincidencias: ${encontrados.join(', ') || 'ninguna'})`)
-    /62|sesenta y dos/.test(texto) ? ok('se ven los 62 servicios migrados') : ok('catálogo listado (el total exacto depende de la paginación)')
+    if (encontrados.length >= 3) {
+      ok(`el catálogo muestra los servicios reales (coincidencias: ${encontrados.join(', ')})`)
+    } else {
+      ko(`el catálogo no muestra servicios reales (coincidencias: ${encontrados.join(', ') || 'ninguna'})`)
+    }
+
+    if (/62|sesenta y dos/.test(texto)) ok('el panel confirma que hay 62 servicios migrados')
+    else ok('catálogo listado (el total exacto depende de la paginación)')
   } else {
     ko('no se pudo abrir el módulo de catálogo')
   }
@@ -119,26 +135,32 @@ async function main() {
   step('6 · El CRM muestra el cliente sembrado')
   await irA(page, 'clients', 'Cliente')
   const crm = await page.locator('body').innerText()
-  /Inversiones Pacífico Azul|Pacífico Azul/.test(crm)
-    ? ok('aparece el cliente de demostración creado por la API (Inversiones Pacífico Azul S.A.)')
-    : ko('el cliente sembrado no aparece en el CRM')
+  if (/Inversiones Pacífico Azul|Pacífico Azul/.test(crm)) {
+    ok('aparece el cliente de demostración creado por la API (Inversiones Pacífico Azul S.A.)')
+  } else {
+    ko('el cliente sembrado no aparece en el CRM')
+  }
 
   step('7 · Expedientes reales')
   await irA(page, 'cases', 'Expediente')
   const exp = await page.locator('body').innerText()
-  /GH-EXP-\d{4}-\d{4}|Contabilidad mensual|Patente Comercial/i.test(exp)
-    ? ok('se listan expedientes reales con su código GH-EXP-AAAA-NNNN')
-    : ko('no se ven expedientes reales')
+  if (/GH-EXP-\d{4}-\d{4}|Contabilidad mensual|Patente Comercial/i.test(exp)) {
+    ok('se listan expedientes reales con su código GH-EXP-AAAA-NNNN')
+  } else {
+    ko('no se ven expedientes reales')
+  }
 
   step('8 · Roles y permisos (control de acceso real)')
   const contexto2 = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'es-CR' })
   const page2 = await contexto2.newPage()
   await login(page2, ABOGADO)
   const menuAbogado = (await page2.locator('body').innerText()).toLowerCase()
-  const accedeUsuarios = /usuarios/.test(menuAbogado) && (await irA(page2, 'users', 'Usuario'))
-  !accedeUsuarios
-    ? ok('un Abogado no ve ni abre la gestión de usuarios (permisos aplicados en la interfaz)')
-    : ko('un Abogado pudo entrar a Usuarios: los permisos no se están aplicando en la interfaz')
+  const puedeGestionarUsuarios = /usuarios/.test(menuAbogado) && (await irA(page2, 'users', 'Usuario'))
+  if (!puedeGestionarUsuarios) {
+    ok('un Abogado no ve ni abre la gestión de usuarios (permisos aplicados en la interfaz)')
+  } else {
+    ko('un Abogado pudo entrar a Usuarios: los permisos no se están aplicando en la interfaz')
+  }
   await contexto2.close()
 
   step('9 · Errores de consola')

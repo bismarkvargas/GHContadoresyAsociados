@@ -35,6 +35,7 @@ npm install
 | `npm run dev` | Servidor de desarrollo en `http://127.0.0.1:5173/ghcontadores/` |
 | `npm run typecheck` | `tsc --noEmit` (debe salir limpio) |
 | `npm run build` | `tsc --noEmit && vite build` → genera `dist/` |
+| `npm run smoke` | Prueba de humo del contrato mock fuera del navegador (107 comprobaciones: auth, RBAC, paginación, CRUD, versionado, informes, ajustes, 401/404) |
 | `npm run preview` | Sirve `dist/` localmente para revisar el build |
 
 > El servidor de desarrollo publica la app bajo el base `/ghcontadores/`, por lo que la URL es
@@ -42,19 +43,20 @@ npm install
 
 ## 4. Variables de entorno
 
-Crea un `.env` en la raíz de `admin-web/` (hay un `.env.example` de referencia):
+Crea un `.env` en la raíz de `admin-web/` (hay un `.env.example` de referencia y un `.env.api`
+listo para pegar cuando la API real esté disponible). **El `.env` entregado usa el modo mock**, para
+que la demo en `https://demostracion.es/ghcontadores/` funcione sin backend:
 
-| Variable | Por defecto | Descripción |
+| Variable | Valor entregado | Descripción |
 |---|---|---|
-| `VITE_API_URL` | `/ghcontadores/api/v1` | Base de la API REST. En producción se sirve bajo el mismo dominio del panel. |
-| `VITE_USE_MOCKS` | `true` | `true` → adaptador en memoria + `localStorage`, sin backend. `false` → axios habla con `VITE_API_URL`. |
+| `VITE_API_URL` | `/ghcontadores/api/v1` | Base de la API REST (misma ruta que la del panel). |
+| `VITE_USE_MOCKS` | `true` | `true` → adaptador en memoria + `localStorage`. `false` → axios habla con `VITE_API_URL`. |
 | `VITE_HUB_URL` | `/ghcontadores/hubs/realtime` | Hub **SignalR** de tiempo real. Solo se usa con `VITE_USE_MOCKS=false`. |
 
 ```powershell
-# Ejemplo .env para producción con API real
-"VITE_API_URL=/ghcontadores/api/v1"   | Out-File .env -Encoding utf8
-"VITE_USE_MOCKS=false"                | Out-File .env -Append -Encoding utf8
-"VITE_HUB_URL=/ghcontadores/hubs/realtime" | Out-File .env -Append -Encoding utf8
+# Para pasar a la API real
+Copy-Item .env.api .env -Force
+npm run dev          # o: npm run build
 ```
 
 ## 5. Credenciales demo (modo mock)

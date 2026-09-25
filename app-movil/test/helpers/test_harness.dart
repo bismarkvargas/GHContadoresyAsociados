@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gh_contadores/core/widgets/product_card.dart';
 import 'package:gh_contadores/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,10 +10,44 @@ import 'package:shared_preferences/shared_preferences.dart';
 class TestHarness {
   const TestHarness._();
 
-  /// Prepara SharedPreferences con el onboarding ya completado.
+  /// Canal de `flutter_secure_storage` simulado en memoria.
+  static const MethodChannel _secureStorageChannel =
+      MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+
+  static final Map<String, String> _secureValues = <String, String>{};
+
+  /// Prepara SharedPreferences y el almacenamiento seguro simulado.
   static void prepare({bool onboardingDone = true}) {
+    _installSecureStorageMock();
     SharedPreferences.setMockInitialValues(<String, Object>{
       if (onboardingDone) 'gh_onboarding_done': true,
+    });
+  }
+
+  /// Responde a las llamadas del plugin de almacenamiento seguro.
+  static void _installSecureStorageMock() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_secureStorageChannel, (call) async {
+      switch (call.method) {
+        case 'read':
+          return _secureValues[(call.arguments as Map)['key']];
+        case 'write':
+          final args = call.arguments as Map;
+          _secureValues[args['key'] as String] = args['value'] as String;
+          return null;
+        case 'delete':
+          _secureValues.remove((call.arguments as Map)['key']);
+          return null;
+        case 'readAll':
+          return Map<String, String>.from(_secureValues);
+        case 'deleteAll':
+          _secureValues.clear();
+          return null;
+        case 'containsKey':
+          return _secureValues.containsKey((call.arguments as Map)['key']);
+        default:
+          return null;
+      }
     });
   }
 
@@ -21,52 +57,72 @@ class TestHarness {
   }
 
   /// Espera a que el splash y el arranque terminen.
+  ///
+  /// No se usa `pumpAndSettle` porque el modo demo mantiene un temporizador
+  /// periódico de tiempo real (y el splash tiene animaciones continuas), así
+  /// que la app nunca queda "en reposo".
   static Future<void> waitForBoot(WidgetTester tester) async {
     await tester.pump();
-    for (int i = 0; i < 90; i++) {
+    for (int i = 0; i < 120; i++) {
       await tester.pump(const Duration(milliseconds: 120));
-      if (find.text('Servicios').evaluate().isNotEmpty &&
-          find.text('Buscar trámite, servicio o código…').evaluate().isNotEmpty) {
+      if (find.text('Buscar trámite, servicio o código…').evaluate().isNotEmpty) {
         return;
       }
     }
-    await tester.pumpAndSettle(const Duration(milliseconds: 200));
+  }
+
+  /// Avanza el reloj virtual un tiempo determinado.
+  static Future<void> advance(
+    WidgetTester tester, {
+    Duration duration = const Duration(seconds: 2),
+    Duration step = const Duration(milliseconds: 120),
+  }) async {
+    final steps = (duration.inMilliseconds / step.inMilliseconds).ceil();
+    for (int i = 0; i < steps; i++) {
+      await tester.pump(step);
+    }
   }
 
   /// Espera a que el catálogo tenga tarjetas de servicio renderizadas.
   static Future<void> waitForCatalog(WidgetTester tester) async {
-    for (int i = 0; i < 80; i++) {
+    for (int i = 0; i < 100; i++) {
       await tester.pump(const Duration(milliseconds: 120));
-      if (_addToCartButtons(tester) > 3) return;
+      if (find.byType(ProductCard).evaluate().isNotEmpty) return;
     }
-    await tester.pumpAndSettle(const Duration(milliseconds: 200));
   }
 
-  static int _addToCartButtons(WidgetTester tester) {
-    int count = 0;
-    for (final element in find.byType(InkResponse).evaluate()) {
-      final widget = element.widget as InkResponse;
-      if (widget.onTap != null) count++;
+  /// Espera a que aparezca un texto concreto.
+  static Future<bool> waitForText(
+    WidgetTester tester,
+    String text, {
+    int attempts = 100,
+  }) async {
+    for (int i = 0; i < attempts; i++) {
+      await tester.pump(const Duration(milliseconds: 120));
+      if (find.text(text).evaluate().isNotEmpty) return true;
     }
-    return count;
+    return false;
   }
 
   /// Agrega el primer servicio del catálogo al carrito.
   static Future<void> addFirstProductToCart(WidgetTester tester) async {
-    final button = find.byType(InkResponse).first;
-    expect(button, findsOneWidget);
-    await tester.tap(button);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    final card = find.byType(ProductCard).first;
+    expect(card, findsOneWidget);
+
+    // Botón de agregar dentro de la primera tarjeta (InkResponse con onTap).
+    final addButton = find.descendant(
+      of: card,
+      matching: find.byType(InkResponse),
+    );
+    expect(addButton, findsWidgets);
+    await tester.tap(addButton.first);
+    await advance(tester, duration: const Duration(seconds: 1));
   }
 
   /// Navega a la pestaña del carrito.
   static Future<void> openCart(WidgetTester tester) async {
     await tester.tap(find.text('Carrito').last);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    await advance(tester, duration: const Duration(milliseconds: 900));
   }
 
   /// Completa los datos de facturación y avanza al pago.
@@ -85,9 +141,7 @@ class TestHarness {
     );
     await tester.pump();
     await tester.tap(find.text('Continuar al pago'));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    await advance(tester, duration: const Duration(seconds: 2));
   }
 
   /// Rellena la tarjeta indicada y paga.
@@ -110,11 +164,7 @@ class TestHarness {
     );
     await tester.pump();
     await tester.tap(find.text('Pagar ahora'));
-    // La pasarela simulada tarda ~1,5 s en procesar.
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pumpAndSettle(const Duration(milliseconds: 400));
+    // La pasarela simulada tarda ~1,5 s en procesar; el mock suma su latencia.
+    await advance(tester, duration: const Duration(seconds: 6));
   }
 }
