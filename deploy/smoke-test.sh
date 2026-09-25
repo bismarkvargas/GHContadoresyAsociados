@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+�#!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # Prueba de humo del sistema GH Contadores
 #
@@ -27,8 +27,27 @@ FAIL=0
 SUFFIX=$(date +%s)
 NUEVO_EMAIL="prueba.humo.${SUFFIX}@ejemplo.cr"
 
-ok()   { PASS=$((PASS+1)); printf '  \033[32m✔\033[0m %s\n' "$1"; }
-ko()   { FAIL=$((FAIL+1)); printf '  \033[31m✘\033[0m %s\n' "$1"; }
+# El flujo de alta de cliente (pasos 5 a 8) exige que el registro funcione «con aprobación».
+# Se guarda el modo vigente y se restaura al final (paso 12), para que la suite sea
+# determinista independientemente de cómo esté configurado el entorno.
+MODO_ORIGINAL=""
+guardar_y_fijar_modo_aprobacion() {
+  MODO_ORIGINAL=$(curl -sS "$BASE/public/site" 2>/dev/null | python3 -c "import sys,json;print(json.load(sys.stdin).get('registration',{}).get('mode',''))" 2>/dev/null)
+  if [ -n "$MODO_ORIGINAL" ] && [ "$MODO_ORIGINAL" != "approval" ]; then
+    local token
+    token=$(curl -sS -X POST "$BASE/auth/login" -H 'Content-Type: application/json' \
+      -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASS}\"}" 2>/dev/null \
+      | python3 -c "import sys,json;print(json.load(sys.stdin).get('accessToken',''))" 2>/dev/null)
+    if [ -n "$token" ]; then
+      curl -sS -o /dev/null -X PUT "$BASE/admin/settings" -H "Authorization: Bearer $token" \
+        -H 'Content-Type: application/json' -d '{"values":[{"key":"registration.mode","value":"approval"}]}'
+      sleep 1
+    fi
+  fi
+}
+
+ok()   { PASS=$((PASS+1)); printf '  \033[32m�S\033[0m %s\n' "$1"; }
+ko()   { FAIL=$((FAIL+1)); printf '  \033[31m�S�\033[0m %s\n' "$1"; }
 step() { printf '\n\033[1;36m%s\033[0m\n' "$1"; }
 
 # jq no siempre está instalado: se usa python3 (presente en Ubuntu) para leer JSON.
@@ -69,6 +88,9 @@ print(p[0]['name'] if p else '')" <<<"$BODY" 2>/dev/null)
 [ -n "$PRODUCTO_ID" ] && ok "servicio de prueba: $PRODUCTO_NOMBRE" || ko "no se encontró un servicio que requiera expediente"
 
 step "3 · Solicitud de cuenta desde el app"
+# El alta desde el app queda pendiente y la aprueba el administrador: se fija ese modo
+# (el modo original del entorno se restaura al final, en el paso 12).
+guardar_y_fijar_modo_aprobacion
 RESP=$(api POST /public/account-requests "{\"fullName\":\"Prueba Humo ${SUFFIX}\",\"email\":\"${NUEVO_EMAIL}\",\"phone\":\"+506 8888 0001\",\"idNumber\":\"1-1111-2222\",\"clientType\":\"Company\",\"company\":\"Prueba Humo S.A.\",\"message\":\"Solicitud generada por la prueba de humo\"}")
 CODE=$(tail -1 <<<"$RESP"); BODY=$(sed '$d' <<<"$RESP")
 TRACKING=$(json "['trackingCode']" <<<"$BODY")
@@ -98,7 +120,7 @@ CODE=$(tail -1 <<<"$RESP"); BODY=$(sed '$d' <<<"$RESP")
 NUEVO_TOKEN=$(json "['accessToken']" <<<"$BODY")
 if [ "$CODE" = "200" ] && [ -n "$NUEVO_TOKEN" ]; then ok "el cliente puede entrar solo tras la aprobación"; else ko "login del cliente nuevo: código $CODE"; echo "$BODY" | head -3; fi
 
-step "7 · Compra con la pasarela simulada (carrito → checkout → pago)"
+step "7 · Compra con la pasarela simulada (carrito �  checkout �  pago)"
 # Se compra desde el carrito, que es el flujo real del app.
 curl -sS -o /dev/null -X DELETE "$BASE/me/cart" -H "Authorization: Bearer $NUEVO_TOKEN"
 RESP=$(api POST /me/cart/items "{\"productId\":\"${PRODUCTO_ID}\",\"quantity\":2}" "$NUEVO_TOKEN")
@@ -259,7 +281,7 @@ if [ -n "$SOLICITUD_ID" ]; then
   CODE=$(tail -1 <<<"$RESP")
   [ "$CODE" = "200" ] && ok "el administrador aprueba la solicitud" || ko "aprobación: código $CODE"
 
-  # Lo importante: debe entrar con LA CONTRASEÑA QUE ELIGIÓ, no con una por defecto.
+  # Lo importante: debe entrar con LA CONTRASE�A QUE ELIGI�, no con una por defecto.
   RESP=$(api POST /auth/login "{\"email\":\"${APR_EMAIL}\",\"password\":\"${APR_PASS}\"}")
   CODE=$(tail -1 <<<"$RESP")
   [ "$CODE" = "200" ] && ok "tras aprobarla entra con la contraseña que eligió el cliente" || ko "no entra con su propia contraseña (código $CODE): se está usando una por defecto"
@@ -267,10 +289,10 @@ else
   ko "no se encontró la solicitud pendiente en el panel"
 fi
 
-# --- 12.d Se restaura el modo con el que estaba producción ---
-cambiar_modo "$MODO_INICIAL"
+# --- 12.d Se restaura el modo con el que estaba el entorno al empezar la suite ---
+cambiar_modo "$MODO_ORIGINAL"
 MODO_FINAL=$(api GET /public/site | sed '$d' | python3 -c "import sys,json;print(json.load(sys.stdin).get('registration',{}).get('mode','?'))" 2>/dev/null)
-[ "$MODO_FINAL" = "$MODO_INICIAL" ] && ok "modo de registro restaurado a «$MODO_INICIAL»" || ko "el modo quedó en $MODO_FINAL (se esperaba $MODO_INICIAL)"
+[ "$MODO_FINAL" = "$MODO_ORIGINAL" ] && ok "modo de registro restaurado a «$MODO_ORIGINAL»" || ko "el modo quedó en $MODO_FINAL (se esperaba $MODO_ORIGINAL)"
 
 printf '\n\033[1m==================================================\033[0m\n'
 printf '  Pruebas superadas: \033[32m%d\033[0m   ·   Fallidas: \033[31m%d\033[0m\n' "$PASS" "$FAIL"
