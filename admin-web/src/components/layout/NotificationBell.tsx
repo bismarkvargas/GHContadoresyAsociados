@@ -55,11 +55,24 @@ export function NotificationBell() {
   const navigate = useNavigate()
   const seenRef = useRef(0)
 
-  const { data } = useQuery({
+  /**
+   * Si la API no expone la bandeja de administración (responde 404), se deja de
+   * consultar: la campana sigue funcionando con los eventos de tiempo real y no
+   * se generan errores de consola en bucle.
+   */
+  const [endpointAvailable, setEndpointAvailable] = useState(true)
+
+  const { data, error } = useQuery({
     queryKey: ['notifications', { page: 1, pageSize: 12 }],
     queryFn: () => notificationsApi.list({ page: 1, pageSize: 12 }),
     refetchInterval: 60000,
+    enabled: endpointAvailable,
+    retry: false,
   })
+
+  useEffect(() => {
+    if (apiErrorStatus(error) === 404) setEndpointAvailable(false)
+  }, [error])
 
   /* Eventos en vivo: cada notificación nueva entra a la campana sin recargar */
   useEffect(() => {
@@ -86,13 +99,14 @@ export function NotificationBell() {
     return off
   }, [])
 
-  /* Refresca el contador cuando llega cualquier evento de negocio */
+  /* Refresca la bandeja cuando llega cualquier evento de negocio */
   useEffect(() => {
+    if (!endpointAvailable) return
     const off = realtime.onAny(() => {
       void queryClient.invalidateQueries({ queryKey: ['notifications'] })
     })
     return off
-  }, [queryClient])
+  }, [queryClient, endpointAvailable])
 
   const markAll = useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
@@ -163,7 +177,14 @@ export function NotificationBell() {
                 size="sm"
                 variant="ghost"
                 icon={<CheckCheck className="h-3.5 w-3.5" />}
-                onClick={() => markAll.mutate()}
+                onClick={() => {
+                  if (!endpointAvailable) {
+                    setLive([])
+                    toast.info('Bandeja local vaciada', 'La API no expone el histórico de notificaciones.')
+                    return
+                  }
+                  markAll.mutate()
+                }}
                 loading={markAll.isPending}
               >
                 Marcar leídas

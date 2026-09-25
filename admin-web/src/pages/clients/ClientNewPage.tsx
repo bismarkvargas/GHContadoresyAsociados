@@ -1,19 +1,26 @@
 import { useNavigate } from 'react-router-dom'
 import { clientsApi, casesApi } from '@/api/endpoints'
 import { useApiMutation } from '@/hooks/useApi'
+import { useToast } from '@/hooks/useUi'
+import { pickId } from '@/lib/format'
 import { PageHeader } from '@/components/layout/AppShell'
 import { ClientForm, type ClientFormValues } from './ClientForm'
 import type { Client } from '@/types'
 
 export default function ClientNewPage() {
   const navigate = useNavigate()
+  const toast = useToast()
 
-  const create = useApiMutation<Client, ClientFormValues>(
+  const create = useApiMutation<{ cliente: Client | null; id: string | null }, ClientFormValues>(
     async (values) => {
-      const client = await clientsApi.create(values as Partial<Client>)
-      if (values.createCase) {
+      const respuesta = await clientsApi.create(values as Partial<Client>)
+      // El identificador se extrae de forma tolerante: la respuesta puede venir
+      // envuelta o con otra capitalización según la versión de la API.
+      const id = pickId(respuesta)
+      const cliente = id ? ({ ...(respuesta as Client), id } as Client) : null
+      if (id && values.createCase) {
         await casesApi.create({
-          clientId: client.id,
+          clientId: id,
           title: 'Expediente inicial de asesoría',
           matter: 'Contable',
           entity: 'Otro',
@@ -21,12 +28,23 @@ export default function ClientNewPage() {
           clientVisible: true,
         })
       }
-      return client
+      return { cliente, id }
     },
     {
       successMessage: 'Cliente creado correctamente',
       invalidate: [['clients'], ['dashboard']],
-      onSuccess: (client) => navigate(`/clientes/${client.id}`),
+      onSuccess: ({ id }) => {
+        if (id) {
+          navigate(`/clientes/${id}`)
+          return
+        }
+        // Sin identificador válido nunca se navega a una ficha inexistente.
+        toast.warning(
+          'Cliente creado',
+          'La API no devolvió el identificador; se muestra el listado actualizado.',
+        )
+        navigate('/clientes')
+      },
     },
   )
 
@@ -40,7 +58,7 @@ export default function ClientNewPage() {
       <ClientForm
         submitting={create.isPending}
         onCancel={() => navigate('/clientes')}
-        onSaved={(values) => create.mutate(values as ClientFormValues)}
+        onSaved={(values) => create.mutate(values)}
       />
     </>
   )

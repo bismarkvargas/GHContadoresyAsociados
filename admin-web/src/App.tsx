@@ -61,15 +61,30 @@ const aliases: { from: string; to: string }[] = [
   { from: 'orders/:id', to: '/pedidos/:id' },
 ]
 
-/** Sustituye `:param` por el valor real de la ruta entrante. */
-function resolveAlias(to: string, params: Record<string, string | undefined>): string {
-  return to.replace(/:([a-zA-Z]+)/g, (_, name: string) => params[name] ?? '')
+/**
+ * Sustituye `:param` por el valor real de la ruta entrante.
+ * Devuelve `null` si falta algún parámetro: sin esta guarda un alias como
+ * `/clients/` generaría `/clientes/undefined` y la API respondería 400/404.
+ */
+function resolveAlias(to: string, params: Record<string, string | undefined>): string | null {
+  let faltante = false
+  const resuelto = to.replace(/:([a-zA-Z]+)/g, (_, name: string) => {
+    const valor = params[name]
+    if (!valor || valor === 'undefined' || valor === 'null') {
+      faltante = true
+      return ''
+    }
+    return valor
+  })
+  return faltante ? null : resuelto
 }
 
 /** Redirección permanente de un alias en inglés a la ruta canónica española. */
 function AliasRedirect({ target }: { target: string }) {
   const params = useParams()
-  return <Navigate to={resolveAlias(target, params)} replace />
+  const destino = resolveAlias(target, params)
+  if (!destino) return <NotFound />
+  return <Navigate to={destino} replace />
 }
 
 export default function App() {

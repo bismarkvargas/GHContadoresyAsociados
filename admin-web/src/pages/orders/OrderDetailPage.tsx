@@ -11,7 +11,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { ordersApi, usersApi } from '@/api/endpoints'
-import { useApiMutation } from '@/hooks/useApi'
+import { useApiMutation, useRouteId } from '@/hooks/useApi'
 import { usePermission } from '@/hooks/useAuth'
 import { formatDate, formatDateTime, formatMoney, prettyJson } from '@/lib/format'
 import { labelOf, orderStatusList, orderStatusMeta, paymentMethodMeta, paymentStatusMeta, toneOf } from '@/lib/labels'
@@ -32,7 +32,10 @@ import { PageHeader, PermissionGate } from '@/components/layout/AppShell'
 import type { InvoiceData, Order } from '@/types'
 
 export default function OrderDetailPage() {
-  const { id = '' } = useParams()
+  const { id: rawId } = useParams()
+  // Guarda: un identificador ausente o literal «undefined» nunca debe llegar a la API.
+  const id = useRouteId(rawId) ?? ''
+  const idValido = id !== ''
   const { can } = usePermission()
   const [tab, setTab] = useState('items')
   const [showRefund, setShowRefund] = useState(false)
@@ -42,7 +45,7 @@ export default function OrderDetailPage() {
   const query = useQuery({
     queryKey: ['order', id],
     queryFn: () => ordersApi.get(id),
-    enabled: !!id,
+    enabled: idValido,
   })
 
   const staff = useQuery({
