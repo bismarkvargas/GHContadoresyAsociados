@@ -21,11 +21,13 @@ import type {
 } from '@/types'
 
 /** Clase de color por tono semántico de marca. */
-export type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'info'
+export type Tone = 'neutral' | 'primary' | 'accent' | 'success' | 'warning' | 'danger' | 'info'
 
 export const toneClasses: Record<Tone, string> = {
   neutral: 'bg-surface text-ink-700',
   primary: 'bg-primary-50 text-primary',
+  /** Lima corporativo: el texto va en azul marino (el lima no tiene contraste para texto). */
+  accent: 'bg-accent/30 text-ink',
   success: 'bg-success/10 text-success',
   warning: 'bg-warning/10 text-warning',
   danger: 'bg-danger/10 text-danger',

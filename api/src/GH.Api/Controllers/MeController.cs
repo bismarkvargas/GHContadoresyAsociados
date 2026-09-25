@@ -176,65 +176,6 @@ public class MeController : ControllerBase
         return Ok(new OperationResponse(true, "Datos actualizados correctamente."));
     }
 
-    /// <summary>
-    /// Baja solicitada por el propio cliente desde el app (requisito de las tiendas de
-    /// aplicaciones). Se desactiva la cuenta, se revocan sus sesiones y se desvinculan
-    /// los dispositivos; la ficha del cliente y su expediente se conservan porque la
-    /// firma tiene obligaciones legales y contables de conservación documental.
-    /// </summary>
-    [HttpDelete("profile")]
-    public async Task<ActionResult<OperationResponse>> DeleteAccount(CancellationToken ct)
-    {
-        if (_current.UserId is not Guid userId) return Unauthorized();
-
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct)
-            ?? throw new KeyNotFoundException("Usuario no encontrado.");
-
-        if (user.IsStaff)
-            throw new InvalidOperationException("Las cuentas del personal de la firma no se pueden eliminar desde el app.");
-
-        user.Status = UserStatus.Suspended;
-        user.IsDeleted = true;
-        user.UpdatedAt = DateTime.UtcNow;
-
-        await _db.RefreshTokens.Where(r => r.UserId == userId && !r.RevokedAt.HasValue)
-            .ExecuteUpdateAsync(s => s.SetProperty(r => r.RevokedAt, DateTime.UtcNow), ct);
-        await _db.DeviceTokens.Where(t => t.UserId == userId)
-            .ExecuteUpdateAsync(s => s.SetProperty(t => t.IsActive, false), ct);
-
-        // La ficha del CRM queda marcada como inactiva y con la baja registrada.
-        var client = await _db.Clients.FirstOrDefaultAsync(c => c.UserId == userId && !c.IsDeleted, ct);
-        if (client is not null)
-        {
-            client.Status = ClientStatus.Inactive;
-            client.Notes = string.IsNullOrWhiteSpace(client.Notes)
-                ? "El cliente solicitó la baja de su cuenta en la app."
-                : $"{client.Notes}\nEl cliente solicitó la baja de su cuenta en la app ({DateTime.UtcNow:dd/MM/yyyy}).";
-            client.UpdatedAt = DateTime.UtcNow;
-        }
-
-        await _db.SaveChangesAsync(ct);
-        await _audit.LogAsync("delete-account", "User", userId.ToString(), after: new { selfService = true }, ct: ct);
-
-        await _realtime.ToStaffAsync("client.updated", new
-        {
-            clientId = client?.Id,
-            userId,
-            status = "Inactive",
-            message = "El cliente solicitó la baja de su cuenta desde el app.",
-            at = DateTime.UtcNow,
-        }, ct);
-
-        await _notifications.NotifyStaffAsync(NotificationType.System,
-            "Baja de cuenta solicitada desde el app",
-            $"{user.FullName} ({user.Email}) solicitó la baja de su cuenta.",
-            deepLink: client is null ? "/admin/clients" : $"/admin/clients/{client.Id}",
-            data: new { userId, clientId = client?.Id });
-
-        return Ok(new OperationResponse(true,
-            "Su cuenta fue desactivada. Conservamos su expediente por obligaciones legales y contables; puede solicitar su reactivación cuando lo necesite."));
-    }
-
     // ------------------------------------------------------------------ expedientes
     [HttpGet("cases")]
     public async Task<ActionResult<IReadOnlyList<CaseFileDto>>> Cases([FromQuery] string? status, CancellationToken ct)
@@ -415,9 +356,8 @@ public class MeController : ControllerBase
     /// <summary>Sube un documento del cliente (PDF, imagen u Office, máx. 25 MB).</summary>
     [HttpPost("documents")]
     [RequestSizeLimit(52_428_800)]
-    [Consumes("multipart/form-data")]
     public async Task<ActionResult<DocumentDto>> UploadDocument(
-        IFormFile file,
+        [FromForm] IFormFile file,
         [FromForm] string? category,
         [FromForm] Guid? caseFileId,
         [FromForm] string? description,

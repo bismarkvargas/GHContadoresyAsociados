@@ -252,6 +252,7 @@ export function StatusDot({ tone = 'neutral' }: { tone?: Tone }) {
   const color: Record<Tone, string> = {
     neutral: 'bg-muted',
     primary: 'bg-primary',
+    accent: 'bg-accent',
     success: 'bg-success',
     warning: 'bg-warning',
     danger: 'bg-danger',
@@ -285,6 +286,7 @@ export function ProgressBar({ value, tone = 'primary' }: { value: number; tone?:
   const color: Record<Tone, string> = {
     neutral: 'bg-muted',
     primary: 'bg-primary',
+    accent: 'bg-accent',
     success: 'bg-success',
     warning: 'bg-warning',
     danger: 'bg-danger',

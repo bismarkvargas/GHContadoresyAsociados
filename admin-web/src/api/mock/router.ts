@@ -545,11 +545,26 @@ route('POST', '/public/account-requests', (ctx) => {
     reviewedAt: null,
     rejectionReason: null,
     createdUserId: null,
+    autoApproved: false,
     ipAddress: '127.0.0.1',
     trackingCode: `GH-SEG-${Math.floor(100000 + Math.random() * 899999)}`,
     createdAt: new Date().toISOString(),
   }
   db.accountRequests.unshift(item)
+
+  // Modo de registro: en `automatic` la cuenta nace activa sin revisión humana.
+  const modo = db.settings.find((s) => s.key === 'registration.mode')?.value ?? 'approval'
+  if (modo === 'automatic') {
+    const { clientId, userId, clientCode } = crearClienteDeSolicitud(item, null)
+    item.status = 'Approved'
+    item.autoApproved = true
+    item.reviewedAt = new Date().toISOString()
+    item.createdUserId = userId
+    item.clientId = clientId
+    item.clientCode = clientCode
+    item.reviewedByName = null
+  }
+
   persistDb()
   emitRealtime({ type: 'accountrequest.created', payload: { id: item.id, fullName: item.fullName } })
   return { id: item.id, trackingCode: item.trackingCode, status: item.status }
@@ -1749,14 +1764,45 @@ route('POST', '/admin/account-requests/:id/approve', (ctx) => {
   if (!item) throw new MockHttpError(404, 'Solicitud no encontrada.')
   if (item.status !== 'Pending') throw new MockHttpError(400, 'La solicitud ya fue revisada.')
 
+  const { clientId, userId, clientCode } = crearClienteDeSolicitud(item, actor, str(ctx.body.role, 'Cliente'))
+
+  item.status = 'Approved'
+  item.reviewedByUserId = actor
+  item.reviewedByName = userName(actor)
+  item.reviewedAt = new Date().toISOString()
+  item.createdUserId = userId
+  item.clientId = clientId
+  item.clientCode = clientCode
+  item.autoApproved = false
+
+  notify(actor, 'Solicitud de cuenta aprobada', `${item.fullName} fue aprobado y se creó su usuario.`, 'AccountApproved', {
+    accountRequestId: item.id,
+    userId,
+  })
+  audit(actor, 'approve', 'AccountRequest', item.id, { status: 'Pending' }, { status: 'Approved', userId })
+  persistDb()
+  emitRealtime({ type: 'accountrequest.created', payload: { id: item.id, approved: true } })
+  return { request: item, user: userRow(db.users.find((u) => u.id === userId)!), clientId }
+})
+
+/**
+ * Crea el cliente (estado activo) y el usuario de app a partir de una solicitud.
+ * Lo usan la aprobación manual y el registro automático.
+ */
+function crearClienteDeSolicitud(
+  item: AccountRequest,
+  actor: string | null,
+  rol = 'Cliente',
+): { clientId: string; userId: string; clientCode: string } {
+  const db = getDb()
   const userId = uid('user')
-  const clientCounter = nextCounter('client')
   const clientId = uid('client')
-  const role = str(ctx.body.role, 'Cliente')
+  const clientCode = `GH-CLI-${String(nextCounter('client')).padStart(5, '0')}`
+  const ahora = new Date().toISOString()
 
   db.clients.unshift({
     id: clientId,
-    code: `GH-CLI-${String(clientCounter).padStart(5, '0')}`,
+    code: clientCode,
     clientType: item.clientType,
     legalName: item.company || item.fullName,
     tradeName: item.company,
@@ -1772,11 +1818,12 @@ route('POST', '/admin/account-requests/:id/approve', (ctx) => {
     status: 'Active',
     source: 'app',
     assignedToUserId: actor,
+    tags: ['nuevo', 'app'],
     tagsCsv: 'nuevo,app',
     notes: item.message,
     userId,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: ahora,
+    updatedAt: ahora,
     isDeleted: false,
   })
 
@@ -1793,28 +1840,16 @@ route('POST', '/admin/account-requests/:id/approve', (ctx) => {
     locale: 'es-CR',
     timeZone: 'America/Costa_Rica',
     lastLoginAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: ahora,
+    updatedAt: ahora,
     failedLoginCount: 0,
     lockoutUntil: null,
-    roles: [role],
+    roles: [rol],
   })
   db.passwords[item.email] = 'Cliente123!'
 
-  item.status = 'Approved'
-  item.reviewedByUserId = actor
-  item.reviewedAt = new Date().toISOString()
-  item.createdUserId = userId
-
-  notify(actor, 'Solicitud de cuenta aprobada', `${item.fullName} fue aprobado y se creó su usuario.`, 'AccountApproved', {
-    accountRequestId: item.id,
-    userId,
-  })
-  audit(actor, 'approve', 'AccountRequest', item.id, { status: 'Pending' }, { status: 'Approved', userId })
-  persistDb()
-  emitRealtime({ type: 'accountrequest.created', payload: { id: item.id, approved: true } })
-  return { request: item, user: userRow(db.users.find((u) => u.id === userId)!), clientId }
-})
+  return { clientId, userId, clientCode }
+}
 
 route('POST', '/admin/account-requests/:id/reject', (ctx) => {
   const actor = requireActor(ctx)
@@ -2277,7 +2312,8 @@ route('GET', '/admin/settings', (ctx) => {
 route('PUT', '/admin/settings', (ctx) => {
   const actor = requireActor(ctx)
   const db = getDb()
-  const incoming = (ctx.body.items ?? ctx.body) as unknown
+  // La API real espera { values: [{key,value}] }; se aceptan también { items } y un mapa plano.
+  const incoming = (ctx.body.values ?? ctx.body.items ?? ctx.body) as unknown
   const pairs: { key: string; value: string }[] = []
   if (Array.isArray(incoming)) {
     for (const raw of incoming) {

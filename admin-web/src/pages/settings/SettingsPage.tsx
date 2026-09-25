@@ -8,6 +8,7 @@ import { settingGroups } from '@/lib/constants'
 import { formatMoney, prettyJson } from '@/lib/format'
 import { Badge, Button, Card, Select, Skeleton, TextInput, Textarea } from '@/components/ui'
 import { PageHeader } from '@/components/layout/AppShell'
+import { RegistrationSettings } from './RegistrationSettings'
 import type { Setting } from '@/types'
 
 const brandingDefaults = [
@@ -57,6 +58,15 @@ export default function SettingsPage() {
     save.mutate(payload)
   }
 
+  /** Guarda solo las claves indicadas (lo usa el switch de registro). */
+  function saveKeys(keys: string[]): void {
+    const payload = keys.map((key) => ({
+      key,
+      value: values[key] ?? query.data?.items.find((s) => s.key === key)?.value ?? '',
+    }))
+    save.mutate(payload)
+  }
+
   const dirty = Object.keys(draft).length > 0
 
   return (
@@ -98,7 +108,22 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {query.isLoading ? (
+      {group === 'registration' ? (
+        <RegistrationSettings
+          modo={values['registration.mode'] ?? 'approval'}
+          mensaje={values['registration.message'] ?? ''}
+          puedeEditar={canEdit}
+          guardando={save.isPending}
+          onCambiarModo={(nuevo) => {
+            update('registration.mode', nuevo)
+            // El switch guarda al instante: es una decisión operativa, no un borrador.
+            save.mutate([{ key: 'registration.mode', value: nuevo }])
+          }}
+          onCambiarMensaje={(texto) => update('registration.message', texto)}
+          onGuardarMensaje={() => saveKeys(['registration.message'])}
+          original={query.data?.items.find((s) => s.key === 'registration.mode')?.value ?? 'approval'}
+        />
+      ) : query.isLoading ? (
         <Card>
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (

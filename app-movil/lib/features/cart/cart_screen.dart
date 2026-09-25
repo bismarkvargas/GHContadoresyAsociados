@@ -103,7 +103,6 @@ class CartScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
                       FilledButton.icon(
-                        key: const Key('cart-continue-to-checkout'),
                         onPressed: () => context.push(AppRoutes.checkout),
                         icon: const Icon(Icons.lock_outline_rounded, size: 18),
                         label: Text(

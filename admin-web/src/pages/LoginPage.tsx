@@ -90,38 +90,43 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Panel de marca */}
-      <div className="relative hidden flex-col justify-between bg-[var(--gh-sidebar)] p-10 text-white lg:flex">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-control bg-primary text-base font-bold">
-              GH
-            </span>
-            <div>
-              <p className="text-base font-semibold leading-tight">{company.legalName}</p>
-              <p className="text-xs text-white/55">Firma contable y bufete legal · Costa Rica</p>
+    <div className="min-h-screen bg-page">
+      {/* Franja superior de marca (lima corporativo) */}
+      <div className="gh-brand-strip" aria-hidden />
+
+      <div className="grid min-h-screen lg:grid-cols-2">
+        {/* Panel de marca */}
+        <div className="relative hidden flex-col justify-between bg-[var(--gh-sidebar)] p-10 text-white lg:flex">
+          <div>
+            <div className="flex items-center gap-4">
+              <img
+                src="/ghcontadores/brand/logo-horizontal-blanco.png"
+                alt={`Logotipo de ${company.legalName}`}
+                className="h-14 w-auto"
+                width={1122}
+                height={204}
+              />
             </div>
+            <p className="mt-3 text-xs text-white/60">Firma contable y bufete legal · Costa Rica</p>
+            <h1 className="mt-14 max-w-md text-2xl font-semibold leading-snug">{company.tagline}</h1>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
+              Contabilidad mensual, trámites legales, municipales y tributarios con expediente digital,
+              seguimiento en línea y avisos automáticos de vencimiento.
+            </p>
+            <ul className="mt-8 space-y-3 text-sm text-white/85">
+              {[
+                'CRM de clientes con expediente digital',
+                'Tareas, timeline y mensajería por caso',
+                'Pedidos que generan expediente y asignación',
+                'Informes de ventas, productividad y vencimientos',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2.5">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
-          <h1 className="mt-14 max-w-md text-2xl font-semibold leading-snug">{company.tagline}</h1>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
-            Contabilidad mensual, trámites legales, municipales y tributarios con expediente digital,
-            seguimiento en línea y avisos automáticos de vencimiento.
-          </p>
-          <ul className="mt-8 space-y-3 text-sm text-white/80">
-            {[
-              'CRM de clientes con expediente digital',
-              'Tareas, timeline y mensajería por caso',
-              'Pedidos que generan expediente y asignación',
-              'Informes de ventas, productividad y vencimientos',
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-2.5">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
 
         <div className="space-y-2 text-xs text-white/55">
           <p className="flex items-center gap-2">
@@ -143,23 +148,24 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Formulario */}
-      <div className="flex flex-col justify-center bg-page px-6 py-10 sm:px-12">
-        <div className="mx-auto w-full max-w-md">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <span className="flex h-10 w-10 items-center justify-center rounded-control bg-primary text-sm font-bold text-white">
-              GH
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-ink">{company.legalName}</p>
-              <p className="text-xs text-muted">Panel de administración</p>
+        {/* Formulario */}
+        <div className="flex flex-col justify-center bg-page px-6 py-10 sm:px-12">
+          <div className="mx-auto w-full max-w-md">
+            <div className="mb-8 lg:hidden">
+              <img
+                src="/ghcontadores/brand/logo-horizontal-azul.png"
+                alt={`Logotipo de ${company.legalName}`}
+                className="h-12 w-auto"
+                width={687}
+                height={125}
+              />
+              <p className="mt-2 text-xs text-muted">Panel de administración</p>
             </div>
-          </div>
 
-          <h2 className="text-xl font-semibold text-ink">Iniciar sesión</h2>
-          <p className="mt-1 text-sm text-muted">
-            Acceso restringido al personal de la firma. Los clientes entran desde la app móvil.
-          </p>
+            <h2 className="text-xl font-semibold text-ink">Iniciar sesión</h2>
+            <p className="mt-1 text-sm text-muted">
+              Acceso restringido al personal de la firma. Los clientes entran desde la app móvil.
+            </p>
 
           {serverError ? (
             <div
@@ -253,6 +259,7 @@ export default function LoginPage() {
               Ajustes ni Auditoría.
             </p>
           </div>
+        </div>
         </div>
       </div>
     </div>

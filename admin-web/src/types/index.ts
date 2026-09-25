@@ -146,9 +146,15 @@ export interface AccountRequest {
   source: 'app' | 'web' | 'admin'
   status: AccountRequestStatus
   reviewedByUserId?: string | null
+  reviewedByName?: string | null
   reviewedAt?: string | null
   rejectionReason?: string | null
   createdUserId?: string | null
+  /** Cliente creado al aprobar (la API devuelve `createdClientId` / `createdClientCode`). */
+  clientId?: string | null
+  clientCode?: string | null
+  /** `true` cuando el registro automático creó la cuenta sin revisión humana. */
+  autoApproved?: boolean
   ipAddress?: string | null
   trackingCode: string
   createdAt: string
@@ -549,6 +555,8 @@ export interface Setting {
   key: string
   value: string
   group: string
+  /** Grupo tal y como lo devuelve la API (p. ej. «Registro»), para reenviarlo igual. */
+  groupRaw?: string
   description: string
   updatedAt: string
 }

@@ -54,7 +54,6 @@ builder.Services.AddScoped<IRealtimeNotifier, SignalRRealtimeNotifier>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<OrderWorkflowService>();
-builder.Services.AddScoped<AccountActivationService>();
 
 // ------------------------------------------------------------------ autenticación
 var jwtSection = builder.Configuration.GetSection("Jwt");

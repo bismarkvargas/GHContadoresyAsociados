@@ -284,14 +284,21 @@ export const reportsApi = {
 }
 
 /* --------------------------- Ajustes y auditoría ----------------------- */
+export interface SettingsPageData {
+  items: Setting[]
+  groups: Record<string, Setting[]>
+  exchangeRate: number
+}
+
 export const settingsApi = {
   list: (group?: string) =>
-    get<{ items: Setting[]; groups: Record<string, Setting[]>; exchangeRate: number }>(
-      '/admin/settings',
-      group ? { group } : undefined,
-    ),
+    get<SettingsPageData>('/admin/settings', group ? { group } : undefined),
+  /**
+   * La API espera `{ values: [{ key, value }] }`. Con `{ items: [...] }` responde
+   * 400 («The Values field is required»), así que el panel envía `values`.
+   */
   update: (items: { key: string; value: string }[]) =>
-    put<{ ok: boolean; updated: number }>('/admin/settings', { items }),
+    put<{ ok: boolean; updated: number }>('/admin/settings', { values: items }),
 }
 
 export const auditApi = {

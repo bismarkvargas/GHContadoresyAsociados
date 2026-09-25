@@ -46,6 +46,8 @@ const KPI_TONES = {
   info: 'bg-info/10 text-info',
   warning: 'bg-warning/10 text-warning',
   success: 'bg-success/10 text-success',
+  /** Lima corporativo para los ingresos: acento con texto azul marino encima. */
+  accent: 'bg-accent/40 text-ink',
 } as const
 
 function KpiCard({
@@ -201,7 +203,7 @@ export default function DashboardPage() {
           value={formatMoney(k.monthRevenue)}
           hint={`${formatNumber(k.ordersThisMonth)} pedidos este mes`}
           icon={CircleDollarSign}
-          tone="info"
+          tone="accent"
           to="/informes"
         />
       </div>

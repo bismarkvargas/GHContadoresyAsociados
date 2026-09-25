@@ -155,10 +155,30 @@ export const seedRoles = [
 export const settingGroups = [
   { key: 'company', label: 'Datos de la empresa' },
   { key: 'branding', label: 'Marca y colores' },
+  { key: 'registration', label: 'Registro de clientes' },
   { key: 'currency', label: 'Monedas y tipo de cambio' },
   { key: 'notifications', label: 'Plantillas de notificación' },
   { key: 'messages', label: 'Plantillas de mensajes' },
   { key: 'payment', label: 'Pasarela simulada' },
+] as const
+
+/** Valores admitidos del ajuste `registration.mode`. */
+export const REGISTRATION_MODE_KEY = 'registration.mode'
+export const REGISTRATION_MESSAGE_KEY = 'registration.message'
+
+export const registrationModes = [
+  {
+    value: 'automatic',
+    label: 'Registro automático',
+    description:
+      'La cuenta se crea activa al instante: el solicitante puede entrar al app en cuanto se registra, sin intervención del panel.',
+  },
+  {
+    value: 'approval',
+    label: 'Requiere aprobación',
+    description:
+      'La solicitud queda pendiente en la bandeja y un administrador debe aprobarla o rechazarla con un motivo antes de crear el usuario.',
+  },
 ] as const
 
 /** Ajustes semilla persistidos por la API. */
@@ -171,15 +191,40 @@ export const seedSettings: { key: string; value: string; group: string; descript
   { key: 'company.emailManagement', value: company.emailManagement, group: 'company', description: 'Correo de gerencia' },
   { key: 'company.emailOrders', value: company.emailOrders, group: 'company', description: 'Correo de pedidos' },
   { key: 'company.timeZone', value: company.timeZone, group: 'company', description: 'Zona horaria comercial' },
-  { key: 'branding.primary', value: '#DF3131', group: 'branding', description: 'Rojo corporativo' },
-  { key: 'branding.primary600', value: '#C42121', group: 'branding', description: 'Rojo hover / pressed' },
-  { key: 'branding.primary50', value: '#FDECEC', group: 'branding', description: 'Rojo suave de fondo' },
-  { key: 'branding.ink', value: '#212121', group: 'branding', description: 'Tinta / estructura' },
-  { key: 'branding.danger', value: '#E62214', group: 'branding', description: 'Rojo de acción' },
+  { key: 'branding.primary', value: '#1E2B58', group: 'branding', description: 'Azul marino corporativo' },
+  { key: 'branding.primary600', value: '#16214A', group: 'branding', description: 'Azul marino hover / pressed' },
+  { key: 'branding.primary700', value: '#101838', group: 'branding', description: 'Azul marino profundo' },
+  { key: 'branding.primary50', value: '#EEF1F8', group: 'branding', description: 'Azul marino suave de fondo' },
+  { key: 'branding.accent', value: '#C4D82D', group: 'branding', description: 'Verde lima corporativo (acento)' },
+  { key: 'branding.accent600', value: '#A8BC1F', group: 'branding', description: 'Verde lima hover' },
+  { key: 'branding.accent50', value: '#F6FAE0', group: 'branding', description: 'Verde lima suave de fondo' },
+  { key: 'branding.ink', value: '#1E2B58', group: 'branding', description: 'Tinta / texto principal' },
+  { key: 'branding.ink700', value: '#2A3B70', group: 'branding', description: 'Tinta secundaria' },
+  { key: 'branding.muted', value: '#5A6785', group: 'branding', description: 'Texto atenuado' },
+  { key: 'branding.danger', value: '#C0392B', group: 'branding', description: 'Rojo solo para acciones destructivas' },
   { key: 'branding.success', value: '#008250', group: 'branding', description: 'Verde de éxito' },
   { key: 'branding.warning', value: '#D49341', group: 'branding', description: 'Ámbar de advertencia' },
-  { key: 'branding.info', value: '#116DFF', group: 'branding', description: 'Azul informativo' },
-  { key: 'branding.surface', value: '#ECEFF3', group: 'branding', description: 'Superficie clara' },
+  { key: 'branding.info', value: '#2A6FDB', group: 'branding', description: 'Azul informativo' },
+  { key: 'branding.surface', value: '#F4F6FB', group: 'branding', description: 'Superficie clara' },
+  { key: 'branding.surface2', value: '#FAFBFD', group: 'branding', description: 'Superficie muy clara' },
+  { key: 'branding.border', value: '#DCE2EE', group: 'branding', description: 'Bordes y separadores' },
+  { key: 'branding.font', value: 'Montserrat', group: 'branding', description: 'Tipografía corporativa' },
+
+  /* Registro de clientes: automático o con aprobación del panel. */
+  {
+    key: 'registration.mode',
+    value: 'approval',
+    group: 'registration',
+    description: 'Modo de registro de clientes (automatic | approval)',
+  },
+  {
+    key: 'registration.message',
+    value:
+      'Su solicitud fue recibida. Un profesional de la firma la revisará y le avisaremos por correo cuando la cuenta esté activa.',
+    group: 'registration',
+    description: 'Mensaje que ve el solicitante al enviar su registro',
+  },
+
   { key: 'currency.base', value: 'USD', group: 'currency', description: 'Moneda base del catálogo' },
   { key: 'currency.secondary', value: 'CRC', group: 'currency', description: 'Moneda secundaria' },
   { key: 'currency.usdToCrc', value: String(defaultExchangeRate), group: 'currency', description: 'Tipo de cambio USD → CRC' },

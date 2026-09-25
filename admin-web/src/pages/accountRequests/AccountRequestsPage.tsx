@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Check, Download, UserCheck, X } from 'lucide-react'
-import { accountRequestsApi, type AccountRequestPage } from '@/api/endpoints'
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { Check, Download, Info, Settings2, UserCheck, X } from 'lucide-react'
+import { accountRequestsApi, settingsApi, type AccountRequestPage } from '@/api/endpoints'
 import { useApiMutation, useDebounced, useListQuery, useTableState } from '@/hooks/useApi'
 import { usePermission } from '@/hooks/useAuth'
 import { downloadCsv, formatDateTime, formatNumber } from '@/lib/format'
@@ -11,6 +13,7 @@ import {
   labelOf,
   toneOf,
 } from '@/lib/labels'
+import { registrationModes } from '@/lib/constants'
 import {
   Badge,
   Button,
@@ -61,6 +64,18 @@ export default function AccountRequestsPage() {
     accountRequestsApi.list,
     params,
   )
+
+  /* Modo de registro vigente, para explicarlo en la cabecera. */
+  const ajustes = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => settingsApi.list(),
+    staleTime: 60000,
+  })
+  const modoRegistro =
+    ajustes.data?.items.find((s) => s.key === 'registration.mode')?.value ?? 'approval'
+  const registroAutomatico = modoRegistro === 'automatic'
+  const etiquetaModo =
+    registrationModes.find((m) => m.value === modoRegistro)?.label ?? 'Requiere aprobación'
 
   const approve = useApiMutation((id: string) => accountRequestsApi.approve(id, role), {
     successMessage: 'Solicitud aprobada · usuario Cliente creado',
@@ -127,9 +142,29 @@ export default function AccountRequestsPage() {
       header: 'Estado',
       sortable: true,
       render: (r) => (
-        <Badge tone={toneOf(accountRequestStatusMeta, r.status)}>
-          {labelOf(accountRequestStatusMeta, r.status)}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge tone={toneOf(accountRequestStatusMeta, r.status)}>
+            {labelOf(accountRequestStatusMeta, r.status)}
+          </Badge>
+          {r.status === 'Approved' ? (
+            r.autoApproved ? (
+              <Badge tone="accent" className="whitespace-nowrap">
+                Automática
+              </Badge>
+            ) : r.reviewedByName ? (
+              <span className="text-[11px] text-muted">Aprobada por {r.reviewedByName}</span>
+            ) : null
+          ) : null}
+          {r.clientCode ? (
+            <Link
+              to={r.clientId ? `/clientes/${r.clientId}` : '/clientes'}
+              className="font-mono text-[11px] text-primary hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {r.clientCode}
+            </Link>
+          ) : null}
+        </div>
       ),
     },
     {
@@ -172,35 +207,68 @@ export default function AccountRequestsPage() {
     <>
       <PageHeader
         title="Solicitudes de cuenta"
-        subtitle="Onboarding desde el app móvil y el sitio web · al aprobar se crea el usuario Cliente"
+        subtitle={`Onboarding desde el app móvil y el sitio web · modo de registro: ${etiquetaModo}`}
         actions={
-          <Button
-            variant="secondary"
-            icon={<Download className="h-4 w-4" />}
-            disabled={!query.data?.items.length}
-            onClick={() =>
-              downloadCsv(
-                `solicitudes-cuenta-gh-${new Date().toISOString().slice(0, 10)}.csv`,
-                (query.data?.items ?? []).map((r) => ({
-                  Nombre: r.fullName,
-                  Empresa: r.company ?? '',
-                  Correo: r.email,
-                  Telefono: r.phone,
-                  Cedula: r.idNumber,
-                  Tipo: labelOf(clientTypeMeta, r.clientType),
-                  Origen: r.source,
-                  Estado: labelOf(accountRequestStatusMeta, r.status),
-                  Seguimiento: r.trackingCode,
-                  MotivoRechazo: r.rejectionReason ?? '',
-                  Recibida: r.createdAt,
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
+          <>
+            <Link to="/ajustes">
+              <Button variant="secondary" icon={<Settings2 className="h-4 w-4" />}>
+                Cambiar modo de registro
+              </Button>
+            </Link>
+            <Button
+              variant="secondary"
+              icon={<Download className="h-4 w-4" />}
+              disabled={!query.data?.items.length}
+              onClick={() =>
+                downloadCsv(
+                  `solicitudes-cuenta-gh-${new Date().toISOString().slice(0, 10)}.csv`,
+                  (query.data?.items ?? []).map((r) => ({
+                    Nombre: r.fullName,
+                    Empresa: r.company ?? '',
+                    Correo: r.email,
+                    Telefono: r.phone,
+                    Cedula: r.idNumber,
+                    Tipo: labelOf(clientTypeMeta, r.clientType),
+                    Origen: r.source,
+                    Estado: labelOf(accountRequestStatusMeta, r.status),
+                    Automatica: r.autoApproved ? 'Si' : 'No',
+                    RevisadaPor: r.reviewedByName ?? '',
+                    Cliente: r.clientCode ?? '',
+                    Seguimiento: r.trackingCode,
+                    MotivoRechazo: r.rejectionReason ?? '',
+                    Recibida: r.createdAt,
+                  })),
+                )
+              }
+            >
+              Exportar CSV
+            </Button>
+          </>
         }
       />
+
+      {/* Estado del modo de registro: explica cómo se están creando las cuentas */}
+      <div
+        className={`mb-5 flex flex-wrap items-center gap-3 rounded-card border p-3.5 text-sm ${
+          registroAutomatico ? 'border-accent/60 bg-accent/20' : 'border-line bg-surface-2'
+        }`}
+      >
+        <Info className={`h-4 w-4 shrink-0 ${registroAutomatico ? 'text-ink' : 'text-muted'}`} aria-hidden />
+        <span className="text-ink-700">
+          {registroAutomatico ? (
+            <>
+              <strong className="text-ink">Registro automático</strong>: las cuentas se crean activas al
+              instante; en la bandeja aparecen como <strong className="text-ink">Automática</strong>.
+            </>
+          ) : (
+            <>
+              <strong className="text-ink">Requiere aprobación</strong>: cada solicitud queda pendiente y
+              debe aprobarse o rechazarse con un motivo.
+            </>
+          )}
+        </span>
+        <Badge tone={registroAutomatico ? 'accent' : 'primary'}>{etiquetaModo}</Badge>
+      </div>
 
       <Card padded={false}>
         <Tabs value={tab} onChange={setTab}>

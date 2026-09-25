@@ -73,12 +73,3 @@ Thumbs.db
 desktop.ini
 *.log
 *.tmp
-
-# Evidencia de las pruebas E2E (se regenera al ejecutarlas)
-tools/e2e-admin/*.png
-tools/e2e-admin/panel-dashboard.png
-
-# Caches de compilacion de Kotlin/Gradle
-app-movil/android/.kotlin/
-app-movil/android/.gradle/
-*.apk

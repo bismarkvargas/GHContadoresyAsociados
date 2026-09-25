@@ -129,7 +129,6 @@ class CatalogNotifier extends StateNotifier<CatalogState> {
 
     try {
       final client = await _ref.read(apiBootstrapProvider.future);
-      if (!mounted) return;
       final page = reset ? 1 : state.page + 1;
       final result = await client.getProducts(
         category: filters.categorySlug,
@@ -142,7 +141,6 @@ class CatalogNotifier extends StateNotifier<CatalogState> {
         page: page,
         pageSize: AppConfig.pageSize,
       );
-      if (!mounted) return;
       state = CatalogState(
         products: reset ? result.items : <Product>[...state.products, ...result.items],
         page: result.page,
@@ -151,7 +149,6 @@ class CatalogNotifier extends StateNotifier<CatalogState> {
         hasMore: result.hasMore,
       );
     } catch (e) {
-      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         isLoadingMore: false,

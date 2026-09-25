@@ -167,11 +167,8 @@ class SignalRRealtimeService implements RealtimeService {
   }
 
   String _hubUrl() {
-    // Se conserva la raíz de despliegue de la API (por ejemplo /ghcontadores) y solo se
-    // sustituye la ruta de versión por la del hub.
     final uri = Uri.parse(_baseUrl);
-    final raiz = uri.path.replaceFirst(RegExp(r'/api/v\d+/?$'), '');
-    final base = uri.replace(path: '$raiz${AppConfig.realtimeHubPath}').toString();
+    final base = uri.replace(path: AppConfig.realtimeHubPath).toString();
     final token = _accessToken;
     if (token == null || token.isEmpty) return base;
     return '$base?access_token=${Uri.encodeComponent(token)}';

@@ -422,9 +422,13 @@ export function normalizeAccountRequest(raw: unknown): AccountRequest {
     source: (str(a.source, 'app').toLowerCase() as AccountRequest['source']) || 'app',
     status: (str(a.status, 'Pending') as AccountRequest['status']) || 'Pending',
     reviewedByUserId: (a.reviewedByUserId as string | null) ?? null,
+    reviewedByName: (a.reviewedByName as string | null) ?? null,
     reviewedAt: (a.reviewedAt as string | null) ?? null,
     rejectionReason: (a.rejectionReason as string | null) ?? null,
     createdUserId: (a.createdUserId as string | null) ?? null,
+    clientId: (a.clientId ?? a.createdClientId ?? null) as string | null,
+    clientCode: (a.clientCode ?? a.createdClientCode ?? null) as string | null,
+    autoApproved: bool(a.autoApproved),
     ipAddress: (a.ipAddress as string | null) ?? null,
     trackingCode: str(a.trackingCode),
     createdAt: str(a.createdAt),
@@ -769,14 +773,46 @@ export interface NormalizedSettings {
   exchangeRate: number
 }
 
+/**
+ * La API agrupa los ajustes con etiquetas en español («Registro», «Catálogo»,
+ * «Marca»…), mientras el panel usa claves internas (`registration`, `company`…).
+ * Se traducen en ambos sentidos para que la interfaz y los guards funcionen.
+ */
+const GRUPOS_API_A_PANEL: Record<string, string> = {
+  empresa: 'company',
+  company: 'company',
+  marca: 'branding',
+  branding: 'branding',
+  registro: 'registration',
+  registration: 'registration',
+  monedas: 'currency',
+  moneda: 'currency',
+  currency: 'currency',
+  notificaciones: 'notifications',
+  notifications: 'notifications',
+  mensajes: 'messages',
+  messages: 'messages',
+  pasarela: 'payment',
+  pago: 'payment',
+  payment: 'payment',
+}
+
+export function grupoDeAjuste(grupo: string): string {
+  const clave = grupo.trim().toLowerCase()
+  return GRUPOS_API_A_PANEL[clave] ?? clave
+}
+
 export function normalizeSettings(raw: unknown, fallbackRate = 520): NormalizedSettings {
   const list = Array.isArray(raw) ? raw : asArray<Rec>(asRecord(raw).items)
   const items: Setting[] = list.map((entry, i) => {
     const s = asRecord(entry)
+    const grupoOriginal = str(s.group, 'company')
     return {
       key: str(s.key, `setting.${i}`),
       value: str(s.value),
-      group: str(s.group, 'company').toLowerCase(),
+      // Se conserva el grupo original para poder reenviarlo tal cual a la API.
+      group: grupoDeAjuste(grupoOriginal),
+      groupRaw: grupoOriginal,
       description: str(s.description, str(s.key)),
       updatedAt: str(s.updatedAt ?? new Date().toISOString()),
     }

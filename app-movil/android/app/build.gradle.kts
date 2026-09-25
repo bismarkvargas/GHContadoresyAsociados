@@ -6,9 +6,7 @@ plugins {
 
 android {
     namespace = "net.ghcontadores.gh_contadores"
-    // Se fija la API de compilación: los complementos actuales (file_picker,
-    // flutter_plugin_android_lifecycle) exigen compilar contra android-36 o superior.
-    compileSdk = 36
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

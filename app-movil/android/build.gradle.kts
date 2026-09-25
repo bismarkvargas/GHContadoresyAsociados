@@ -14,16 +14,6 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
-
-    // Los complementos (file_picker, flutter_plugin_android_lifecycle…) traen su propio
-    // compileSdk y pueden quedar por debajo del que exige otro complemento. Se unifica a 36
-    // al terminar de evaluar cada módulo, antes de que se evalúe :app.
-    afterEvaluate {
-        val androidExtension = extensions.findByName("android")
-        if (androidExtension is com.android.build.gradle.BaseExtension) {
-            androidExtension.compileSdkVersion(36)
-        }
-    }
 }
 subprojects {
     project.evaluationDependsOn(":app")
