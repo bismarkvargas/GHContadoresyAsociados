@@ -127,7 +127,7 @@ export function NotificationBell() {
       void queryClient.invalidateQueries({ queryKey: ['notifications'] })
     })
     return off
-  }, [queryClient, endpointAvailable])
+  }, [queryClient])
 
   const persistidas = data?.items ?? []
   const sinLeerPersistidas = summary.data?.unread ?? persistidas.filter((n) => !n.isRead).length
