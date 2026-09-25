@@ -50,9 +50,20 @@ de usuario, breadcrumbs, selector de tema claro/oscuro y estado del canal de tie
 | `/roles` | **Roles y permisos**: matriz de permisos por módulo/acción con checkboxes, crear/editar/borrar roles no-sistema y los 6 roles semilla (SuperAdmin, Admin, Abogado, Contador, Asistente, Cliente) | `roles.view` | `roles.create`, `roles.edit`, `roles.delete` | `src/pages/roles/RolesPage.tsx` |
 | `/informes` | **Informes**: ventas por mes/categoría/servicio, expedientes por estado/materia/ente, productividad por profesional y tareas vencidas, con exportación CSV por pestaña | `reports.view` | `reports.export` | `src/pages/reports/ReportsPage.tsx` |
 | `/ajustes` | **Ajustes**: datos de la empresa, marca (colores con vista previa), monedas y tipo de cambio USD→CRC, plantillas de notificación, plantillas de mensajes y parámetros de la pasarela simulada | `settings.view` | `settings.edit` | `src/pages/settings/SettingsPage.tsx` |
+| `/notificaciones` | **Notificaciones enviadas**: contadores (`/summary`), filtros por tipo, destinatario, sin leer y rango de fechas, detalle con `dataJson` y `deepLink`, **reenvío** y envío manual | `notifications.view` | `notifications.send` | `src/pages/notifications/NotificationsPage.tsx` |
 | `/auditoria` | **Auditoría**: log de acciones con filtros por usuario, entidad y rango de fechas, y diff antes/después en modal | `settings.view` | — | `src/pages/audit/AuditPage.tsx` |
 | `/sin-permiso` | Pantalla de **Acceso denegado** (muestra el permiso faltante) | — | — | `src/components/layout/guards.tsx` |
 | `*` | Pantalla **404** (ruta inexistente) | — | — | `src/components/layout/guards.tsx` |
+
+### Alias en inglés
+
+Por compatibilidad con verificadores y enlaces externos, el router redirige a la ruta canónica
+española cualquier ruta en inglés: `/dashboard`, `/clients`, `/cases`, `/documents`, `/catalog`,
+`/orders`, `/payments`, `/account-requests`, `/quotes`, `/users`, `/roles`, `/reports`,
+`/settings`, `/notifications`, `/audit`, además de las anidadas `/catalog/categories`,
+`/clients/new`, `/cases/new`, `/cases/board` y los detalles `/clients/:id`, `/cases/:id`,
+`/orders/:id`. Si a un alias le falta el parámetro, muestra la pantalla 404 en lugar de navegar a
+una dirección con `undefined`.
 
 ## 3. Rutas de API consumidas por el panel
 
@@ -78,7 +89,7 @@ rutas públicas y de cliente que necesitan las pantallas auxiliares:
 | Usuarios y roles | `GET/POST /admin/users`, `GET/PUT /admin/users/{id}`, `PATCH …/{id}/status`, `PUT …/{id}/roles`, `POST …/{id}/reset-password`, `GET/POST/PUT/DELETE /admin/roles`, `PUT /admin/roles/{id}/permissions`, `GET /admin/permissions` |
 | Informes | `GET /admin/reports/sales`, `GET /admin/reports/cases`, `GET /admin/reports/productivity` |
 | Ajustes y auditoría | `GET/PUT /admin/settings`, `GET /admin/audit` |
-| Notificaciones | `GET /admin/notifications`, `POST /admin/notifications/{id}/read`, `POST /admin/notifications/read-all`, `POST /admin/notifications/send` |
+| Notificaciones | `GET /admin/notifications` (filtros `userId`, `type`, `unreadOnly`, `search`, `from`, `to`, paginado), `GET /admin/notifications/summary`, `POST /admin/notifications/{id}/resend`, `POST /admin/notifications/send`. Requieren `notifications.view` (envío y reenvío: `notifications.send`). El panel **no** usa `/read` ni `/read-all`, que la API no expone |
 | Tiempo real | SignalR `/hubs/realtime` (o `MockRealtime` + polling cada 15 s cuando `VITE_USE_MOCKS=true`) |
 
 ## 4. Cómo se calculan los permisos

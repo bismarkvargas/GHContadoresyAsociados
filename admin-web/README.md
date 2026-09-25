@@ -35,7 +35,7 @@ npm install
 | `npm run dev` | Servidor de desarrollo en `http://127.0.0.1:5173/ghcontadores/` |
 | `npm run typecheck` | `tsc --noEmit` (debe salir limpio) |
 | `npm run build` | `tsc --noEmit && vite build` → genera `dist/` |
-| `npm run smoke` | Prueba de humo del contrato mock fuera del navegador (107 comprobaciones: auth, RBAC, paginación, CRUD, versionado, informes, ajustes, 401/404) |
+| `npm run smoke` | Prueba de humo del contrato mock fuera del navegador (122 comprobaciones: auth, RBAC, paginación, CRUD, versionado, notificaciones, etiquetas, informes, ajustes, 401/404) |
 | `npm run preview` | Sirve `dist/` localmente para revisar el build |
 
 > El servidor de desarrollo publica la app bajo el base `/ghcontadores/`, por lo que la URL es
@@ -50,6 +50,7 @@ En `../tools/e2e-admin` (Playwright ya instalado):
 | `node e2e-admin.mjs` | **Producción**: login escribiendo credenciales, datos reales en los 14 módulos, alta real de cliente contra la API, control de acceso de un Abogado y errores de consola/red |
 | `node verificar-local.mjs` | Panel local en modo mock: enlace de campos de formulario, KPIs, alias de rutas y validación en español |
 | `node verificar-alta-cliente.mjs` | El alta de cliente navega a la ficha con un identificador **válido** (nunca `/clientes/undefined`) |
+| `node verificar-ronda2.mjs` | Campana con el contrato real de notificaciones, rutas con id ausente, etiquetas como arreglo y reenvío |
 | `node diagnostico-red.mjs` | Registra todas las respuestas ≥ 400 del panel desplegado |
 | `node diagnostico-sesion.mjs` | Ciclo de vida del token y de `/auth/me` al navegar |
 | `node diagnostico-alta.mjs` | Respuesta cruda del alta de cliente y URL final |
