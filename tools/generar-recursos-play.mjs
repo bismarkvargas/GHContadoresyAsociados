@@ -70,6 +70,26 @@ function codificar({ width, height, data }) {
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), trozo('IHDR', ihdr), trozo('IDAT', deflateSync(crudo, { level: 9 })), trozo('IEND', Buffer.alloc(0))])
 }
 
+/// Codifica en PNG RGB de 24 bits **sin canal alfa**, que es lo que exige Google Play
+/// para el gráfico destacado («JPEG o PNG de 24 bits sin transparencia»).
+function codificarRgb({ width, height, data }) {
+  const stride = width * 3
+  const crudo = Buffer.alloc((stride + 1) * height)
+  for (let y = 0; y < height; y++) {
+    const base = y * (stride + 1)
+    crudo[base] = 0
+    for (let x = 0; x < width; x++) {
+      const s = (y * width + x) * 4
+      crudo[base + 1 + x * 3] = data[s]
+      crudo[base + 2 + x * 3] = data[s + 1]
+      crudo[base + 3 + x * 3] = data[s + 2]
+    }
+  }
+  const ihdr = Buffer.alloc(13)
+  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4); ihdr[8] = 8; ihdr[9] = 2
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), trozo('IHDR', ihdr), trozo('IDAT', deflateSync(crudo, { level: 9 })), trozo('IEND', Buffer.alloc(0))])
+}
+
 const vacia = (w, h, color) => {
   const data = Buffer.alloc(w * h * 4)
   for (let i = 0; i < w * h; i++) {
@@ -185,7 +205,7 @@ const destacado = franja(vacia(1024, 500, NAVY), 18)
 const lw = Math.round(1024 * 0.62)
 const lh = Math.round((logoBlanco.height / logoBlanco.width) * lw)
 componer(destacado, escalar(logoBlanco, lw, lh), Math.round((1024 - lw) / 2), Math.round((500 - lh) / 2) - 20)
-writeFileSync('brand/play-store/grafico-destacado-1024x500.png', codificar(destacado))
+writeFileSync('brand/play-store/grafico-destacado-1024x500.png', codificarRgb(destacado))
 
 console.log('Recursos de Play generados:')
 console.log('  brand/play-store/icono-512.png')
