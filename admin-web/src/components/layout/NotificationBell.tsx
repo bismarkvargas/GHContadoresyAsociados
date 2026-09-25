@@ -95,8 +95,8 @@ export function NotificationBell() {
   const unreadPersisted = persisted.filter((n) => !n.readAt).length
   const unread = unreadPersisted + live.length
 
-  const items = useMemo(() => {
-    const persistedItems = persisted.map((n) => ({
+  const items = useMemo<BellItem[]>(() => {
+    const persistedItems: BellItem[] = persisted.map((n) => ({
       id: n.id,
       title: n.title,
       body: n.body,
@@ -105,7 +105,7 @@ export function NotificationBell() {
       live: false,
       read: !!n.readAt,
     }))
-    const liveItems = live.map((l) => ({ ...l, read: false }))
+    const liveItems: BellItem[] = live.map((l) => ({ ...l, read: false }))
     return [...liveItems, ...persistedItems].slice(0, 14)
   }, [persisted, live])
 

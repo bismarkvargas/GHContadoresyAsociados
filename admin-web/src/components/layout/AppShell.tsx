@@ -217,7 +217,7 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
       <GlobalSearch />
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
-        <Badge tone={meta.tone} className="hidden md:inline-flex" title="Estado del canal de tiempo real">
+        <Badge tone={meta.tone} className="hidden md:inline-flex">
           {status === 'disconnected' ? (
             <WifiOff className="h-3 w-3" aria-hidden />
           ) : (

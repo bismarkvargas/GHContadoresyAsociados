@@ -65,21 +65,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final stopwatch = Stopwatch()..start();
 
     // Espera tolerante: la app nunca se queda pegada en el splash.
-    await AsyncGuard.retry<void>(
-      () async {
-        await AsyncGuard.timeout(
-          ref.read(apiBootstrapProvider.future),
-          limit: const Duration(seconds: 12),
-        );
-        await AsyncGuard.timeout(
-          ref.read(authProvider.notifier).bootstrap(),
-          limit: const Duration(seconds: 12),
-        );
-      },
-      attempts: 2,
-      initialDelay: const Duration(milliseconds: 400),
-      shouldRetry: (_) => true,
-    ).catchError((_) {});
+    try {
+      await AsyncGuard.retry<void>(
+        () async {
+          await AsyncGuard.timeout(
+            ref.read(apiBootstrapProvider.future),
+            limit: const Duration(seconds: 12),
+          );
+          await AsyncGuard.timeout(
+            ref.read(authProvider.notifier).bootstrap(),
+            limit: const Duration(seconds: 12),
+          );
+        },
+        attempts: 2,
+        initialDelay: const Duration(milliseconds: 400),
+      );
+    } catch (_) {
+      // Arrancamos igual: el modo demo y el catálogo público no dependen de red.
+    }
 
     if (mounted) {
       setState(() => _status = 'Verificando tu sesión…');

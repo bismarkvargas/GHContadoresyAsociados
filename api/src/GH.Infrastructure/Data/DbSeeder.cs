@@ -357,15 +357,30 @@ public static class DbSeeder
 
         var added = 0;
         var sort = 0;
+        // El SKU es único en la base: se reserva en memoria y se comprueba contra la BD
+        // para que un catálogo con SKU repetidos (o parcialmente sembrado) nunca rompa el arranque.
+        var usedSkus = (await db.Products.Select(p => p.Sku).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existingSlugs = (await db.Products.Select(p => p.Slug).ToListAsync(ct)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         foreach (var p in file.Products)
         {
             if (!categoryMap.TryGetValue(p.CategorySlug, out var category)) continue;
-            if (await db.Products.AnyAsync(x => x.Slug == p.Slug, ct)) continue;
+            if (existingSlugs.Contains(p.Slug)) continue;
+
+            var sku = string.IsNullOrWhiteSpace(p.Sku) ? $"GH-{Guid.NewGuid():N}"[..12].ToUpperInvariant() : p.Sku.Trim();
+            if (usedSkus.Contains(sku))
+            {
+                var suffix = 2;
+                var candidate = $"{sku}-{suffix}";
+                while (usedSkus.Contains(candidate)) candidate = $"{sku}-{++suffix}";
+                sku = candidate;
+            }
+            usedSkus.Add(sku);
 
             sort++;
             db.Products.Add(new Product
             {
-                Sku = p.Sku,
+                Sku = sku,
                 Slug = p.Slug,
                 Name = p.Name,
                 ShortDescription = p.ShortDescription,

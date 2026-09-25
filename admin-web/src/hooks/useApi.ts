@@ -147,14 +147,15 @@ export function useApiMutation<TData, TVariables>(
 
   return useMutation<TData, unknown, TVariables>({
     mutationFn,
-    onSuccess: (data, variables) => {
+    onSuccess: (data, variables, context) => {
       for (const key of invalidate) void queryClient.invalidateQueries({ queryKey: key })
       if (successMessage) toast.success(successMessage)
-      options.onSuccess?.(data, variables, undefined)
+      options.onSuccess?.(data, variables, context)
       onDone?.()
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
       toast.error(errorMessage ?? 'No se pudo completar la operación', apiErrorMessage(error))
+      options.onError?.(error, variables, context)
     },
   })
 }

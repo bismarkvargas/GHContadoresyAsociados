@@ -36,6 +36,19 @@ function slugify(s) {
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
+/** Hash determinista (djb2) para construir SKU únicos y estables entre ejecuciones. */
+function shortHash(s) {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0
+  return h.toString(36).toUpperCase().padStart(5, '0').slice(0, 5)
+}
+
+/** SKU legible y único: GH-<inicio del slug>-<hash>. Evita colisiones al truncar. */
+function makeSku(slug) {
+  const base = slug.replace(/-/g, '').slice(0, 14).toUpperCase()
+  return `GH-${base}-${shortHash(slug)}`
+}
+
 const categoryMeta = {
   'servicios-contables': { name: 'Servicios Contables', icon: 'calculator', order: 1, description: 'Contabilidad mensual, anual y trimestral, estados financieros, facturación electrónica y liquidaciones laborales.' },
   'servicios-legales': { name: 'Servicios Legales', icon: 'scale', order: 2, description: 'Poderes, contratos, composición accionaria, trámites ante SUGEF, ACAM, MEIC, MAG, ICT y Ministerio de Salud.' },
@@ -51,7 +64,7 @@ const products = raw.products.map((p) => {
   const fallback = `${p.name}. Servicio profesional de GH Contadores y Asociados: gestión integral del trámite ante el ente correspondiente, revisión documental, presentación y seguimiento hasta la resolución. Incluye asesoría de un profesional asignado y acceso al expediente en línea.`
   return {
     slug: slugify(p.name),
-    sku: `GH-${slugify(p.name).slice(0, 18).toUpperCase().replace(/-/g, '')}`,
+    sku: makeSku(slugify(p.name)),
     name: p.name.replace(/\s+/g, ' ').trim(),
     price: p.price,
     currency: p.currency || 'USD',

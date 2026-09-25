@@ -976,8 +976,7 @@ export async function buildSeedDb(): Promise<MockDb> {
 
     if (status !== 'PendingPayment' && status !== 'Cancelled') {
       const method = pick(['Card', 'Sinpe', 'Transfer'] as const)
-      const declined = status === 'PendingPayment'
-      const payStatus = status === 'Refunded' ? 'Refunded' : declined ? 'Declined' : 'Approved'
+      const payStatus = status === 'Refunded' ? 'Refunded' : 'Approved'
       const reference = `GH-PAY-${String(90000 + i)}`
       db.payments.push({
         id: uid('pay'),

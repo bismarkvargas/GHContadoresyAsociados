@@ -39,7 +39,7 @@
   "products": [
     {
       "slug": "tramite-municipal-renovacion-patente-comercial",
-      "sku": "GH-TRAMITEMUNICIPAL",
+      "sku": "GH-TRAMITEMUNICIP-N3URT",
       "name": "Trámite Municipal - Renovación Patente Comercial",
       "price": 339,
       "currency": "USD",
@@ -59,7 +59,7 @@
     },
     {
       "slug": "tramite-mag",
-      "sku": "GH-TRAMITEMAG",
+      "sku": "GH-TRAMITEMAG-12878",
       "name": "Trámite MAG",
       "price": 282.5,
       "currency": "USD",
@@ -79,7 +79,7 @@
     },
     {
       "slug": "tenencia-de-libros-legales",
-      "sku": "GH-TENENCIADELIBROS",
+      "sku": "GH-TENENCIADELIBR-JC8SQ",
       "name": "Tenencia de Libros Legales",
       "price": 113,
       "currency": "USD",
@@ -99,7 +99,7 @@
     },
     {
       "slug": "recuperacion-acceso-ovi",
-      "sku": "GH-RECUPERACIONACCES",
+      "sku": "GH-RECUPERACIONAC-KU2ZV",
       "name": "Recuperación Acceso OVI",
       "price": 50,
       "currency": "USD",
@@ -119,7 +119,7 @@
     },
     {
       "slug": "tramite-poliza",
-      "sku": "GH-TRAMITEPOLIZA",
+      "sku": "GH-TRAMITEPOLIZA-1LAYZ",
       "name": "Trámite Poliza",
       "price": 113,
       "currency": "USD",
@@ -137,7 +137,7 @@
     },
     {
       "slug": "levantamiento-de-suspension-sugef",
-      "sku": "GH-LEVANTAMIENTODES",
+      "sku": "GH-LEVANTAMIENTOD-F67RF",
       "name": "Levantamiento de Suspensión SUGEF",
       "price": 56.5,
       "currency": "USD",
@@ -157,7 +157,7 @@
     },
     {
       "slug": "activacion-de-acam",
-      "sku": "GH-ACTIVACIONDEACAM",
+      "sku": "GH-ACTIVACIONDEAC-G1BUP",
       "name": "Activación de ACAM",
       "price": 113,
       "currency": "USD",
@@ -177,7 +177,7 @@
     },
     {
       "slug": "reporte-de-ingresos-sugef",
-      "sku": "GH-REPORTEDEINGRESO",
+      "sku": "GH-REPORTEDEINGRE-NFNNF",
       "name": "Reporte de Ingresos SUGEF",
       "price": 113,
       "currency": "USD",
@@ -197,7 +197,7 @@
     },
     {
       "slug": "renovacion-permiso-de-salud",
-      "sku": "GH-RENOVACIONPERMISO",
+      "sku": "GH-RENOVACIONPERM-AA5LE",
       "name": "Renovación Permiso de Salud",
       "price": 226,
       "currency": "USD",
@@ -217,7 +217,7 @@
     },
     {
       "slug": "renovacion-patente-comercial",
-      "sku": "GH-RENOVACIONPATENTE",
+      "sku": "GH-RENOVACIONPATE-V2ESM",
       "name": "Renovación Patente Comercial",
       "price": 339,
       "currency": "USD",
@@ -237,7 +237,7 @@
     },
     {
       "slug": "rectificativa-declaraciones",
-      "sku": "GH-RECTIFICATIVADECL",
+      "sku": "GH-RECTIFICATIVAD-2IP7H",
       "name": "Rectificativa - Declaraciones",
       "price": 22.6,
       "currency": "USD",
@@ -257,7 +257,7 @@
     },
     {
       "slug": "tramite-meic",
-      "sku": "GH-TRAMITEMEIC",
+      "sku": "GH-TRAMITEMEIC-1HZQ5",
       "name": "Trámite MEIC",
       "price": 423.75,
       "currency": "USD",
@@ -277,7 +277,7 @@
     },
     {
       "slug": "renovacion-de-poliza-del-ins",
-      "sku": "GH-RENOVACIONDEPOLI",
+      "sku": "GH-RENOVACIONDEPO-13KUE",
       "name": "Renovación de Póliza del INS",
       "price": 169.5,
       "currency": "USD",
@@ -297,7 +297,7 @@
     },
     {
       "slug": "tramites-legales-poderes-poa",
-      "sku": "GH-TRAMITESLEGALESP",
+      "sku": "GH-TRAMITESLEGALE-SE4HT",
       "name": "Trámites Legales-Poderes (POA)",
       "price": 90.4,
       "currency": "USD",
@@ -317,7 +317,7 @@
     },
     {
       "slug": "tramite-bancario",
-      "sku": "GH-TRAMITEBANCARIO",
+      "sku": "GH-TRAMITEBANCARI-VOHPA",
       "name": "Trámite Bancario",
       "price": 90.4,
       "currency": "USD",
@@ -337,7 +337,7 @@
     },
     {
       "slug": "inactivacion-de-acam",
-      "sku": "GH-INACTIVACIONDEAC",
+      "sku": "GH-INACTIVACIONDE-GBY2I",
       "name": "Inactivación de Acam",
       "price": 69.99,
       "currency": "USD",
@@ -357,7 +357,7 @@
     },
     {
       "slug": "tramite-legal-composicion-accionaria",
-      "sku": "GH-TRAMITELEGALCOMP",
+      "sku": "GH-TRAMITELEGALCO-14LBO",
       "name": "Trámite Legal Composición Accionaria",
       "price": 90.4,
       "currency": "USD",
@@ -377,7 +377,7 @@
     },
     {
       "slug": "declaracion-de-dividendos",
-      "sku": "GH-DECLARACIONDEDIV",
+      "sku": "GH-DECLARACIONDED-1I0UM",
       "name": "Declaración de Dividendos",
       "price": 254.25,
       "currency": "USD",
@@ -397,7 +397,7 @@
     },
     {
       "slug": "certificacion-de-hechos-convenidos",
-      "sku": "GH-CERTIFICACIONDEH",
+      "sku": "GH-CERTIFICACIOND-J4VTJ",
       "name": "Certificación de Hechos Convenidos",
       "price": 113,
       "currency": "USD",
@@ -417,7 +417,7 @@
     },
     {
       "slug": "tramite-ict",
-      "sku": "GH-TRAMITEICT",
+      "sku": "GH-TRAMITEICT-12875",
       "name": "Trámite ICT",
       "price": 169.5,
       "currency": "USD",
@@ -437,7 +437,7 @@
     },
     {
       "slug": "actualizacion-sugef-directo",
-      "sku": "GH-ACTUALIZACIONSUGE",
+      "sku": "GH-ACTUALIZACIONS-1G83F",
       "name": "Actualización - Sugef Directo",
       "price": 113,
       "currency": "USD",
@@ -455,7 +455,7 @@
     },
     {
       "slug": "declaracion-impuestos-al-valor-agregado",
-      "sku": "GH-DECLARACIONIMPUES",
+      "sku": "GH-DECLARACIONIMP-1CNC2",
       "name": "Declaración Impuestos Al Valor Agregado",
       "price": 113,
       "currency": "USD",
@@ -473,7 +473,7 @@
     },
     {
       "slug": "llave-criptografica",
-      "sku": "GH-LLAVECRIPTOGRAFIC",
+      "sku": "GH-LLAVECRIPTOGRA-151XY",
       "name": "Llave Criptográfica",
       "price": 56.5,
       "currency": "USD",
@@ -493,7 +493,7 @@
     },
     {
       "slug": "declaracion-registro-de-socios-rtbf",
-      "sku": "GH-DECLARACIONREGIST",
+      "sku": "GH-DECLARACIONREG-1AEN1",
       "name": "Declaración Registro de Socios ( RTBF )",
       "price": 169.5,
       "currency": "USD",
@@ -513,7 +513,7 @@
     },
     {
       "slug": "des-inscripcion-en-sugef",
-      "sku": "GH-DESINSCRIPCIONEN",
+      "sku": "GH-DESINSCRIPCION-J0I4E",
       "name": "Des-Inscripción en Sugef",
       "price": 169.5,
       "currency": "USD",
@@ -533,7 +533,7 @@
     },
     {
       "slug": "inscripcion-en-sugef",
-      "sku": "GH-INSCRIPCIONENSUG",
+      "sku": "GH-INSCRIPCIONENS-1XXBL",
       "name": "Inscripción en Sugef",
       "price": 169.5,
       "currency": "USD",
@@ -553,7 +553,7 @@
     },
     {
       "slug": "renovacion-de-llave-criptografica",
-      "sku": "GH-RENOVACIONDELLAV",
+      "sku": "GH-RENOVACIONDELL-76728",
       "name": "Renovación de Llave Criptográfica",
       "price": 56.6,
       "currency": "USD",
@@ -573,7 +573,7 @@
     },
     {
       "slug": "configuracion-facturacion-electronica",
-      "sku": "GH-CONFIGURACIONFACT",
+      "sku": "GH-CONFIGURACIONF-11VZP",
       "name": "Configuración Facturación Electrónica",
       "price": 282.5,
       "currency": "USD",
@@ -593,7 +593,7 @@
     },
     {
       "slug": "constancia-de-facturas-emitidas",
-      "sku": "GH-CONSTANCIADEFACT",
+      "sku": "GH-CONSTANCIADEFA-3IYIG",
       "name": "Constancia de Facturas Emitidas",
       "price": 113,
       "currency": "USD",
@@ -613,7 +613,7 @@
     },
     {
       "slug": "declaracion-de-sociedades-inactivas",
-      "sku": "GH-DECLARACIONDESOC",
+      "sku": "GH-DECLARACIONDES-1OJQT",
       "name": "Declaración de Sociedades Inactivas",
       "price": 169.5,
       "currency": "USD",
@@ -631,7 +631,7 @@
     },
     {
       "slug": "declaracion-rentas-de-capital",
-      "sku": "GH-DECLARACIONRENTAS",
+      "sku": "GH-DECLARACIONREN-1KLRG",
       "name": "Declaración Rentas de Capital",
       "price": 45.2,
       "currency": "USD",
@@ -649,7 +649,7 @@
     },
     {
       "slug": "tramite-ministerio-salud",
-      "sku": "GH-TRAMITEMINISTERIO",
+      "sku": "GH-TRAMITEMINISTE-198QZ",
       "name": "Trámite Ministerio Salud",
       "price": 226,
       "currency": "USD",
@@ -667,7 +667,7 @@
     },
     {
       "slug": "tramite-municipal-patente-comercial",
-      "sku": "GH-TRAMITEMUNICIPAL",
+      "sku": "GH-TRAMITEMUNICIP-CLSZ9",
       "name": "Trámite Municipal - Patente Comercial",
       "price": 734.5,
       "currency": "USD",
@@ -687,7 +687,7 @@
     },
     {
       "slug": "constancia-de-estados-financieros",
-      "sku": "GH-CONSTANCIADEESTA",
+      "sku": "GH-CONSTANCIADEES-166H8",
       "name": "Constancia de Estados Financieros",
       "price": 452,
       "currency": "USD",
@@ -707,7 +707,7 @@
     },
     {
       "slug": "certificacion-de-estados-financieros",
-      "sku": "GH-CERTIFICACIONDEE",
+      "sku": "GH-CERTIFICACIOND-1RKXX",
       "name": "Certificación de Estados Financieros",
       "price": 452,
       "currency": "USD",
@@ -725,7 +725,7 @@
     },
     {
       "slug": "certificacion-de-flujo-prospectivo",
-      "sku": "GH-CERTIFICACIONDEF",
+      "sku": "GH-CERTIFICACIOND-1WBOL",
       "name": "Certificación de Flujo Prospectivo",
       "price": 310.75,
       "currency": "USD",
@@ -745,7 +745,7 @@
     },
     {
       "slug": "constancia-de-flujo-prospectivo",
-      "sku": "GH-CONSTANCIADEFLUJ",
+      "sku": "GH-CONSTANCIADEFL-L4Z1P",
       "name": "Constancia de Flujo Prospectivo",
       "price": 282.5,
       "currency": "USD",
@@ -765,7 +765,7 @@
     },
     {
       "slug": "modificacion-tributaria",
-      "sku": "GH-MODIFICACIONTRIBU",
+      "sku": "GH-MODIFICACIONTR-16ETK",
       "name": "Modificación Tributaria",
       "price": 113,
       "currency": "USD",
@@ -783,7 +783,7 @@
     },
     {
       "slug": "des-inscripcion-tributaria",
-      "sku": "GH-DESINSCRIPCIONTR",
+      "sku": "GH-DESINSCRIPCION-1N2DC",
       "name": "Des-Inscripción Tributaria",
       "price": 113,
       "currency": "USD",
@@ -803,7 +803,7 @@
     },
     {
       "slug": "elaboracion-d-151",
-      "sku": "GH-ELABORACIOND151",
+      "sku": "GH-ELABORACIOND15-A2NVI",
       "name": "Elaboración D-151",
       "price": 84.75,
       "currency": "USD",
@@ -823,7 +823,7 @@
     },
     {
       "slug": "tramite-municipal-estado-de-cuenta-y-pago-de-impuestos",
-      "sku": "GH-TRAMITEMUNICIPAL",
+      "sku": "GH-TRAMITEMUNICIP-WQF1C",
       "name": "Trámite Municipal - Estado de cuenta y pago de impuestos",
       "price": 169.5,
       "currency": "USD",
@@ -843,7 +843,7 @@
     },
     {
       "slug": "tramite-municipal-patente-comercial-con-venta-de-licores",
-      "sku": "GH-TRAMITEMUNICIPAL",
+      "sku": "GH-TRAMITEMUNICIP-1B056",
       "name": "Trámite Municipal - Patente comercial con venta de licores",
       "price": 960.5,
       "currency": "USD",
@@ -863,7 +863,7 @@
     },
     {
       "slug": "constancia-accionaria",
-      "sku": "GH-CONSTANCIAACCIONA",
+      "sku": "GH-CONSTANCIAACCI-119IF",
       "name": "Constancia Accionaria",
       "price": 113,
       "currency": "USD",
@@ -881,7 +881,7 @@
     },
     {
       "slug": "tramites-legales",
-      "sku": "GH-TRAMITESLEGALES",
+      "sku": "GH-TRAMITESLEGALE-17GED",
       "name": "Trámites Legales",
       "price": 113,
       "currency": "USD",
@@ -901,7 +901,7 @@
     },
     {
       "slug": "consulta-profesional-cpi",
-      "sku": "GH-CONSULTAPROFESION",
+      "sku": "GH-CONSULTAPROFES-1MUQC",
       "name": "Consulta Profesional CPI",
       "price": 67.8,
       "currency": "USD",
@@ -921,7 +921,7 @@
     },
     {
       "slug": "inscripcion-tributaria-d-140",
-      "sku": "GH-INSCRIPCIONTRIBUT",
+      "sku": "GH-INSCRIPCIONTRI-5U11J",
       "name": "Inscripción Tributaria D-140",
       "price": 203.4,
       "currency": "USD",
@@ -941,7 +941,7 @@
     },
     {
       "slug": "contabilidad-anual",
-      "sku": "GH-CONTABILIDADANUAL",
+      "sku": "GH-CONTABILIDADAN-1EACZ",
       "name": "Contabilidad Anual",
       "price": 339,
       "currency": "USD",
@@ -959,7 +959,7 @@
     },
     {
       "slug": "contabilidad-trimestral",
-      "sku": "GH-CONTABILIDADTRIME",
+      "sku": "GH-CONTABILIDADTR-KZ08J",
       "name": "Contabilidad Trimestral",
       "price": 90.4,
       "currency": "USD",
@@ -977,7 +977,7 @@
     },
     {
       "slug": "tramites-en-la-ccss",
-      "sku": "GH-TRAMITESENLACCS",
+      "sku": "GH-TRAMITESENLACC-MCGIT",
       "name": "Trámites en la CCSS",
       "price": 169.5,
       "currency": "USD",
@@ -998,7 +998,7 @@
     },
     {
       "slug": "tramite-tributario",
-      "sku": "GH-TRAMITETRIBUTARIO",
+      "sku": "GH-TRAMITETRIBUTA-1YA94",
       "name": "Trámite Tributario",
       "price": 282.5,
       "currency": "USD",
@@ -1019,7 +1019,7 @@
     },
     {
       "slug": "confeccion-declaracion-multas-d-116",
-      "sku": "GH-CONFECCIONDECLARA",
+      "sku": "GH-CONFECCIONDECL-2B8X8",
       "name": "Confección Declaración Multas D-116",
       "price": 16.95,
       "currency": "USD",
@@ -1040,7 +1040,7 @@
     },
     {
       "slug": "tramite-impuesto-solidario",
-      "sku": "GH-TRAMITEIMPUESTOS",
+      "sku": "GH-TRAMITEIMPUEST-WZ5GI",
       "name": "Trámite Impuesto Solidario",
       "price": 395.5,
       "currency": "USD",
@@ -1061,7 +1061,7 @@
     },
     {
       "slug": "libros-contables",
-      "sku": "GH-LIBROSCONTABLES",
+      "sku": "GH-LIBROSCONTABLE-QZW7I",
       "name": "Libros Contables",
       "price": 226,
       "currency": "USD",
@@ -1079,7 +1079,7 @@
     },
     {
       "slug": "elaboracion-cierre-fiscal",
-      "sku": "GH-ELABORACIONCIERRE",
+      "sku": "GH-ELABORACIONCIE-1ELEH",
       "name": "Elaboración Cierre Fiscal",
       "price": 226,
       "currency": "USD",
@@ -1099,7 +1099,7 @@
     },
     {
       "slug": "solicitud-del-permiso-sanitario",
-      "sku": "GH-SOLICITUDDELPERM",
+      "sku": "GH-SOLICITUDDELPE-1BQ3I",
       "name": "Solicitud del Permiso Sanitario",
       "price": 113,
       "currency": "USD",
@@ -1120,7 +1120,7 @@
     },
     {
       "slug": "tramites-legales-contrato",
-      "sku": "GH-TRAMITESLEGALESC",
+      "sku": "GH-TRAMITESLEGALE-1CIFR",
       "name": "Trámites Legales-Contrato",
       "price": 226,
       "currency": "USD",
@@ -1141,7 +1141,7 @@
     },
     {
       "slug": "calculo-liquidacion-laboral",
-      "sku": "GH-CALCULOLIQUIDACIO",
+      "sku": "GH-CALCULOLIQUIDA-XBDAI",
       "name": "Cálculo Liquidación Laboral",
       "price": 56.5,
       "currency": "USD",
@@ -1161,7 +1161,7 @@
     },
     {
       "slug": "constancia-de-inactividad-tributaria",
-      "sku": "GH-CONSTANCIADEINAC",
+      "sku": "GH-CONSTANCIADEIN-1DK51",
       "name": "Constancia de Inactividad Tributaria",
       "price": 197.5,
       "currency": "USD",
@@ -1182,7 +1182,7 @@
     },
     {
       "slug": "constancia-de-revision-contable",
-      "sku": "GH-CONSTANCIADEREVI",
+      "sku": "GH-CONSTANCIADERE-QCEKO",
       "name": "Constancia de Revisión Contable",
       "price": 56.5,
       "currency": "USD",
@@ -1202,7 +1202,7 @@
     },
     {
       "slug": "administracion-factura-electronica",
-      "sku": "GH-ADMINISTRACIONFAC",
+      "sku": "GH-ADMINISTRACION-S9IEH",
       "name": "Administración Factura Electrónica",
       "price": 56.5,
       "currency": "USD",
@@ -1222,7 +1222,7 @@
     },
     {
       "slug": "declaracion-perdidas-y-ganancias-de-capital",
-      "sku": "GH-DECLARACIONPERDID",
+      "sku": "GH-DECLARACIONPER-W7IC7",
       "name": "Declaración Perdidas y Ganancias de Capital",
       "price": 565,
       "currency": "USD",
@@ -1242,7 +1242,7 @@
     },
     {
       "slug": "contabilidad-mensual",
-      "sku": "GH-CONTABILIDADMENSU",
+      "sku": "GH-CONTABILIDADME-ZUJ7T",
       "name": "Contabilidad Mensual",
       "price": 169.5,
       "currency": "USD",

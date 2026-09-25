@@ -1,5 +1,5 @@
-import { del, get, patch, post, put, api, USE_MOCKS } from '../client'
-import { handleMockRequest } from '../mock/router'
+import { del, get, patch, post, put, api, USE_MOCKS } from './client'
+import { handleMockRequest } from './mock/router'
 import type {
   AccountRequest,
   AuditLog,

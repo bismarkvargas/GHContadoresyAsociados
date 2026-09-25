@@ -6,7 +6,6 @@
 
 import type {
   AccountRequest,
-  AuditLog,
   CaseEvent,
   CaseFile,
   CaseTask,
@@ -14,15 +13,12 @@ import type {
   ClientInteraction,
   DashboardSummary,
   DocumentItem,
-  ListParams,
   LoginResponse,
   Message,
   Notification,
   Order,
-  OrderItem,
   Paginated,
   Payment,
-  Permission,
   Product,
   ProductCategory,
   QuoteRequest,
@@ -211,8 +207,10 @@ function requireActor(ctx: Ctx): string {
   return actor
 }
 
-function touch(entity: { updatedAt?: string }): void {
-  if ('updatedAt' in entity) entity.updatedAt = new Date().toISOString()
+function touch(entity: object): void {
+  if ('updatedAt' in entity) {
+    ;(entity as { updatedAt?: string }).updatedAt = new Date().toISOString()
+  }
 }
 
 function audit(
@@ -332,7 +330,7 @@ function paymentRow(p: Payment): Payment {
 function productRow(p: Product): Product {
   const db = getDb()
   const category = db.productCategories.find((c) => c.id === p.categoryId)
-  return { ...p, categorySlug: category?.slug, categoryName: category?.name }
+  return { ...p, categorySlug: category?.slug ?? '', categoryName: category?.name ?? '' }
 }
 
 function userRow(u: User): User {
@@ -2221,7 +2219,7 @@ route('GET', '/admin/reports/productivity', (): ReportProductivity => {
         title: t.title,
         caseCode: db.caseFiles.find((c) => c.id === t.caseFileId)?.code ?? '—',
         assignedToName: userName(t.assignedToUserId),
-        dueAt: t.dueAt,
+        dueAt: t.dueAt ?? null,
         priority: t.priority,
         status: t.status,
       }))

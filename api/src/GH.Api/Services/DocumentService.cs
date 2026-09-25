@@ -19,9 +19,12 @@ public class DocumentService
     private readonly INotificationService _notifications;
     private readonly IRealtimeNotifier _realtime;
     private readonly IAuditLogger _audit;
+    /// <summary>Prefijo público bajo el que se sirve la API (p. ej. "/ghcontadores" en demostracion.es).</summary>
+    private readonly string _publicBasePath;
 
     public DocumentService(GhDbContext db, IStorageService storage, ICurrentUser current,
-        INotificationService notifications, IRealtimeNotifier realtime, IAuditLogger audit)
+        INotificationService notifications, IRealtimeNotifier realtime, IAuditLogger audit,
+        IConfiguration configuration)
     {
         _db = db;
         _storage = storage;
@@ -29,6 +32,7 @@ public class DocumentService
         _notifications = notifications;
         _realtime = realtime;
         _audit = audit;
+        _publicBasePath = (configuration["PublicBasePath"] ?? string.Empty).TrimEnd('/');
     }
 
     public async Task<DocumentDto> UploadAsync(IFormFile file, DocumentUploadRequest request, Guid? forcedClientId, CancellationToken ct)
@@ -151,13 +155,13 @@ public class DocumentService
 
     public Task<DocumentDto> ToDtoAsync(Document document, CancellationToken ct = default)
     {
-        var url = $"/api/v1/public/files/{_storage.CreateDownloadToken(document.StoragePath, document.OriginalName, document.ContentType, TimeSpan.FromMinutes(15))}";
+        var url = $"{_publicBasePath}/api/v1/public/files/{_storage.CreateDownloadToken(document.StoragePath, document.OriginalName, document.ContentType, TimeSpan.FromMinutes(15))}";
         return Task.FromResult(DocumentDto.From(document, url));
     }
 
     public DownloadLinkDto CreateLink(Document document)
     {
         var token = _storage.CreateDownloadToken(document.StoragePath, document.OriginalName, document.ContentType, TimeSpan.FromMinutes(15));
-        return new DownloadLinkDto($"/api/v1/public/files/{token}", DateTime.UtcNow.AddMinutes(15));
+        return new DownloadLinkDto($"{_publicBasePath}/api/v1/public/files/{token}", DateTime.UtcNow.AddMinutes(15));
     }
 }
