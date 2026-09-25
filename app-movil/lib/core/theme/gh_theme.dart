@@ -42,7 +42,7 @@ class GhTheme {
         titleTextStyle: text.titleLarge,
         surfaceTintColor: Colors.transparent,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: scheme.surfaceContainerLowest,
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -168,7 +168,7 @@ class GhTheme {
         shape: RoundedRectangleBorder(borderRadius: GhTokens.controlRadius),
         insetPadding: const EdgeInsets.all(16),
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: scheme.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: GhTokens.cardRadius),

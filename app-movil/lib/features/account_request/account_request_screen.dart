@@ -187,29 +187,35 @@ class _AccountRequestScreenState extends ConsumerState<AccountRequestScreen> {
                 style: theme.textTheme.labelMedium,
               ),
               const SizedBox(height: 8),
-              for (final type in ClientType.values)
-                RadioListTile<ClientType>(
-                  value: type,
-                  groupValue: _clientType,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() => _clientType = value);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  title: Text(clientTypeLabel(type)),
-                  subtitle: Text(
-                    switch (type) {
-                      ClientType.individual =>
-                        'Persona física residente con cédula 9 dígitos',
-                      ClientType.company =>
-                        'Sociedad o empresa con cédula jurídica 10 dígitos',
-                      ClientType.foreignInvestor =>
-                        'Extranjero o inversionista sin cédula costarricense',
-                    },
-                    style: theme.textTheme.bodySmall,
-                  ),
+              RadioGroup<ClientType>(
+                groupValue: _clientType,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _clientType = value);
+                },
+                child: Column(
+                  children: <Widget>[
+                    for (final type in ClientType.values)
+                      RadioListTile<ClientType>(
+                        value: type,
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: Text(clientTypeLabel(type)),
+                        subtitle: Text(
+                          switch (type) {
+                            ClientType.individual =>
+                              'Persona física residente con cédula 9 dígitos',
+                            ClientType.company =>
+                              'Sociedad o empresa con cédula jurídica 10 dígitos',
+                            ClientType.foreignInvestor =>
+                              'Extranjero o inversionista sin cédula costarricense',
+                          },
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ),
+                  ],
                 ),
+              ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _company,

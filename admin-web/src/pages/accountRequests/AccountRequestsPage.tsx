@@ -1,6 +1,4 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { Check, Download, UserCheck, X } from 'lucide-react'
 import { accountRequestsApi } from '@/api/endpoints'
 import { useApiMutation, useDebounced, useListQuery, useTableState } from '@/hooks/useApi'
@@ -29,7 +27,7 @@ import {
   Textarea,
   type Column,
 } from '@/components/ui'
-import { PageHeader, PermissionGate } from '@/components/layout/AppShell'
+import { PageHeader } from '@/components/layout/AppShell'
 import type { AccountRequest } from '@/types'
 
 export default function AccountRequestsPage() {

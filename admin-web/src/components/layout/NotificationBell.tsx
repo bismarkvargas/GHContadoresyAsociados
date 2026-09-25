@@ -19,6 +19,17 @@ interface LiveNotification {
   live: boolean
 }
 
+/** Elemento renderizado en la bandeja (persistido o en vivo). */
+interface BellItem {
+  id: string
+  title: string
+  body: string
+  createdAt: string
+  kind?: string
+  live: boolean
+  read: boolean
+}
+
 const deepLinkByType: Record<string, string> = {
   AccountApproved: '/solicitudes',
   AccountRejected: '/solicitudes',

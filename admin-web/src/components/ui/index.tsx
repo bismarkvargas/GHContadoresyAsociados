@@ -4,7 +4,6 @@ import {
   useEffect,
   useId,
   useRef,
-  useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
@@ -111,7 +110,7 @@ export function TextInput({ label, hint, error, leading, trailing, className, ..
         ) : null}
         <input
           id={id}
-          className={cx('gh-input', leading && 'pl-9', trailing && 'pr-9', className)}
+          className={cx('gh-input', leading ? 'pl-9' : '', trailing ? 'pr-9' : '', className)}
           {...rest}
         />
         {trailing ? (

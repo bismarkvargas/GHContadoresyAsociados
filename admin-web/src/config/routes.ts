@@ -6,7 +6,6 @@
 
 import {
   Activity,
-  BadgeDollarSign,
   BarChart3,
   Briefcase,
   ClipboardList,
